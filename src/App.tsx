@@ -3,9 +3,14 @@ import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
+import ComingSoon from './ComingSoon'
+
+const LOADING_SCREEN = import.meta.env.VITE_FEATURE_LOADING_SCREEN === 'true'
 
 function App() {
   const [count, setCount] = useState(0)
+
+  if (LOADING_SCREEN) return <ComingSoon />
 
   return (
     <>
