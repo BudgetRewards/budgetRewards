@@ -24,3 +24,6 @@ dist-ssr
 *.slnx
 *.sw?
 .vs/
+
+# Local claude
+*.claude/*
