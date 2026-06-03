@@ -28,7 +28,7 @@ function TabBar({ active, onChange }){
         return (
           <button key={tab.id} className={'rr-tab'+(on?' active':'')} onClick={()=>onChange(tab.id)}>
             <Icon name={tab.icon} size={24} stroke="currentColor" sw={on?2.3:2}
-              fill={on && (tab.id==='home') ? 'rgba(0,166,81,0.12)' : 'none'}/>
+              fill={on && (tab.id==='home') ? 'rgba(255,255,255,0.18)' : 'none'}/>
             <span className="lbl">{t.tabs[tab.id]}</span>
           </button>
         );
