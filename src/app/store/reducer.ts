@@ -28,7 +28,7 @@ function nextTierFor(tier: TierKey, tiers: RRState['tiers']): RRState['nextTier'
   if (idx >= TIER_ORDER.length - 1) return null;
   const nextId = TIER_ORDER[idx + 1];
   const def = tiers.find(t => t.id === nextId);
-  return def ? { name: def.name, threshold: def.min } : null;
+  return def ? { name: def.name, nameEn: def.nameEn, threshold: def.min } : null;
 }
 
 function applyCatalogueKey(

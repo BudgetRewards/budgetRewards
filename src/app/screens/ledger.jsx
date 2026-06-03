@@ -1,11 +1,11 @@
 import React from 'react'
-import RR from '../data.jsx'
+import { useRR } from '../store/RRContext.tsx'
 import { SeedMark, ScreenHeader } from '../ui.jsx'
 import { useT, useFmt, useLang } from '../i18n.jsx'
 
 /* ───────────────── Screen 2 · Seeds history (Ledger) ───────────────── */
 function Ledger(){
-  const R = RR;
+  const R = useRR();
   const t = useT();
   const fmt = useFmt();
   const { lang } = useLang();

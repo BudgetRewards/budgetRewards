@@ -1,5 +1,5 @@
 import React from 'react'
-import RR from '../data.jsx'
+import { useRR } from '../store/RRContext.tsx'
 import { Icon, ScreenHeader, Progress } from '../ui.jsx'
 import { useT, useFmt, useLang, tRoutes } from '../i18n.jsx'
 
@@ -63,7 +63,7 @@ function TierCard({ tier, current, achieved, isNext }){
 }
 
 function Tiers(){
-  const R = RR;
+  const R = useRR();
   const t = useT();
   const fmt = useFmt();
   const { lang } = useLang();

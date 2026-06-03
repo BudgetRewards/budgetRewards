@@ -1,5 +1,5 @@
 import React from 'react'
-import RR from '../data.jsx'
+import { useRR } from '../store/RRContext.tsx'
 import { Icon, SeedMark, ScreenHeader } from '../ui.jsx'
 import { useT, useFmt, useLang } from '../i18n.jsx'
 
@@ -63,7 +63,7 @@ function TriggerRow({ item, isLast }){
 }
 
 function Catalogue(){
-  const R = RR;
+  const R = useRR();
   const t = useT();
   const { lang } = useLang();
   const total = R.catalogue.reduce((s,g)=>s+g.items.filter(i=>i.status==='available').length,0);

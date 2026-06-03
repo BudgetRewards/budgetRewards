@@ -1,5 +1,5 @@
 import React from 'react'
-import RR from '../data.jsx'
+import { useRR } from '../store/RRContext.tsx'
 import { Icon, SeedMark, useCountUp, Progress } from '../ui.jsx'
 import { useT, useFmt, useLang } from '../i18n.jsx'
 
@@ -19,7 +19,7 @@ function Logo({ light=false }){
 }
 
 function Dashboard({ onNav }){
-  const R = RR;
+  const R = useRR();
   const t = useT();
   const fmt = useFmt();
   const { lang } = useLang();

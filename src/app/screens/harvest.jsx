@@ -1,5 +1,5 @@
 import React from 'react'
-import RR from '../data.jsx'
+import { useRR } from '../store/RRContext.tsx'
 import { Icon, SeedMark, ScreenHeader } from '../ui.jsx'
 import { useT, useFmt } from '../i18n.jsx'
 
@@ -29,7 +29,7 @@ function HarvestDay({ cell }){
 }
 
 function Harvest(){
-  const R = RR;
+  const R = useRR();
   const H = R.harvest;
   const t = useT();
   const fmt = useFmt();

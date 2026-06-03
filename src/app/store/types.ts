@@ -4,6 +4,7 @@ export type CatalogueItemStatus = 'claimed' | 'available' | 'locked' | 'penalty'
 export type LedgerEntry = {
   id: number;
   name: string;
+  nameEn?: string;
   cat: string;
   date: string;
   base: number;
@@ -14,13 +15,16 @@ export type LedgerEntry = {
 
 export type CatalogueItem = {
   name: string;
+  nameEn?: string;
   seeds: number;
   status: CatalogueItemStatus;
   need?: string;
+  needEn?: string;
 };
 
 export type CatalogueCategory = {
   cat: string;
+  catEn?: string;
   items: CatalogueItem[];
 };
 
@@ -40,11 +44,13 @@ export type Tier = {
   id: TierKey;
   emoji: string;
   name: string;
+  nameEn: string;
   en: string;
   min: number;
   max: number | null;
   mult: string;
   routes: string[];
+  routesEn: string[];
 };
 
 export type RRState = {
@@ -55,7 +61,7 @@ export type RRState = {
   period: { startLabel: string; endLabel: string; daysLeft: number };
   tiers: Tier[];
   currentTier: TierKey;
-  nextTier: { name: string; threshold: number } | null;
+  nextTier: { name: string; nameEn: string; threshold: number } | null;
   ledger: LedgerEntry[];
   catalogue: CatalogueCategory[];
   harvestSeason: { year: number; months: number[]; todayMonth: number; todayDate: number };

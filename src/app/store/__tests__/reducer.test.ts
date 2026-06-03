@@ -8,7 +8,7 @@ const freshState: RRState = {
   balance: 0,
   currentTier: 'seed',
   multiplier: 1,
-  nextTier: { name: 'Boom', threshold: 2500 },
+  nextTier: { name: 'Boom', nameEn: 'Tree', threshold: 2500 },
   ledger: [],
   remoteReadEnabled: true,
 };
@@ -49,7 +49,7 @@ describe('APPLY_TRIGGER', () => {
     const next = apply(near, { name: 'Test', cat: 'App & Data', base: 200, kind: 'pos' });
     expect(next.currentTier).toBe('tree');
     expect(next.multiplier).toBe(1.5);
-    expect(next.nextTier).toEqual({ name: 'Bos', threshold: 6000 });
+    expect(next.nextTier).toEqual({ name: 'Bos', nameEn: 'Forest', threshold: 6000 });
   });
 
   test('upgrades tier from tree to forest when balance crosses 6000', () => {

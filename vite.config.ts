@@ -18,6 +18,13 @@ export default defineConfig({
             res.end(transformed)
             return
           }
+          if (req.url === '/config' || req.url === '/config/') {
+            const html = fs.readFileSync(resolve(__dirname, 'config/index.html'), 'utf-8')
+            const transformed = await server.transformIndexHtml('/config/', html)
+            res.setHeader('Content-Type', 'text/html')
+            res.end(transformed)
+            return
+          }
           next()
         })
       },
@@ -33,8 +40,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        app: resolve(__dirname, 'app/index.html'),
+        main:   resolve(__dirname, 'index.html'),
+        app:    resolve(__dirname, 'app/index.html'),
+        config: resolve(__dirname, 'config/index.html'),
       },
     },
   },
