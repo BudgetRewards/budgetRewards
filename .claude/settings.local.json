@@ -18,7 +18,8 @@
       "Bash(Select-Object Name)",
       "PowerShell(npm run *)",
       "Bash(git commit *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(npm run *)"
     ]
   }
 }

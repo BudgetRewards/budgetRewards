@@ -3,6 +3,7 @@ import { Icon, SeedMark, ScreenHeader } from '../ui.jsx'
 import { useT, useFmt, useProfile } from '../i18n.jsx'
 import { useRR, useTrigger } from '../store/RRContext.tsx'
 import { isGreenHoursEarned } from '../store/services/greenHours'
+import { weekendRewardSeeds } from '../store/services/harvestWeekend'
 
 const pad = n => String(n).padStart(2, '0');
 
@@ -196,8 +197,13 @@ function Harvest(){
             <div style={{ fontWeight:800, fontSize:13.5 }}>{t.harvest.notEnrolledTitle}</div>
             <div className="rr-sub" style={{ fontSize:12 }}>{t.harvest.notEnrolledDesc}</div>
           </div>
-          <div style={{ display:'flex', alignItems:'center', gap:4, color:'#5f6d00', fontWeight:800, fontSize:15 }}>
-            +20<SeedMark size={16} tone="lime"/>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:2 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:4, color:'#5f6d00', fontWeight:800, fontSize:15 }}>
+              +{weekendRewardSeeds(R.catalogue)}<SeedMark size={16} tone="lime"/>
+            </div>
+            <span style={{ fontSize:9.5, fontWeight:700, color:'var(--navy-60)', letterSpacing:0.2 }}>
+              {t.harvest.perWeekend}
+            </span>
           </div>
         </div>
       </div>

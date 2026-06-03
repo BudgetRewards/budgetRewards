@@ -1,5 +1,17 @@
-import type { UsageRecord } from '../types';
+import type { UsageRecord, CatalogueCategory } from '../types';
 import { isGreenHoursEarned } from './greenHours';
+
+/** Catalogue item whose seed value (set in the config) defines the weekend reward. */
+export const WEEKEND_REWARD_KEY = 'Oogstdag — verschuiving';
+
+/** The configured seed value awarded for a fully-earned weekend (read from the catalogue/config). */
+export function weekendRewardSeeds(catalogue: CatalogueCategory[]): number {
+  for (const cat of catalogue) {
+    const item = cat.items.find(i => i.name === WEEKEND_REWARD_KEY);
+    if (item) return item.seeds;
+  }
+  return 0;
+}
 
 /* Weekend harvest: a weekend earns seeds only when BOTH its Saturday and
    Sunday earned green hours (consumption > production, 12:00–17:00). */
