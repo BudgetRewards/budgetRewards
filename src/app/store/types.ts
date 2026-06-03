@@ -87,9 +87,16 @@ export type TriggerPayload = {
   setRemoteRead?: boolean;
 };
 
-export type RRAction = {
-  type: 'APPLY_TRIGGER';
-  payload: TriggerPayload;
+export type Profile = {
+  solarPanels: boolean;
+  homeBattery: boolean;
+  householdSize: number;
+  customerYears: number;
+  products: string[];
 };
+
+export type RRAction =
+  | { type: 'APPLY_TRIGGER'; payload: TriggerPayload }
+  | { type: 'APPLY_ONBOARDING'; profile: Profile };
 
 export type Dispatch = (action: RRAction) => void;
