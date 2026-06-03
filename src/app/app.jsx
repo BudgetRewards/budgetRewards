@@ -45,7 +45,9 @@ const isStandalone = () =>
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
 
 function FullscreenHint() {
-  const [visible, setVisible] = React.useState(() => !isStandalone());
+  const [visible, setVisible] = React.useState(
+    () => !isStandalone() && window.matchMedia('(max-width: 767px)').matches
+  );
   const [dismissed, setDismissed] = React.useState(
     () => !!localStorage.getItem('rr-fs-dismissed')
   );
