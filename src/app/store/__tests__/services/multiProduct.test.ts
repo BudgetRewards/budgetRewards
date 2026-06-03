@@ -14,21 +14,21 @@ const cleanState: RRState = {
 };
 
 describe('addProduct', () => {
-  test('dispatches 500 seeds for second product (Internet)', () => {
+  test('dispatches 500 seeds for Internet', () => {
     const dispatch = vi.fn();
     addProduct('Internet', cleanState, dispatch);
     expect(dispatch).toHaveBeenCalledWith({
       type: 'APPLY_TRIGGER',
-      payload: expect.objectContaining({ base: 500, catalogueKey: 'Tweede product: Internet' }),
+      payload: expect.objectContaining({ base: 500, catalogueKey: 'Internet' }),
     });
   });
 
-  test('dispatches 750 seeds for third product (Verzekering)', () => {
+  test('dispatches 400 seeds for Gas', () => {
     const dispatch = vi.fn();
-    addProduct('Verzekering', cleanState, dispatch);
+    addProduct('Gas', cleanState, dispatch);
     expect(dispatch).toHaveBeenCalledWith({
       type: 'APPLY_TRIGGER',
-      payload: expect.objectContaining({ base: 750, catalogueKey: 'Derde product: Verzekering' }),
+      payload: expect.objectContaining({ base: 400, catalogueKey: 'Gas' }),
     });
   });
 
@@ -38,7 +38,7 @@ describe('addProduct', () => {
       ...cleanState,
       catalogue: cleanState.catalogue.map(cat =>
         cat.cat === 'Multi-product'
-          ? { ...cat, items: cat.items.map(i => i.name === 'Tweede product: Internet' ? { ...i, status: 'claimed' as const } : i) }
+          ? { ...cat, items: cat.items.map(i => i.name === 'Internet' ? { ...i, status: 'claimed' as const } : i) }
           : cat
       ),
     };

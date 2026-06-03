@@ -2,6 +2,14 @@ import type { RRState, RRAction, TierKey, LedgerEntry, CatalogueCategory } from 
 import { computeOnboardingRewards } from './services/onboarding';
 import { formatDate } from './format';
 import { weekendFor, isWeekendEarned, weekendLabels, weekendRewardSeeds } from './services/harvestWeekend';
+import { baseInitialState } from './initialState';
+import {
+  applyProfileToCatalogue,
+  applyHarvestGate,
+  claimedBalance,
+  buildLedgerFromCatalogue,
+  hasElectricity,
+} from './catalogueDerive';
 
 const TIER_MULTIPLIERS: Record<TierKey, number> = {
   seed: 1,
@@ -154,13 +162,19 @@ function applyEarning(state: RRState, input: EarningInput, multiplier?: number):
 
 export function reducer(state: RRState, action: RRAction): RRState {
   if (action.type === 'APPLY_ONBOARDING') {
-    const { entries, total } = computeOnboardingRewards(action.profile);
-    const balance = Math.min(state.cap, Math.max(0, total));
+    // The product picks decide which Multi-product items are claimed vs missed;
+    // without electricity the Harvest Hours opportunities become missed too.
+    // Derive from the pristine base catalogue so re-onboarding starts clean.
+    const catalogue = applyHarvestGate(applyProfileToCatalogue(baseInitialState.catalogue, action.profile));
+    const { entries: bonusEntries, total: bonusTotal } = computeOnboardingRewards(action.profile);
+    const balance = Math.min(state.cap, Math.max(0, claimedBalance(catalogue) + bonusTotal));
     const tier = evaluateTier(balance, state.currentTier);
+    const ledger = [...buildLedgerFromCatalogue(catalogue, bonusEntries.length), ...bonusEntries];
     return {
       ...state,
+      catalogue,
       balance,
-      ledger: entries,
+      ledger,
       currentTier: tier,
       multiplier: TIER_MULTIPLIERS[tier],
       nextTier: nextTierFor(tier, state.tiers),
@@ -175,6 +189,9 @@ export function reducer(state: RRState, action: RRAction): RRState {
     const weekend = weekendFor(action.payload.date);
     if (weekend && !state.awardedWeekends.includes(weekend.id) && isWeekendEarned(weekend, usages)) {
       const labels = weekendLabels(weekend);
+      // Without electricity the harvest is missed, not earned: it lands in the
+      // history as a missed harvest and never adds to the balance.
+      const earned = hasElectricity(state.catalogue);
       // Award the configured value as-is (no tier multiplier) so the points
       // shown on the harvest screen match exactly what lands in the history.
       const { patch, entry } = applyEarning(next, {
@@ -182,14 +199,15 @@ export function reducer(state: RRState, action: RRAction): RRState {
         nameEn: `Harvest weekend ${labels.en}`,
         cat: 'Harvest Hours',
         base: weekendRewardSeeds(state.catalogue) || 2 * state.harvest.seedsPerDay,
-        kind: 'pos',
+        kind: earned ? 'pos' : 'missed',
       }, 1);
       next = {
         ...next,
         ...patch,
         awardedWeekends: [...state.awardedWeekends, weekend.id],
         historyUnseen: true,
-        pendingReward: { amount: entry.amount, weekend: labels.nl, weekendEn: labels.en },
+        // Only celebrate an actual earning; a missed weekend just shows in history.
+        pendingReward: earned ? { amount: entry.amount, weekend: labels.nl, weekendEn: labels.en } : state.pendingReward,
       };
     }
     return next;

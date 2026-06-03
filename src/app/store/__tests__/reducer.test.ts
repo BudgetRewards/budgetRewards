@@ -115,32 +115,62 @@ describe('APPLY_TRIGGER', () => {
   });
 });
 
+function multiItem(state: RRState, name: string) {
+  return state.catalogue.find(c => c.cat === 'Multi-product')!.items.find(i => i.name === name);
+}
+function harvestItem(state: RRState, name: string) {
+  return state.catalogue.find(c => c.cat === 'Harvest Hours')!.items.find(i => i.name === name);
+}
+
 describe('APPLY_ONBOARDING', () => {
-  test('sets balance and ledger from onboarding rewards', () => {
+  test('claims selected products + Welcome; counts only those in the balance', () => {
     const next = reducer(freshState, {
       type: 'APPLY_ONBOARDING',
-      profile: { solarPanels: true, homeBattery: false, householdSize: 1, customerYears: 0, products: [] },
+      profile: { solarPanels: false, homeBattery: false, householdSize: 1, customerYears: 0, products: ['electricity', 'internet'] },
     });
-    expect(next.balance).toBe(650);
-    expect(next.ledger).toHaveLength(2);
+    // Welcome 1000 + Stroom 500 + Internet 500 + household bonus 50 = 2050
+    expect(next.balance).toBe(2050);
     expect(next.currentTier).toBe('seed');
+    expect(multiItem(next, 'Stroom')?.status).toBe('claimed');
+    expect(multiItem(next, 'Internet')?.status).toBe('claimed');
+    expect(multiItem(next, 'Gas')?.status).toBe('missed');
   });
 
-  test('recomputes tier when onboarding total crosses 2500', () => {
+  test('with electricity, harvest opportunities stay available (earnable)', () => {
     const next = reducer(freshState, {
       type: 'APPLY_ONBOARDING',
-      profile: { solarPanels: true, homeBattery: true, householdSize: 6, customerYears: 20, products: ['a', 'b', 'c'] },
+      profile: { solarPanels: false, homeBattery: false, householdSize: 1, customerYears: 0, products: ['electricity'] },
     });
-    expect(next.balance).toBe(4050);
+    expect(harvestItem(next, 'Oogstdag — gratis stroom')?.status).toBe('available');
+  });
+
+  test('without electricity, harvest opportunities become missed', () => {
+    const next = reducer(freshState, {
+      type: 'APPLY_ONBOARDING',
+      profile: { solarPanels: false, homeBattery: false, householdSize: 1, customerYears: 0, products: ['gas'] },
+    });
+    expect(harvestItem(next, 'Oogstdag — gratis stroom')?.status).toBe('missed');
+    // Gas 400 + Welcome 1000 + household 50 = 1450 (harvest missed → not counted)
+    expect(next.balance).toBe(1450);
+  });
+
+  test('recomputes tier when the total crosses 2500', () => {
+    const next = reducer(freshState, {
+      type: 'APPLY_ONBOARDING',
+      profile: { solarPanels: true, homeBattery: true, householdSize: 4, customerYears: 5, products: ['electricity', 'gas', 'internet', 'tv'] },
+    });
+    // Welcome 1000 + Stroom 500 + Gas 400 + Internet 500 + TV 300 + Solar 600 = 3300
+    // + battery 400 + household 200 + years 500 = 4400
+    expect(next.balance).toBe(4400);
     expect(next.currentTier).toBe('tree');
     expect(next.multiplier).toBe(1.5);
   });
 
-  test('clamps onboarding total to cap (10000)', () => {
+  test('clamps the total to the cap', () => {
     const lowCap = { ...freshState, cap: 1000 };
     const next = reducer(lowCap, {
       type: 'APPLY_ONBOARDING',
-      profile: { solarPanels: true, homeBattery: true, householdSize: 6, customerYears: 20, products: ['a', 'b', 'c'] },
+      profile: { solarPanels: true, homeBattery: true, householdSize: 6, customerYears: 20, products: ['electricity', 'gas', 'internet', 'tv', 'mobile', 'landline'] },
     });
     expect(next.balance).toBe(1000);
   });

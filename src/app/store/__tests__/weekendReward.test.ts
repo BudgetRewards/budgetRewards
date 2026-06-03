@@ -15,10 +15,23 @@ function setUsage(state: RRState, date: string, consumption: number, production:
   });
 }
 
+/** Weekend seeds are only earned with electricity, so claim the 'Stroom' item. */
+function withElectricity(state: RRState): RRState {
+  return {
+    ...state,
+    catalogue: state.catalogue.map(cat =>
+      cat.cat !== 'Multi-product' ? cat : {
+        ...cat,
+        items: cat.items.map(i => i.name === 'Stroom' ? { ...i, status: 'claimed' as const } : i),
+      }
+    ),
+  };
+}
+
 // 2026-05-02 is a Saturday, 2026-05-03 the adjacent Sunday.
 describe('weekend reward (SET_USAGE)', () => {
   test('awards once both weekend days earn green hours', () => {
-    let s = initialState;
+    let s = withElectricity(initialState);
     const before = s.ledger.length;
 
     s = setUsage(s, '2026-05-02', 2, 1); // Saturday earned — Sunday still missing
@@ -40,12 +53,22 @@ describe('weekend reward (SET_USAGE)', () => {
   });
 
   test('does not double-award the same weekend', () => {
-    let s = initialState;
+    let s = withElectricity(initialState);
     s = setUsage(s, '2026-05-02', 2, 1);
     s = setUsage(s, '2026-05-03', 2, 1);
     const after = s.ledger.length;
     s = setUsage(s, '2026-05-02', 2, 1); // re-simulate Saturday
     expect(s.ledger.length).toBe(after);
+  });
+
+  test('without electricity, a completed weekend is recorded as a missed harvest', () => {
+    let s = initialState; // no electricity by default
+    s = setUsage(s, '2026-05-02', 2, 1);
+    s = setUsage(s, '2026-05-03', 2, 1);
+    expect(s.ledger[0].name).toContain('Oogstweekend');
+    expect(s.ledger[0].kind).toBe('missed');
+    expect(s.pendingReward).toBeNull(); // no celebratory toast for a missed harvest
+    expect(s.balance).toBe(initialState.balance); // balance unchanged
   });
 
   test('no award when one day misses', () => {
@@ -57,7 +80,7 @@ describe('weekend reward (SET_USAGE)', () => {
   });
 
   test('MARK_HISTORY_SEEN and DISMISS_REWARD clear their flags', () => {
-    let s = initialState;
+    let s = withElectricity(initialState);
     s = setUsage(s, '2026-05-02', 2, 1);
     s = setUsage(s, '2026-05-03', 2, 1);
     expect(s.historyUnseen).toBe(true);

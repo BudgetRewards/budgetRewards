@@ -1,6 +1,14 @@
-import type { RRState, MonthData, HarvestCell, LedgerEntry, TierKey, CatalogueItemStatus, Profile } from './types';
+import type { RRState, MonthData, HarvestCell, CatalogueItemStatus, Profile } from './types';
 import { computeOnboardingRewards } from './services/onboarding';
 import { simulateDailyUsage } from './services/usageSimulator';
+import {
+  applyProfileToCatalogue,
+  applyHarvestGate,
+  claimedBalance,
+  buildLedgerFromCatalogue,
+  deriveTier,
+  EMPTY_PROFILE,
+} from './catalogueDerive';
 
 function buildHarvestMonthsData(): MonthData[] {
   const year = 2026;
@@ -50,7 +58,7 @@ export const baseInitialState: RRState = {
 
   catalogue: [
     { cat: 'Contract & Lifecycle', catEn: 'Contract & Lifecycle', items: [
-      { name: 'Welkomstbonus',              nameEn: 'Welcome bonus',             seeds: 1000, status: 'available' },
+      { name: 'Welkomstbonus',              nameEn: 'Welcome bonus',             seeds: 1000, status: 'claimed' },
       { name: 'Boom-tier bereikt',          nameEn: 'Tree tier reached',         seeds: 250,  status: 'available' },
       { name: 'Contract verlengd (1 jaar)', nameEn: 'Contract renewed (1 year)', seeds: 400,  status: 'available' },
       { name: '5 jaar trouw lid',           nameEn: '5 years loyal member',      seeds: 1500, status: 'locked', need: 'Word lid voor 5 jaar — nog 4 jaar te gaan', needEn: 'Become a member for 5 years — 4 years to go' },
@@ -71,9 +79,13 @@ export const baseInitialState: RRState = {
       { name: 'Remote uitlezing uitgezet',    nameEn: 'Remote reading disabled',    seeds: 60, status: 'available', need: 'Gemiste oogst: zet remote uitlezing aan om deze 60 zaden niet te missen', needEn: 'Missed harvest: enable remote reading so you don’t miss these 60 seeds' },
     ]},
     { cat: 'Multi-product', catEn: 'Multi-product', items: [
-      { name: 'Tweede product: Internet',    nameEn: 'Second product: Internet', seeds: 500, status: 'available' },
-      { name: 'Derde product: Verzekering',  nameEn: 'Third product: Insurance', seeds: 750, status: 'locked', need: 'Voeg een derde Budget Thuis-product toe', needEn: 'Add a third Budget Thuis product' },
-      { name: 'Zonnepanelen geregistreerd',  nameEn: 'Solar panels registered',  seeds: 600, status: 'available' },
+      { name: 'Stroom',                      nameEn: 'Electricity',              seeds: 500, status: 'available', need: 'Gemiste oogst: voeg Stroom toe om deze 500 zaden te verdienen', needEn: 'Missed harvest: add Electricity to earn these 500 seeds' },
+      { name: 'Gas',                         nameEn: 'Gas',                      seeds: 400, status: 'available', need: 'Gemiste oogst: voeg Gas toe om deze 400 zaden te verdienen', needEn: 'Missed harvest: add Gas to earn these 400 seeds' },
+      { name: 'Internet',                    nameEn: 'Internet',                 seeds: 500, status: 'available', need: 'Gemiste oogst: voeg Internet toe om deze 500 zaden te verdienen', needEn: 'Missed harvest: add Internet to earn these 500 seeds' },
+      { name: 'TV',                          nameEn: 'TV',                       seeds: 300, status: 'available', need: 'Gemiste oogst: voeg TV toe om deze 300 zaden te verdienen', needEn: 'Missed harvest: add TV to earn these 300 seeds' },
+      { name: 'Mobiel',                      nameEn: 'Mobile',                   seeds: 300, status: 'available', need: 'Gemiste oogst: voeg Mobiel toe om deze 300 zaden te verdienen', needEn: 'Missed harvest: add Mobile to earn these 300 seeds' },
+      { name: 'Vaste lijn',                  nameEn: 'Landline',                 seeds: 200, status: 'available', need: 'Gemiste oogst: voeg Vaste lijn toe om deze 200 zaden te verdienen', needEn: 'Missed harvest: add Landline to earn these 200 seeds' },
+      { name: 'Zonnepanelen geregistreerd',  nameEn: 'Solar panels registered',  seeds: 600, status: 'available', need: 'Gemiste oogst: registreer zonnepanelen om deze 600 zaden te verdienen', needEn: 'Missed harvest: register solar panels to earn these 600 seeds' },
     ]},
   ],
 
@@ -105,46 +117,6 @@ export const baseInitialState: RRState = {
   pendingReward: null,
 };
 
-function fakeDateFor(idx: number, total: number): string {
-  const startMs = new Date(2026, 0, 1).getTime();
-  const endMs   = new Date(2026, 4, 31).getTime();
-  const t = total <= 1 ? 0 : idx / (total - 1);
-  return new Date(startMs + t * (endMs - startMs))
-    .toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
-/**
- * Rebuild the ledger from the active catalogue items — those the customer has
- * claimed (earned) or missed — spread across fake Jan–May 2026 dates and ordered
- * newest-first. `idOffset` keeps ids unique when onboarding entries are also
- * present. A missed item's seeds are shown as the amount missed; only claimed
- * items count toward the balance (computed separately).
- */
-function buildLedgerFromCatalogue(catalogue: RRState['catalogue'], idOffset: number): LedgerEntry[] {
-  const activeItems: { name: string; nameEn?: string; cat: string; seeds: number; missed: boolean }[] = [];
-  for (const cat of catalogue) {
-    for (const item of cat.items) {
-      if (item.status === 'claimed' || item.status === 'missed') {
-        activeItems.push({ name: item.name, nameEn: item.nameEn, cat: cat.cat, seeds: item.seeds, missed: item.status === 'missed' });
-      }
-    }
-  }
-
-  return activeItems
-    .map((item, idx) => ({
-      id: idOffset + idx + 1,
-      name: item.name,
-      nameEn: item.nameEn,
-      cat: item.cat,
-      date: fakeDateFor(idx, activeItems.length),
-      base: item.seeds,
-      mult: 1,
-      amount: item.seeds,
-      kind: (item.missed ? 'missed' : 'pos') as 'pos' | 'missed',
-    }))
-    .reverse();
-}
-
 function readProfile(): Profile | null {
   try {
     const raw = localStorage.getItem('rr-profile');
@@ -163,71 +135,53 @@ function readProfile(): Profile | null {
   }
 }
 
-function deriveTier(balance: number): {
-  currentTier: TierKey;
-  multiplier: number;
-  nextTier: RRState['nextTier'];
-} {
-  const currentTier: TierKey = balance >= 6000 ? 'forest' : balance >= 2500 ? 'tree' : 'seed';
-  const multiplier = currentTier === 'forest' ? 2 : currentTier === 'tree' ? 1.5 : 1;
-  const nextTier =
-    currentTier === 'forest' ? null :
-    currentTier === 'tree'   ? { name: 'Bos',  nameEn: 'Forest', threshold: 6000 } :
-                                { name: 'Boom', nameEn: 'Tree',   threshold: 2500 };
-  return { currentTier, multiplier, nextTier };
+/** Apply a saved /config catalogue override (statuses) on top of a catalogue. */
+function applyConfigOverrides(catalogue: RRState['catalogue']): RRState['catalogue'] {
+  try {
+    const saved = localStorage.getItem('rr-config');
+    if (!saved) return catalogue;
+    const parsed = JSON.parse(saved) as {
+      catalogue: { name: string; status: CatalogueItemStatus }[];
+    };
+    if (!Array.isArray(parsed.catalogue)) return catalogue;
+    const overrides = parsed.catalogue;
+    return catalogue.map(cat => ({
+      ...cat,
+      items: cat.items.map(item => {
+        const override = overrides.find(o => o.name === item.name);
+        return override ? { ...item, status: override.status } : item;
+      }),
+    }));
+  } catch {
+    return catalogue;
+  }
 }
 
+/**
+ * Build the initial state from persisted demo inputs. The onboarding profile
+ * (rr-profile) decides which products are owned (claimed) vs missed; a saved
+ * /config override (rr-config) can then flip any item; finally the harvest gate
+ * turns Harvest Hours into missed harvests whenever electricity isn't owned.
+ * Balance counts claimed items only; the ledger mirrors claimed + missed items
+ * plus the non-catalogue onboarding bonuses (battery, household, customer years).
+ */
 export function loadFromConfig(base: RRState): RRState {
   const profile = readProfile();
 
-  let catalogue = base.catalogue;
-  let catalogueBalance = 0;
-
-  try {
-    const saved = localStorage.getItem('rr-config');
-    if (saved) {
-      const parsed = JSON.parse(saved) as {
-        catalogue: { name: string; status: CatalogueItemStatus }[];
-      };
-      if (Array.isArray(parsed.catalogue)) {
-        const overrides = parsed.catalogue;
-        catalogue = base.catalogue.map(cat => ({
-          ...cat,
-          items: cat.items.map(item => {
-            const override = overrides.find(o => o.name === item.name);
-            return override ? { ...item, status: override.status } : item;
-          }),
-        }));
-        // Only claimed (earned) items count toward the balance; missed harvests
-        // are informational and never affect it.
-        catalogueBalance = catalogue.flatMap(c => c.items)
-          .filter(i => i.status === 'claimed')
-          .reduce((sum, i) => sum + i.seeds, 0);
-      }
-    }
-  } catch {
-    // malformed rr-config: ignore, fall back to base catalogue
-    catalogue = base.catalogue;
-    catalogueBalance = 0;
-  }
+  // Always map a profile onto the catalogue — with no saved profile we use an
+  // empty one, so unowned products start as missed harvests (Welcome stays claimed).
+  let catalogue = applyProfileToCatalogue(base.catalogue, profile ?? EMPTY_PROFILE);
+  catalogue = applyConfigOverrides(catalogue);
+  catalogue = applyHarvestGate(catalogue);
 
   const onboarding = profile ? computeOnboardingRewards(profile) : { entries: [], total: 0 };
 
-  // No config and no profile → return base untouched (preserves referential expectations).
-  if (catalogueBalance === 0 && catalogue === base.catalogue && onboarding.entries.length === 0) {
-    return base;
-  }
-
-  const balance = Math.min(base.cap, Math.max(0, catalogueBalance + onboarding.total));
+  const balance = Math.min(base.cap, Math.max(0, claimedBalance(catalogue) + onboarding.total));
   const { currentTier, multiplier, nextTier } = deriveTier(balance);
 
-  // Rebuild the ledger from whatever drove this state: claimed/missed catalogue
-  // items (only when an rr-config was applied) plus any onboarding rewards. The
-  // static base ledger is intentionally replaced so history matches the live balance.
-  const configApplied = catalogue !== base.catalogue;
-  const catalogueLedger = configApplied
-    ? buildLedgerFromCatalogue(catalogue, onboarding.entries.length)
-    : [];
+  // History mirrors the live state: claimed/missed catalogue items plus any
+  // onboarding bonuses, newest-first. The static base ledger is replaced.
+  const catalogueLedger = buildLedgerFromCatalogue(catalogue, onboarding.entries.length);
   const ledger = [...catalogueLedger, ...onboarding.entries];
 
   return { ...base, catalogue, balance, currentTier, multiplier, nextTier, ledger };

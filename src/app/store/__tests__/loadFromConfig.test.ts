@@ -160,13 +160,14 @@ describe('loadFromConfig', () => {
 });
 
 describe('loadFromConfig — onboarding profile', () => {
-  test('folds onboarding seeds from rr-profile into balance and ledger', () => {
+  test('folds onboarding bonus seeds from rr-profile into balance and ledger', () => {
     localStorage.setItem('rr-profile', JSON.stringify({
-      solarPanels: true, homeBattery: false, householdSize: 2, customerYears: 0, products: ['electricity'],
+      solarPanels: false, homeBattery: true, householdSize: 2, customerYears: 1, products: [],
     }));
     const result = loadFromConfig(minimalState);
-    // 600 (solar) + 250×1 (product) + 50×2 (household) = 950
-    expect(result.balance).toBe(950);
+    // battery 400 + household 50×2 + years 100×1 = 600 (solar/products are catalogue items,
+    // and minimalState has no matching catalogue items so none are claimed)
+    expect(result.balance).toBe(600);
     expect(result.ledger.length).toBe(3);
   });
 

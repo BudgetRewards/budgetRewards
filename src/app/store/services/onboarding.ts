@@ -1,10 +1,10 @@
 import type { LedgerEntry, Profile } from '../types';
 import { formatDate } from '../format';
 
+// Solar panels and product ownership are now catalogue items (claimed/missed),
+// so they are NOT rewarded here — only the non-catalogue situational bonuses are.
 export const ONBOARDING_REWARDS = {
-  solarPanels: 600,        // granted only on Yes
   homeBattery: 400,        // granted only on Yes
-  perProduct: 250,         // × products.length
   perCustomerYear: 100,    // × customerYears
   perHouseholdMember: 50,  // × householdSize
 };
@@ -19,15 +19,8 @@ export function computeOnboardingRewards(
   const date = formatDate();
   const specs: Spec[] = [];
 
-  if (profile.solarPanels) {
-    specs.push({ seeds: ONBOARDING_REWARDS.solarPanels, name: 'Zonnepanelen geregistreerd', nameEn: 'Solar panels registered' });
-  }
   if (profile.homeBattery) {
     specs.push({ seeds: ONBOARDING_REWARDS.homeBattery, name: 'Thuisbatterij geregistreerd', nameEn: 'Home battery registered' });
-  }
-  const productCount = profile.products.length;
-  if (productCount > 0) {
-    specs.push({ seeds: ONBOARDING_REWARDS.perProduct * productCount, name: `Producten gekoppeld (×${productCount})`, nameEn: `Products linked (×${productCount})` });
   }
   if (profile.customerYears > 0) {
     specs.push({ seeds: ONBOARDING_REWARDS.perCustomerYear * profile.customerYears, name: `Klantjaren (×${profile.customerYears})`, nameEn: `Customer years (×${profile.customerYears})` });
