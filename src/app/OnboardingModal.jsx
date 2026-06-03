@@ -255,7 +255,7 @@ function Step3({ profile, setField, c }) {
 
 /* ─── main modal ─────────────────────────────────────────── */
 export function OnboardingModal() {
-  const { set, setUserName } = useLang()
+  const { set, setUserName, setProfile: saveProfile } = useLang()
   const { applyOnboarding } = useTrigger()
 
   const [step, setStep] = React.useState(0)
@@ -288,7 +288,7 @@ export function OnboardingModal() {
     set(lang)
     setUserName(name.trim())
     const fullProfile = { ...profile, products }
-    localStorage.setItem('rr-profile', JSON.stringify(fullProfile))
+    saveProfile(fullProfile)
     applyOnboarding(fullProfile)
   }
 

@@ -1,5 +1,6 @@
 import type { RRState, MonthData, HarvestCell, Profile, TierKey } from './types';
 import { computeOnboardingRewards } from './services/onboarding';
+import { simulateDailyUsage } from './services/usageSimulator';
 
 function buildHarvestMonthsData(): MonthData[] {
   const year = 2026;
@@ -89,6 +90,19 @@ export const baseInitialState: RRState = {
   },
 
   remoteReadEnabled: true,
+
+  usages: {
+    '2026-06-03': { // app "today" — matches harvestSeason
+      date: '2026-06-03',
+      generatedAt: new Date().toISOString(),
+      hasHomeBattery: false,
+      hours: simulateDailyUsage({ hasHomeBattery: false }),
+    },
+  },
+  currentUsageDate: '2026-06-03',
+  awardedWeekends: [],
+  historyUnseen: false,
+  pendingReward: null,
 };
 
 function readProfile(): Profile | null {

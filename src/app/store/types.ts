@@ -1,5 +1,16 @@
+import type { HourlyUsage } from './services/usageSimulator';
+
 export type TierKey = 'seed' | 'tree' | 'forest';
 export type CatalogueItemStatus = 'claimed' | 'available' | 'locked' | 'penalty';
+
+/** The most recent 24-hour usage simulation, held in app state. */
+export type UsageRecord = {
+  /** The day the simulation is for, as yyyy-mm-dd. */
+  date: string;
+  generatedAt: string;
+  hasHomeBattery: boolean;
+  hours: HourlyUsage[];
+};
 
 export type LedgerEntry = {
   id: number;
@@ -75,6 +86,16 @@ export type RRState = {
     monthsData: MonthData[];
   };
   remoteReadEnabled: boolean;
+  /** Every simulated day's usage, keyed by yyyy-mm-dd. */
+  usages: Record<string, UsageRecord>;
+  /** The day currently shown on the Usage screen. */
+  currentUsageDate: string;
+  /** Weekend ids (the Saturday's yyyy-mm-dd) already rewarded, to avoid double-awarding. */
+  awardedWeekends: string[];
+  /** Whether the history has new entries the customer hasn't viewed (drives the tab dot). */
+  historyUnseen: boolean;
+  /** The most recent weekend reward, shown as a toast until dismissed. */
+  pendingReward: { amount: number; weekend: string; weekendEn: string } | null;
 };
 
 export type TriggerPayload = {
@@ -97,6 +118,10 @@ export type Profile = {
 
 export type RRAction =
   | { type: 'APPLY_TRIGGER'; payload: TriggerPayload }
-  | { type: 'APPLY_ONBOARDING'; profile: Profile };
+  | { type: 'APPLY_ONBOARDING'; profile: Profile }
+  | { type: 'SET_USAGE'; payload: UsageRecord }
+  | { type: 'SELECT_USAGE_DATE'; payload: { date: string } }
+  | { type: 'MARK_HISTORY_SEEN' }
+  | { type: 'DISMISS_REWARD' };
 
 export type Dispatch = (action: RRAction) => void;

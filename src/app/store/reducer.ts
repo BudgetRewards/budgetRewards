@@ -1,6 +1,7 @@
 import type { RRState, RRAction, TierKey, LedgerEntry, CatalogueCategory } from './types';
 import { computeOnboardingRewards } from './services/onboarding';
 import { formatDate } from './format';
+import { weekendFor, isWeekendEarned, weekendLabels } from './services/harvestWeekend';
 
 const TIER_MULTIPLIERS: Record<TierKey, number> = {
   seed: 1,
@@ -96,6 +97,54 @@ function nextLedgerId(ledger: RRState['ledger']): number {
   return ledger.length > 0 ? Math.max(...ledger.map(e => e.id)) + 1 : 1;
 }
 
+type EarningInput = {
+  name: string;
+  nameEn?: string;
+  cat: string;
+  base: number;
+  kind: 'pos' | 'neg';
+};
+
+/**
+ * Apply a seed earning/penalty: append a ledger entry and recompute balance,
+ * tier, and multiplier. Returns the changed state fields plus the new entry
+ * (so callers can read the awarded amount). Shared by APPLY_TRIGGER and the
+ * weekend reward.
+ */
+function applyEarning(state: RRState, input: EarningInput): {
+  patch: Pick<RRState, 'balance' | 'multiplier' | 'currentTier' | 'nextTier' | 'ledger'>;
+  entry: LedgerEntry;
+} {
+  const mult = TIER_MULTIPLIERS[state.currentTier];
+  const amount = Math.round(input.base * mult);
+
+  const entry: LedgerEntry = {
+    id: nextLedgerId(state.ledger),
+    name: input.name,
+    nameEn: input.nameEn,
+    cat: input.cat,
+    date: formatDate(),
+    base: input.base,
+    mult,
+    amount,
+    kind: input.kind,
+  };
+
+  const newBalance = Math.min(state.cap, Math.max(0, state.balance + amount));
+  const newTier = evaluateTier(newBalance, state.currentTier);
+
+  return {
+    patch: {
+      balance: newBalance,
+      multiplier: TIER_MULTIPLIERS[newTier],
+      currentTier: newTier,
+      nextTier: nextTierFor(newTier, state.tiers),
+      ledger: [entry, ...state.ledger],
+    },
+    entry,
+  };
+}
+
 export function reducer(state: RRState, action: RRAction): RRState {
   if (action.type === 'APPLY_ONBOARDING') {
     const { entries, total } = computeOnboardingRewards(action.profile);
@@ -110,45 +159,59 @@ export function reducer(state: RRState, action: RRAction): RRState {
       nextTier: nextTierFor(tier, state.tiers),
     };
   }
+  if (action.type === 'SET_USAGE') {
+    const usages = { ...state.usages, [action.payload.date]: action.payload };
+    let next: RRState = { ...state, usages, currentUsageDate: action.payload.date };
 
+    // Award seeds when this simulation completes a weekend: both Saturday and
+    // Sunday must have earned green hours, and the weekend not yet rewarded.
+    const weekend = weekendFor(action.payload.date);
+    if (weekend && !state.awardedWeekends.includes(weekend.id) && isWeekendEarned(weekend, usages)) {
+      const labels = weekendLabels(weekend);
+      const { patch, entry } = applyEarning(next, {
+        name: `Oogstweekend ${labels.nl}`,
+        nameEn: `Harvest weekend ${labels.en}`,
+        cat: 'Harvest Hours',
+        base: 2 * state.harvest.seedsPerDay,
+        kind: 'pos',
+      });
+      next = {
+        ...next,
+        ...patch,
+        awardedWeekends: [...state.awardedWeekends, weekend.id],
+        historyUnseen: true,
+        pendingReward: { amount: entry.amount, weekend: labels.nl, weekendEn: labels.en },
+      };
+    }
+    return next;
+  }
+  if (action.type === 'SELECT_USAGE_DATE') {
+    if (!state.usages[action.payload.date]) return state;
+    return { ...state, currentUsageDate: action.payload.date };
+  }
+  if (action.type === 'MARK_HISTORY_SEEN') {
+    return state.historyUnseen ? { ...state, historyUnseen: false } : state;
+  }
+  if (action.type === 'DISMISS_REWARD') {
+    return state.pendingReward ? { ...state, pendingReward: null } : state;
+  }
   if (action.type !== 'APPLY_TRIGGER') return state;
 
   const { name, cat, base, kind, catalogueKey, harvestDate, setRemoteRead } = action.payload;
 
-  const mult = TIER_MULTIPLIERS[state.currentTier];
-  const amount = Math.round(base * mult);
-
-  const entry: LedgerEntry = {
-    id: nextLedgerId(state.ledger),
-    name,
-    cat,
-    date: formatDate(),
-    base,
-    mult,
-    amount,
-    kind,
-  };
-
-  const newBalance = Math.min(state.cap, Math.max(0, state.balance + amount));
-  const newTier = evaluateTier(newBalance, state.currentTier);
-  const newMultiplier = TIER_MULTIPLIERS[newTier];
-  const newNextTier = nextTierFor(newTier, state.tiers);
+  const { patch } = applyEarning(state, { name, cat, base, kind });
 
   let newCatalogue = state.catalogue;
   if (catalogueKey) newCatalogue = applyCatalogueKey(newCatalogue, catalogueKey);
   if (setRemoteRead !== undefined) newCatalogue = applyRemoteReadCatalogue(newCatalogue, setRemoteRead);
 
   const newHarvest = harvestDate
-    ? applyHarvestDate(state.harvest, harvestDate, mult)
+    ? applyHarvestDate(state.harvest, harvestDate, TIER_MULTIPLIERS[state.currentTier])
     : state.harvest;
 
   return {
     ...state,
-    balance: newBalance,
-    multiplier: newMultiplier,
-    currentTier: newTier,
-    nextTier: newNextTier,
-    ledger: [entry, ...state.ledger],
+    ...patch,
     catalogue: newCatalogue,
     harvest: newHarvest,
     remoteReadEnabled: setRemoteRead !== undefined ? setRemoteRead : state.remoteReadEnabled,

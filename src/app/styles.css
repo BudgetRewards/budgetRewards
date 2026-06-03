@@ -30,14 +30,6 @@ html,body{ margin:0; padding:0; }
 
 /* App shell */
 .rr-app{ height:100%; display:flex; flex-direction:column; background:var(--grey); padding-top:50px; position:relative; }
-
-/* Language toggle */
-.rr-lang-toggle{
-  position:absolute; top:14px; right:14px; z-index:20;
-  background:rgba(255,255,255,0.85); border:1px solid var(--grey-line); border-radius:99px;
-  padding:4px 10px; font-family:inherit; font-weight:800; font-size:11px; letter-spacing:0.5px;
-  color:var(--navy); cursor:pointer; backdrop-filter:blur(8px);
-}
 .rr-scroll{ flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
 .rr-scroll::-webkit-scrollbar{ display:none; }
 .rr-page{ padding:0 18px 28px; }
@@ -99,6 +91,18 @@ html,body{ margin:0; padding:0; }
   display:flex; flex-direction:column; align-items:center; gap:4px; padding:4px 0; color:rgba(255,255,255,0.55); }
 .rr-tab .lbl{ font-size:10px; font-weight:700; letter-spacing:0.2px; }
 .rr-tab.active{ color:var(--white); }
+/* unread-action dot on a tab icon */
+.rr-tab-dot{ position:absolute; top:-2px; right:-3px; width:9px; height:9px; border-radius:50%;
+  background:var(--red); border:1.5px solid var(--green); }
+
+/* Reward toast */
+.rr-toast{
+  position:absolute; top:58px; left:14px; right:14px; z-index:60;
+  display:flex; align-items:center; gap:12px; cursor:pointer;
+  padding:12px 14px; border-radius:16px; color:var(--white);
+  background:linear-gradient(150deg,#00B85A 0%,#00A651 55%,#018a45 100%);
+  box-shadow:0 12px 30px rgba(0,166,81,0.34);
+}
 
 /* misc */
 .rr-divider{ height:1px; background:var(--grey-line); }
@@ -131,12 +135,21 @@ html,body{ margin:0; padding:0; }
 @keyframes rrSlideUp{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
 
 @media (max-width: 767px) {
-  html, body { height: 100%; }
+  html {
+    height: -webkit-fill-available;
+    height: 100svh;
+  }
+  body, #root {
+    height: 100%;
+    overflow: hidden;
+  }
   .rr-app {
-    height: 100dvh;
+    height: 100%;
     padding-top: env(safe-area-inset-top, 0px);
+    overflow: hidden;
   }
   .rr-tabbar {
+    flex-shrink: 0;
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
   }
 }

@@ -1,7 +1,9 @@
 import React from 'react'
 import { Icon } from '../ui.jsx'
-import { useT } from '../i18n.jsx'
-import { simulateDailyUsage } from '../store/services/usageSimulator'
+import { useT, useLang, useProfile } from '../i18n.jsx'
+import { useRR, useTrigger } from '../store/RRContext.tsx'
+
+const pad = n => String(n).padStart(2, '0');
 
 /* ───────────────── Screen 6 · Daily usage simulation ─────────────────
    Mirrored 24-hour bar chart: consumption grows up from the centre axis,
@@ -66,7 +68,32 @@ function Bars({ usage }) {
 
 function Usage() {
   const t = useT();
-  const [usage, setUsage] = React.useState(() => simulateDailyUsage());
+  const { lang } = useLang();
+  // Read the simulation from app state — switching screens reuses the stored
+  // simulations rather than generating new ones.
+  const state = useRR();
+  const { simulateUsage, selectUsageDate } = useTrigger();
+  // Whether the customer has a home battery comes from their onboarding profile.
+  const { homeBattery } = useProfile();
+  const date = state.currentUsageDate;
+  const record = state.usages[date];
+  const usage = record.hours;
+
+  // App "today" — the latest day the customer may simulate.
+  const hs = state.harvestSeason;
+  const today = `${hs.year}-${pad(hs.todayMonth + 1)}-${pad(hs.todayDate)}`;
+
+  const regenerate = () => simulateUsage({ date, hasHomeBattery: homeBattery });
+  const onDateChange = e => {
+    const next = e.target.value;
+    if (!next || next > today) return; // never simulate beyond today
+    if (state.usages[next]) selectUsageDate(next);                       // already simulated → reuse
+    else simulateUsage({ date: next, hasHomeBattery: homeBattery });     // new day → simulate
+  };
+
+  const fmtDate = iso =>
+    new Date(`${iso}T00:00:00`).toLocaleDateString(lang === 'nl' ? 'nl-NL' : 'en-US',
+      { weekday: 'short', day: 'numeric', month: 'long' });
 
   const totalCons = usage.reduce((s, u) => s + u.consumption, 0);
   const totalProd = usage.reduce((s, u) => s + u.production, 0);
@@ -77,9 +104,9 @@ function Usage() {
   return (
     <div className="rr-page rr-stagger">
       <ScreenHeaderWithAction
-        eyebrow={t.usage.eyebrow}
+        eyebrow={fmtDate(date)}
         title={t.usage.title}
-        onAction={() => setUsage(simulateDailyUsage())}
+        onAction={() => regenerate()}
         actionLabel={t.usage.regenerate}
       />
 
@@ -88,6 +115,22 @@ function Usage() {
         <StatCard label={t.usage.totalConsumption} value={kwh(totalCons)} unit={t.usage.kwh} color={CONS}/>
         <StatCard label={t.usage.totalProduction} value={kwh(totalProd)} unit={t.usage.kwh} color={PROD}/>
         <StatCard label={t.usage.net} value={kwh(net)} unit={t.usage.kwh} color="var(--green-700)"/>
+      </div>
+
+      {/* Date picker — choose which day to simulate, up to today */}
+      <div className="rr-card" style={{ marginTop: 14, padding: '13px 16px', display: 'flex',
+        alignItems: 'center', gap: 13 }}>
+        <span style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(26,26,46,0.05)', flexShrink: 0,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name="calendar" size={20} stroke="var(--navy-60)"/>
+        </span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 800, fontSize: 13.5 }}>{t.usage.dateLabel}</div>
+          <div className="rr-sub" style={{ fontSize: 12 }}>{t.usage.dateHint}</div>
+        </div>
+        <input type="date" value={date} max={today} onChange={onDateChange}
+          style={{ border: '1px solid var(--grey-line)', borderRadius: 10, padding: '7px 10px',
+            fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, color: 'var(--navy)', background: '#fff' }}/>
       </div>
 
       {/* Chart */}
