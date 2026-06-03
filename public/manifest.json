@@ -1,0 +1,13 @@
+{
+  "name": "RootedRewards · Budget Thuis",
+  "short_name": "RootedRewards",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "/app/",
+  "scope": "/app/",
+  "background_color": "#F5F5F5",
+  "theme_color": "#00A651",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

@@ -30,14 +30,6 @@ html,body{ margin:0; padding:0; }
 
 /* App shell */
 .rr-app{ height:100%; display:flex; flex-direction:column; background:var(--grey); padding-top:50px; position:relative; }
-
-/* Language toggle */
-.rr-lang-toggle{
-  position:absolute; top:14px; right:14px; z-index:20;
-  background:rgba(255,255,255,0.85); border:1px solid var(--grey-line); border-radius:99px;
-  padding:4px 10px; font-family:inherit; font-weight:800; font-size:11px; letter-spacing:0.5px;
-  color:var(--navy); cursor:pointer; backdrop-filter:blur(8px);
-}
 .rr-scroll{ flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
 .rr-scroll::-webkit-scrollbar{ display:none; }
 .rr-page{ padding:0 18px 28px; }
@@ -131,9 +123,9 @@ html,body{ margin:0; padding:0; }
 @keyframes rrSlideUp{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
 
 @media (max-width: 767px) {
-  html, body { height: 100%; }
   .rr-app {
-    height: 100dvh;
+    position: fixed;
+    inset: 0;
     padding-top: env(safe-area-inset-top, 0px);
   }
   .rr-tabbar {
