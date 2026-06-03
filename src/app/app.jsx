@@ -1,6 +1,6 @@
 import React from 'react'
 import { IOSDevice } from './ios-frame.jsx'
-import { Icon } from './ui.jsx'
+import { Icon, SeedMark } from './ui.jsx'
 import { Dashboard } from './screens/dashboard.jsx'
 import { Ledger } from './screens/ledger.jsx'
 import { Catalogue } from './screens/catalogue.jsx'
@@ -9,6 +9,7 @@ import { Harvest } from './screens/harvest.jsx'
 import { Usage } from './screens/usage.jsx'
 import { LanguageProvider, useT, useLang } from './i18n.jsx'
 import { OnboardingModal } from './OnboardingModal.jsx'
+import { useRR, useTrigger } from './store/RRContext.tsx'
 
 /* ───────────────── RootedRewards · App shell + tab bar ───────────────── */
 const TABS = [
@@ -22,14 +23,19 @@ const TABS = [
 
 function TabBar({ active, onChange }){
   const t = useT();
+  const { historyUnseen } = useRR();
   return (
     <div className="rr-tabbar">
       {TABS.map(tab=>{
         const on = active===tab.id;
+        const showDot = tab.id==='history' && historyUnseen;
         return (
           <button key={tab.id} className={'rr-tab'+(on?' active':'')} onClick={()=>onChange(tab.id)}>
-            <Icon name={tab.icon} size={24} stroke="currentColor" sw={on?2.3:2}
-              fill={on && (tab.id==='home') ? 'rgba(255,255,255,0.18)' : 'none'}/>
+            <span style={{ position:'relative', display:'inline-flex' }}>
+              <Icon name={tab.icon} size={24} stroke="currentColor" sw={on?2.3:2}
+                fill={on && (tab.id==='home') ? 'rgba(255,255,255,0.18)' : 'none'}/>
+              {showDot && <span className="rr-tab-dot"/>}
+            </span>
             <span className="lbl">{t.tabs[tab.id]}</span>
           </button>
         );
@@ -106,15 +112,47 @@ function FullscreenHint() {
   );
 }
 
+/* Toast shown when a weekend reward lands. Auto-dismisses; tap to open history. */
+function RewardToast({ onView }){
+  const t = useT();
+  const { lang } = useLang();
+  const { pendingReward } = useRR();
+  const { dismissReward } = useTrigger();
+
+  React.useEffect(()=>{
+    if(!pendingReward) return;
+    const id = setTimeout(dismissReward, 4500);
+    return ()=>clearTimeout(id);
+  }, [pendingReward]);
+
+  if(!pendingReward) return null;
+  const label = lang==='en' ? pendingReward.weekendEn : pendingReward.weekend;
+  return (
+    <div className="rr-toast rr-fadein" role="status"
+      onClick={()=>{ dismissReward(); onView(); }}>
+      <SeedMark size={34} tone="onGreen"/>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ fontWeight:800, fontSize:13.5 }}>{t.toast.delivered(pendingReward.amount)}</div>
+        <div style={{ fontSize:11.5, opacity:0.9 }}>{t.toast.weekendEarned(label)}</div>
+      </div>
+      <Icon name="arrow" size={18} stroke="#fff"/>
+    </div>
+  );
+}
+
 function App(){
   const [tab, setTab] = React.useState(()=> localStorage.getItem('rr-tab') || 'home');
   const scrollRef = React.useRef(null);
   const { userName } = useLang();
+  const { markHistorySeen } = useTrigger();
 
   const go = (id)=>{ setTab(id); localStorage.setItem('rr-tab', id);
     if(scrollRef.current) scrollRef.current.scrollTop = 0; };
 
   React.useEffect(()=>{ if(scrollRef.current) scrollRef.current.scrollTop = 0; }, [tab]);
+
+  // Opening the history clears its "unseen" dot.
+  React.useEffect(()=>{ if(tab==='history') markHistorySeen(); }, [tab]);
 
   const screens = {
     home:    <Dashboard onNav={go}/>,
@@ -129,6 +167,7 @@ function App(){
     <div className="rr rr-app">
       {!userName && <OnboardingModal/>}
       <FullscreenHint/>
+      <RewardToast onView={()=>go('history')}/>
       <div className="rr-scroll" ref={scrollRef}>
         <div key={tab}>{screens[tab]}</div>
       </div>

@@ -91,6 +91,18 @@ html,body{ margin:0; padding:0; }
   display:flex; flex-direction:column; align-items:center; gap:4px; padding:4px 0; color:rgba(255,255,255,0.55); }
 .rr-tab .lbl{ font-size:10px; font-weight:700; letter-spacing:0.2px; }
 .rr-tab.active{ color:var(--white); }
+/* unread-action dot on a tab icon */
+.rr-tab-dot{ position:absolute; top:-2px; right:-3px; width:9px; height:9px; border-radius:50%;
+  background:var(--red); border:1.5px solid var(--green); }
+
+/* Reward toast */
+.rr-toast{
+  position:absolute; top:58px; left:14px; right:14px; z-index:60;
+  display:flex; align-items:center; gap:12px; cursor:pointer;
+  padding:12px 14px; border-radius:16px; color:var(--white);
+  background:linear-gradient(150deg,#00B85A 0%,#00A651 55%,#018a45 100%);
+  box-shadow:0 12px 30px rgba(0,166,81,0.34);
+}
 
 /* misc */
 .rr-divider{ height:1px; background:var(--grey-line); }

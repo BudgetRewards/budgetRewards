@@ -92,6 +92,11 @@ const T = {
       dateLabel: 'Simulatiedag',
       dateHint: 'Kies een dag tot en met vandaag',
     },
+    toast: {
+      delivered: n => `${n} seeds geleverd!`,
+      weekendEarned: w => `Oogstweekend ${w} — beide dagen verdiend`,
+      tapToView: 'Tik om je historie te bekijken',
+    },
   },
   en: {
     fmt: n => n.toLocaleString('en-US'),
@@ -183,6 +188,11 @@ const T = {
       homeBatteryDesc: 'Production around the clock instead of daytime only',
       dateLabel: 'Simulation day',
       dateHint: 'Pick a day up to and including today',
+    },
+    toast: {
+      delivered: n => `${n} seeds delivered!`,
+      weekendEarned: w => `Harvest weekend ${w} — both days earned`,
+      tapToView: 'Tap to view your history',
     },
   },
 }

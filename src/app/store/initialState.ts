@@ -122,6 +122,9 @@ export const baseInitialState: RRState = {
     },
   },
   currentUsageDate: '2026-06-03',
+  awardedWeekends: [],
+  historyUnseen: false,
+  pendingReward: null,
 };
 
 export function loadFromConfig(base: RRState): RRState {

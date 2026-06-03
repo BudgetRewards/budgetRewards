@@ -45,5 +45,7 @@ export function useTrigger() {
     registerSolarPanels: ()                               => registerSolarPanels(state, dispatch),
     simulateUsage:       (params: SimulateUsageParams = {})  => simulateUsage(params, dispatch),
     selectUsageDate:     (date: string)                      => selectUsageDate(date, dispatch),
+    markHistorySeen:     ()                                  => dispatch({ type: 'MARK_HISTORY_SEEN' }),
+    dismissReward:       ()                                  => dispatch({ type: 'DISMISS_REWARD' }),
   };
 }

@@ -90,6 +90,12 @@ export type RRState = {
   usages: Record<string, UsageRecord>;
   /** The day currently shown on the Usage screen. */
   currentUsageDate: string;
+  /** Weekend ids (the Saturday's yyyy-mm-dd) already rewarded, to avoid double-awarding. */
+  awardedWeekends: string[];
+  /** Whether the history has new entries the customer hasn't viewed (drives the tab dot). */
+  historyUnseen: boolean;
+  /** The most recent weekend reward, shown as a toast until dismissed. */
+  pendingReward: { amount: number; weekend: string; weekendEn: string } | null;
 };
 
 export type TriggerPayload = {
@@ -105,6 +111,8 @@ export type TriggerPayload = {
 export type RRAction =
   | { type: 'APPLY_TRIGGER'; payload: TriggerPayload }
   | { type: 'SET_USAGE'; payload: UsageRecord }
-  | { type: 'SELECT_USAGE_DATE'; payload: { date: string } };
+  | { type: 'SELECT_USAGE_DATE'; payload: { date: string } }
+  | { type: 'MARK_HISTORY_SEEN' }
+  | { type: 'DISMISS_REWARD' };
 
 export type Dispatch = (action: RRAction) => void;
