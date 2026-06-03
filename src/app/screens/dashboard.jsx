@@ -2,15 +2,13 @@ import React from 'react'
 import RR from '../data.jsx'
 import { Icon, SeedMark, useCountUp, Progress } from '../ui.jsx'
 import { useT, useFmt, useLang } from '../i18n.jsx'
+import { BTLogo } from '../BTLogo.jsx'
 
 /* ───────────────── Screen 1 · Dashboard ───────────────── */
 function Logo({ light=false }){
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:7 }}>
-      <span style={{ width:26, height:26, borderRadius:8, background:light?'rgba(255,255,255,0.18)':'var(--green)',
-        display:'inline-flex', alignItems:'center', justifyContent:'center' }}>
-        <Icon name="leaf" size={16} stroke="#fff"/>
-      </span>
+    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+      <BTLogo width={44}/>
       <span style={{ fontWeight:800, fontSize:15, letterSpacing:-0.2, color:light?'#fff':'var(--navy)' }}>
         Rooted<span style={{ color:light?'#C8E600':'var(--green)' }}>Rewards</span>
       </span>
@@ -24,6 +22,7 @@ function Dashboard({ onNav }){
   const fmt = useFmt();
   const { lang } = useLang();
 
+  const { userName } = useLang();
   const tier = R.tiers.find(tr => tr.id === R.currentTier);
   const tierName = lang === 'en' ? tier.nameEn : tier.name;
   const nextTierName = lang === 'en' ? R.nextTier.nameEn : R.nextTier.name;
@@ -39,7 +38,7 @@ function Dashboard({ onNav }){
       <div className="rr-header" style={{ padding:'4px 0 14px' }}>
         <div>
           <div className="rr-sub" style={{ fontWeight:600 }}>{t.dashboard.greeting}</div>
-          <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.4 }}>{R.user.name} 👋</div>
+          <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.4 }}>{userName || R.user.name} 👋</div>
         </div>
         <Logo/>
       </div>

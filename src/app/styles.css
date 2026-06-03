@@ -115,6 +115,21 @@ html,body{ margin:0; padding:0; }
 .rr-stagger > *:nth-child(8){ animation-delay:.30s; }
 @media (prefers-reduced-motion: reduce){ .rr-fadein, .rr-stagger > *{ animation:none; } }
 
+/* Onboarding modal */
+.rr-onboarding-backdrop{
+  position:fixed; inset:0; z-index:100;
+  background:rgba(26,26,46,0.45); backdrop-filter:blur(6px);
+  display:flex; align-items:center; justify-content:center; padding:24px;
+  animation:rrFade .25s ease both;
+}
+.rr-onboarding-card{
+  background:#fff; border-radius:26px; padding:28px 24px;
+  width:100%; max-width:360px;
+  box-shadow:0 24px 64px rgba(26,26,46,0.18), 0 0 0 1px rgba(26,26,46,0.06);
+  animation:rrSlideUp .3s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes rrSlideUp{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
+
 @media (max-width: 767px) {
   html, body { height: 100%; }
   .rr-app {
