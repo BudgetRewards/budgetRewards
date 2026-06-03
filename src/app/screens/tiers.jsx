@@ -104,16 +104,6 @@ function Tiers(){
           );
         })}
       </div>
-
-      {/* lifetime note */}
-      <div style={{ marginTop:20, background:'rgba(0,166,81,0.07)', borderRadius:16, padding:'14px 16px',
-        display:'flex', gap:10, alignItems:'flex-start' }}>
-        <span style={{ flexShrink:0, marginTop:1 }}><Icon name="leaf" size={18} stroke="var(--green)"/></span>
-        <div>
-          <div style={{ fontWeight:800, fontSize:13 }}>{t.tiers.neverDown}</div>
-          <div className="rr-sub" style={{ fontSize:12, marginTop:2 }}>{t.tiers.neverDownDesc}</div>
-        </div>
-      </div>
     </div>
   );
 }
