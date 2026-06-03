@@ -4,7 +4,7 @@ const T = {
   nl: {
     fmt: n => n.toLocaleString('nl-NL'),
     tabs: {
-      home: 'Home', history: 'Historie', earn: 'Verdienen', tiers: 'Tiers', harvest: 'Oogsturen',
+      home: 'Home', history: 'Historie', earn: 'Verdienen', tiers: 'Tiers', harvest: 'Oogsturen', usage: 'Verbruik',
     },
     dashboard: {
       greeting: 'Goedemorgen,',
@@ -71,11 +71,27 @@ const T = {
       months: ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'],
       weekdays: ['ma','di','wo','do','vr','za','zo'],
     },
+    usage: {
+      eyebrow: 'Vandaag · 24 uur',
+      title: 'Verbruik',
+      consumption: 'Verbruik',
+      production: 'Opwek',
+      totalConsumption: 'Totaal verbruik',
+      totalProduction: 'Totaal opwek',
+      net: 'Netto afname',
+      kwh: 'kWh',
+      hourly: 'Per uur',
+      regenerate: 'Nieuwe simulatie',
+      hint: 'Gesimuleerde data — elke vernieuwing genereert nieuwe willekeurige waarden per uur.',
+      peakConsumption: 'Piek verbruik',
+      peakProduction: 'Piek opwek',
+      at: h => `om ${String(h).padStart(2, '0')}:00`,
+    },
   },
   en: {
     fmt: n => n.toLocaleString('en-US'),
     tabs: {
-      home: 'Home', history: 'History', earn: 'Earn', tiers: 'Tiers', harvest: 'Harvest',
+      home: 'Home', history: 'History', earn: 'Earn', tiers: 'Tiers', harvest: 'Harvest', usage: 'Usage',
     },
     dashboard: {
       greeting: 'Good morning,',
@@ -141,6 +157,22 @@ const T = {
       req2: 'Smart meter with actual readings (not estimated)',
       months: ['January','February','March','April','May','June','July','August','September','October','November','December'],
       weekdays: ['Mo','Tu','We','Th','Fr','Sa','Su'],
+    },
+    usage: {
+      eyebrow: 'Today · 24 hours',
+      title: 'Usage',
+      consumption: 'Consumption',
+      production: 'Production',
+      totalConsumption: 'Total consumption',
+      totalProduction: 'Total production',
+      net: 'Net consumption',
+      kwh: 'kWh',
+      hourly: 'Per hour',
+      regenerate: 'New simulation',
+      hint: 'Simulated data — each refresh generates new random values per hour.',
+      peakConsumption: 'Peak consumption',
+      peakProduction: 'Peak production',
+      at: h => `at ${String(h).padStart(2, '0')}:00`,
     },
   },
 }

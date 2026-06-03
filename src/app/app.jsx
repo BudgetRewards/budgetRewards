@@ -6,6 +6,7 @@ import { Ledger } from './screens/ledger.jsx'
 import { Catalogue } from './screens/catalogue.jsx'
 import { Tiers } from './screens/tiers.jsx'
 import { Harvest } from './screens/harvest.jsx'
+import { Usage } from './screens/usage.jsx'
 import { LanguageProvider, useT, useLang } from './i18n.jsx'
 
 /* ───────────────── RootedRewards · App shell + tab bar ───────────────── */
@@ -15,6 +16,7 @@ const TABS = [
   { id:'earn',    icon:'earn' },
   { id:'tiers',   icon:'tiers' },
   { id:'harvest', icon:'harvest' },
+  { id:'usage',   icon:'bolt' },
 ];
 
 function TabBar({ active, onChange }){
@@ -51,6 +53,7 @@ function App(){
     earn:    <Catalogue/>,
     tiers:   <Tiers/>,
     harvest: <Harvest/>,
+    usage:   <Usage/>,
   };
 
   return (
