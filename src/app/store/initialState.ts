@@ -1,4 +1,5 @@
 import type { RRState, MonthData, HarvestCell } from './types';
+import { simulateDailyUsage } from './services/usageSimulator';
 
 function buildHarvestMonthsData(): MonthData[] {
   const year = 2026;
@@ -111,6 +112,16 @@ export const baseInitialState: RRState = {
   },
 
   remoteReadEnabled: false,
+
+  usages: {
+    '2026-06-03': { // app "today" — matches harvestSeason
+      date: '2026-06-03',
+      generatedAt: new Date().toISOString(),
+      hasHomeBattery: false,
+      hours: simulateDailyUsage({ hasHomeBattery: false }),
+    },
+  },
+  currentUsageDate: '2026-06-03',
 };
 
 export function loadFromConfig(base: RRState): RRState {

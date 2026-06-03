@@ -99,6 +99,17 @@ function nextLedgerId(ledger: RRState['ledger']): number {
 }
 
 export function reducer(state: RRState, action: RRAction): RRState {
+  if (action.type === 'SET_USAGE') {
+    return {
+      ...state,
+      usages: { ...state.usages, [action.payload.date]: action.payload },
+      currentUsageDate: action.payload.date,
+    };
+  }
+  if (action.type === 'SELECT_USAGE_DATE') {
+    if (!state.usages[action.payload.date]) return state;
+    return { ...state, currentUsageDate: action.payload.date };
+  }
   if (action.type !== 'APPLY_TRIGGER') return state;
 
   const { name, cat, base, kind, catalogueKey, harvestDate, setRemoteRead } = action.payload;

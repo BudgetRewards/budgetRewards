@@ -1,5 +1,16 @@
+import type { HourlyUsage } from './services/usageSimulator';
+
 export type TierKey = 'seed' | 'tree' | 'forest';
 export type CatalogueItemStatus = 'claimed' | 'available' | 'locked' | 'penalty';
+
+/** The most recent 24-hour usage simulation, held in app state. */
+export type UsageRecord = {
+  /** The day the simulation is for, as yyyy-mm-dd. */
+  date: string;
+  generatedAt: string;
+  hasHomeBattery: boolean;
+  hours: HourlyUsage[];
+};
 
 export type LedgerEntry = {
   id: number;
@@ -75,6 +86,10 @@ export type RRState = {
     monthsData: MonthData[];
   };
   remoteReadEnabled: boolean;
+  /** Every simulated day's usage, keyed by yyyy-mm-dd. */
+  usages: Record<string, UsageRecord>;
+  /** The day currently shown on the Usage screen. */
+  currentUsageDate: string;
 };
 
 export type TriggerPayload = {
@@ -87,9 +102,9 @@ export type TriggerPayload = {
   setRemoteRead?: boolean;
 };
 
-export type RRAction = {
-  type: 'APPLY_TRIGGER';
-  payload: TriggerPayload;
-};
+export type RRAction =
+  | { type: 'APPLY_TRIGGER'; payload: TriggerPayload }
+  | { type: 'SET_USAGE'; payload: UsageRecord }
+  | { type: 'SELECT_USAGE_DATE'; payload: { date: string } };
 
 export type Dispatch = (action: RRAction) => void;
