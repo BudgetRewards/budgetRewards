@@ -1,5 +1,5 @@
 import type { RRState, RRAction, TierKey, LedgerEntry, CatalogueCategory } from './types';
-import { weekendFor, isWeekendEarned, weekendLabels } from './services/harvestWeekend';
+import { weekendFor, isWeekendEarned, weekendLabels, weekendRewardSeeds } from './services/harvestWeekend';
 
 const TIER_MULTIPLIERS: Record<TierKey, number> = {
   seed: 1,
@@ -113,11 +113,13 @@ type EarningInput = {
  * (so callers can read the awarded amount). Shared by APPLY_TRIGGER and the
  * weekend reward.
  */
-function applyEarning(state: RRState, input: EarningInput): {
+function applyEarning(state: RRState, input: EarningInput, multiplier?: number): {
   patch: Pick<RRState, 'balance' | 'multiplier' | 'currentTier' | 'nextTier' | 'ledger'>;
   entry: LedgerEntry;
 } {
-  const mult = TIER_MULTIPLIERS[state.currentTier];
+  // Most earnings use the tier multiplier; pass an explicit multiplier (e.g. 1)
+  // for rewards that should be awarded at a fixed, configured value.
+  const mult = multiplier ?? TIER_MULTIPLIERS[state.currentTier];
   const amount = Math.round(input.base * mult);
 
   const entry: LedgerEntry = {
@@ -157,13 +159,15 @@ export function reducer(state: RRState, action: RRAction): RRState {
     const weekend = weekendFor(action.payload.date);
     if (weekend && !state.awardedWeekends.includes(weekend.id) && isWeekendEarned(weekend, usages)) {
       const labels = weekendLabels(weekend);
+      // Award the configured value as-is (no tier multiplier) so the points
+      // shown on the harvest screen match exactly what lands in the history.
       const { patch, entry } = applyEarning(next, {
         name: `Oogstweekend ${labels.nl}`,
         nameEn: `Harvest weekend ${labels.en}`,
         cat: 'Harvest Hours',
-        base: 2 * state.harvest.seedsPerDay,
+        base: weekendRewardSeeds(state.catalogue) || 2 * state.harvest.seedsPerDay,
         kind: 'pos',
-      });
+      }, 1);
       next = {
         ...next,
         ...patch,

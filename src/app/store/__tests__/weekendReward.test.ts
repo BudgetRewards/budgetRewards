@@ -30,6 +30,10 @@ describe('weekend reward (SET_USAGE)', () => {
     expect(s.ledger[0].cat).toBe('Harvest Hours');
     expect(s.ledger[0].name).toContain('Oogstweekend');
     expect(s.ledger[0].nameEn).toContain('Harvest weekend');
+    // Awarded at the configured value, no tier multiplier (base === amount).
+    expect(s.ledger[0].mult).toBe(1);
+    expect(s.ledger[0].amount).toBe(s.ledger[0].base);
+    expect(s.ledger[0].amount).toBe(20); // 'Oogstdag — verschuiving' seeds in config
     expect(s.historyUnseen).toBe(true);
     expect(s.pendingReward).not.toBeNull();
     expect(s.awardedWeekends).toContain('2026-05-02');
