@@ -62,7 +62,7 @@ function applyHarvestDate(
   harvestDate: string,
   multiplier: number,
 ): RRState['harvest'] {
-  const [year, month, day] = harvestDate.split('-').map(Number);
+  const [, month, day] = harvestDate.split('-').map(Number);
   const m = month - 1; // JS months are 0-indexed
   const d = day;
 
