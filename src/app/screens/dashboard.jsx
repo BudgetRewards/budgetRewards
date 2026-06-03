@@ -1,6 +1,7 @@
 import React from 'react'
 import RR from '../data.jsx'
-import { Icon, SeedMark, useCountUp, fmt, Progress } from '../ui.jsx'
+import { Icon, SeedMark, useCountUp, Progress } from '../ui.jsx'
+import { useT, useFmt, useLang } from '../i18n.jsx'
 
 /* ───────────────── Screen 1 · Dashboard ───────────────── */
 function Logo({ light=false }){
@@ -19,16 +20,25 @@ function Logo({ light=false }){
 
 function Dashboard({ onNav }){
   const R = RR;
-  const tier = R.tiers.find(t=>t.id===R.currentTier);
+  const t = useT();
+  const fmt = useFmt();
+  const { lang } = useLang();
+
+  const tier = R.tiers.find(tr => tr.id === R.currentTier);
+  const tierName = lang === 'en' ? tier.nameEn : tier.name;
+  const nextTierName = lang === 'en' ? R.nextTier.nameEn : R.nextTier.name;
+  const nextTierEmoji = R.tiers.find(tr => tr.name === R.nextTier.name || tr.nameEn === R.nextTier.nameEn)?.emoji ?? '🌲';
+
   const bal = useCountUp(R.balance);
   const pct = (R.balance / R.nextTier.threshold) * 100;
   const toNext = R.nextTier.threshold - R.balance;
+  const availableCount = R.catalogue.reduce((s,g) => s + g.items.filter(i => i.status === 'available').length, 0);
 
   return (
     <div className="rr-page rr-stagger">
       <div className="rr-header" style={{ padding:'4px 0 14px' }}>
         <div>
-          <div className="rr-sub" style={{ fontWeight:600 }}>Goedemorgen,</div>
+          <div className="rr-sub" style={{ fontWeight:600 }}>{t.dashboard.greeting}</div>
           <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.4 }}>{R.user.name} 👋</div>
         </div>
         <Logo/>
@@ -38,32 +48,31 @@ function Dashboard({ onNav }){
       <div style={{ borderRadius:24, padding:'22px 20px 20px', position:'relative', overflow:'hidden',
         background:'linear-gradient(155deg,#00B85A 0%,#00A651 46%,#018a45 100%)',
         boxShadow:'0 18px 38px rgba(0,166,81,0.30)', color:'#fff' }}>
-        {/* deco */}
         <div style={{ position:'absolute', right:-40, top:-50, width:180, height:180, borderRadius:'50%',
           background:'rgba(255,255,255,0.08)' }}/>
         <div style={{ position:'absolute', right:18, top:18, width:90, height:90, borderRadius:'50%',
           background:'rgba(200,230,0,0.18)' }}/>
 
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', position:'relative' }}>
-          <div className="rr-eyebrow" style={{ color:'rgba(255,255,255,0.85)' }}>Jouw seeds-saldo</div>
+          <div className="rr-eyebrow" style={{ color:'rgba(255,255,255,0.85)' }}>{t.dashboard.balance}</div>
           <div style={{ background:'rgba(255,255,255,0.16)', borderRadius:99, padding:'5px 11px',
             display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:800, letterSpacing:0.3,
             backdropFilter:'blur(4px)' }}>
-            <span style={{ fontSize:15 }}>{tier.emoji}</span>{tier.name} · {tier.mult}
+            <span style={{ fontSize:15 }}>{tier.emoji}</span>{tierName} · {tier.mult}
           </div>
         </div>
 
         <div style={{ display:'flex', alignItems:'baseline', gap:8, marginTop:6, position:'relative' }}>
           <SeedMark size={30} tone="onGreen"/>
           <span style={{ fontSize:48, fontWeight:800, letterSpacing:-1.5, lineHeight:1 }}>{fmt(bal)}</span>
-          <span style={{ fontSize:14, fontWeight:600, opacity:0.85, marginBottom:4 }}>seeds</span>
+          <span style={{ fontSize:14, fontWeight:600, opacity:0.85, marginBottom:4 }}>{t.dashboard.seeds}</span>
         </div>
 
         <div style={{ marginTop:18, position:'relative' }}>
           <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, fontWeight:600,
             marginBottom:7, opacity:0.95 }}>
-            <span>Naar 🌲 Bos</span>
-            <span><b style={{ fontWeight:800 }}>{fmt(toNext)}</b> seeds te gaan</span>
+            <span>{t.dashboard.to} {nextTierEmoji} {nextTierName}</span>
+            <span><b style={{ fontWeight:800 }}>{fmt(toNext)}</b> {t.dashboard.seedsToGo}</span>
           </div>
           <Progress pct={pct} lime onGreen/>
           <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, fontWeight:600,
@@ -76,7 +85,7 @@ function Dashboard({ onNav }){
         <div style={{ marginTop:14, fontSize:11.5, fontWeight:500, opacity:0.82, position:'relative',
           display:'flex', alignItems:'center', gap:6 }}>
           <Icon name="calendar" size={14} stroke="rgba(255,255,255,0.85)" sw={2}/>
-          Periode {R.period.startLabel} – {R.period.endLabel}
+          {t.dashboard.period} {R.period.startLabel} – {R.period.endLabel}
         </div>
       </div>
 
@@ -87,21 +96,21 @@ function Dashboard({ onNav }){
             <Icon name="bolt" size={15} stroke="var(--green)"/>
             <span className="v">{R.multiplier.toLocaleString('nl-NL')}×</span>
           </div>
-          <span className="l">Multiplier actief</span>
+          <span className="l">{t.dashboard.multiplier}</span>
         </div>
         <div className="rr-chip">
           <div style={{ display:'flex', alignItems:'center', gap:5 }}>
             <Icon name="sun" size={15} stroke="var(--green)" sw={2}/>
             <span className="v">{R.harvest.daysEarned}</span>
           </div>
-          <span className="l">Oogstdagen verdiend</span>
+          <span className="l">{t.dashboard.harvestDays}</span>
         </div>
         <div className="rr-chip">
           <div style={{ display:'flex', alignItems:'center', gap:5 }}>
             <Icon name="calendar" size={15} stroke="var(--green)"/>
             <span className="v">{R.period.daysLeft}</span>
           </div>
-          <span className="l">Dagen in periode</span>
+          <span className="l">{t.dashboard.daysLeft}</span>
         </div>
       </div>
 
@@ -114,17 +123,17 @@ function Dashboard({ onNav }){
           <Icon name="earn" size={22} stroke="#6a7a00"/>
         </span>
         <div style={{ flex:1 }}>
-          <div style={{ fontWeight:800, fontSize:14 }}>Verdien meer seeds</div>
-          <div className="rr-sub" style={{ fontSize:12 }}>5 acties beschikbaar om te claimen</div>
+          <div style={{ fontWeight:800, fontSize:14 }}>{t.dashboard.earnMore}</div>
+          <div className="rr-sub" style={{ fontSize:12 }}>{t.dashboard.actionsAvailable(availableCount)}</div>
         </div>
         <Icon name="arrow" size={20} stroke="var(--green)"/>
       </button>
 
       {/* Recent activity preview */}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', margin:'24px 2px 10px' }}>
-        <div className="rr-section-label" style={{ margin:0 }}>Recente activiteit</div>
+        <div className="rr-section-label" style={{ margin:0 }}>{t.dashboard.recentActivity}</div>
         <button onClick={()=>onNav('history')} style={{ border:'none', background:'none', cursor:'pointer',
-          fontFamily:'inherit', color:'var(--green)', fontWeight:700, fontSize:12 }}>Alles →</button>
+          fontFamily:'inherit', color:'var(--green)', fontWeight:700, fontSize:12 }}>{t.dashboard.seeAll}</button>
       </div>
       <div className="rr-card" style={{ overflow:'hidden' }}>
         {R.ledger.slice(0,3).map((e,i)=>(
@@ -132,7 +141,9 @@ function Dashboard({ onNav }){
             <div style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px' }}>
               <SeedMark size={30} tone={e.kind==='neg'?'lime':'green'}/>
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontWeight:700, fontSize:13.5, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{e.name}</div>
+                <div style={{ fontWeight:700, fontSize:13.5, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  {lang === 'en' ? (e.nameEn ?? e.name) : e.name}
+                </div>
                 <div className="rr-sub" style={{ fontSize:11.5 }}>{e.date}</div>
               </div>
               <div style={{ fontWeight:800, fontSize:15, color: e.kind==='neg'?'var(--red)':'var(--green)' }}>

@@ -1,13 +1,11 @@
 import React from 'react'
 import RR from '../data.jsx'
-import { Icon, SeedMark, fmt, ScreenHeader } from '../ui.jsx'
+import { Icon, SeedMark, ScreenHeader } from '../ui.jsx'
+import { useT, useFmt } from '../i18n.jsx'
 
 /* ───────────────── Screen 5 · Harvest Hours ───────────────── */
-const MONTH_FULL = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
-const MONTH_ABBR = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
-const WEEKDAYS = ['ma','di','wo','do','vr','za','zo'];
-
 function HarvestDay({ cell }){
+  const t = useT();
   if(!cell) return <div/>;
   const base = { width:'100%', aspectRatio:'1', display:'flex', alignItems:'center', justifyContent:'center',
     fontSize:13, fontWeight:700, borderRadius:11, position:'relative' };
@@ -33,12 +31,14 @@ function HarvestDay({ cell }){
 function Harvest(){
   const R = RR;
   const H = R.harvest;
-  const [sel, setSel] = React.useState(1); // default May (shows earned + missed)
+  const t = useT();
+  const fmt = useFmt();
+  const [sel, setSel] = React.useState(1);
   const month = H.monthsData[sel];
 
   return (
     <div className="rr-page">
-      <ScreenHeader eyebrow="Apr – sep · weekends 12:00–17:00" title="Oogsturen"/>
+      <ScreenHeader eyebrow={t.harvest.eyebrow} title={t.harvest.title}/>
 
       {/* Hero */}
       <div style={{ borderRadius:22, padding:'18px 18px 16px', position:'relative', overflow:'hidden',
@@ -49,15 +49,15 @@ function Harvest(){
         </div>
         <div style={{ position:'relative' }}>
           <div style={{ fontWeight:800, fontSize:18, letterSpacing:-0.3, maxWidth:230 }}>
-            Verdien seeds in het zonne-uur
+            {t.harvest.heroTitle}
           </div>
           <div style={{ fontSize:12.5, opacity:0.82, fontWeight:500, marginTop:7, maxWidth:250, lineHeight:1.5 }}>
-            In het weekend tussen 12:00 en 17:00 (apr–sep) is er vaak een stroomoverschot. Verbruik of verschuif dan, en oogst seeds.
+            {t.harvest.heroDesc}
           </div>
           <div style={{ display:'flex', gap:8, marginTop:14 }}>
             {H.optedIn && (
               <span className="rr-pill" style={{ background:'rgba(200,230,0,0.22)', color:'#C8E600' }}>
-                <Icon name="check" size={12} stroke="#C8E600" sw={2.6}/>Aangemeld: gratis stroom
+                <Icon name="check" size={12} stroke="#C8E600" sw={2.6}/>{t.harvest.enrolled}
               </span>
             )}
           </div>
@@ -71,14 +71,14 @@ function Harvest(){
             <Icon name="sun" size={16} stroke="var(--green)" sw={2}/>
             <span style={{ fontSize:24, fontWeight:800, letterSpacing:-0.5 }}>{H.daysEarned}</span>
           </div>
-          <div className="rr-sub" style={{ fontSize:11.5, fontWeight:600, marginTop:2 }}>Oogstdagen verdiend</div>
+          <div className="rr-sub" style={{ fontSize:11.5, fontWeight:600, marginTop:2 }}>{t.harvest.daysEarned}</div>
         </div>
         <div className="rr-card" style={{ padding:'14px 16px' }}>
           <div style={{ display:'flex', alignItems:'center', gap:6 }}>
             <SeedMark size={20}/>
             <span style={{ fontSize:24, fontWeight:800, letterSpacing:-0.5, color:'var(--green)' }}>{fmt(H.seasonSeeds)}</span>
           </div>
-          <div className="rr-sub" style={{ fontSize:11.5, fontWeight:600, marginTop:2 }}>Seeds dit seizoen</div>
+          <div className="rr-sub" style={{ fontSize:11.5, fontWeight:600, marginTop:2 }}>{t.harvest.seasonSeeds}</div>
         </div>
       </div>
 
@@ -93,7 +93,7 @@ function Harvest(){
             <Icon name="arrow" size={17} stroke="var(--navy)" sw={2.4} fill="none"/>
           </button>
           <div style={{ fontWeight:800, fontSize:15, textTransform:'capitalize', letterSpacing:-0.2 }}>
-            {MONTH_FULL[month.m]} {H.year}
+            {t.harvest.months[month.m]} {H.year}
           </div>
           <button onClick={()=>setSel(s=>Math.min(H.monthsData.length-1,s+1))} disabled={sel===H.monthsData.length-1}
             style={{ border:'none', background:'rgba(26,26,46,0.05)', borderRadius:10, width:32, height:32,
@@ -105,7 +105,7 @@ function Harvest(){
 
         {/* weekday header */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:5, marginBottom:6 }}>
-          {WEEKDAYS.map((w,i)=>(
+          {t.harvest.weekdays.map((w,i)=>(
             <div key={w} style={{ textAlign:'center', fontSize:10.5, fontWeight:700,
               color: i>=5?'var(--green)':'var(--grey-2)', textTransform:'uppercase', letterSpacing:0.3 }}>{w}</div>
           ))}
@@ -118,9 +118,9 @@ function Harvest(){
         {/* legend */}
         <div style={{ display:'flex', gap:14, justifyContent:'center', marginTop:16, flexWrap:'wrap' }}>
           {[
-            { c:'var(--green)', l:'Verdiend' },
-            { c:'rgba(26,26,46,0.12)', l:'Gemist' },
-            { c:'transparent', l:'Aankomend', dash:true },
+            { c:'var(--green)', l: t.harvest.legendEarned },
+            { c:'rgba(26,26,46,0.12)', l: t.harvest.legendMissed },
+            { c:'transparent', l: t.harvest.legendUpcoming, dash:true },
           ].map(x=>(
             <div key={x.l} style={{ display:'flex', alignItems:'center', gap:6 }}>
               <span style={{ width:13, height:13, borderRadius:5, background:x.c,
@@ -132,7 +132,7 @@ function Harvest(){
       </div>
 
       {/* Reward types */}
-      <div className="rr-section-label" style={{ marginTop:22 }}>Twee manieren om te oogsten</div>
+      <div className="rr-section-label" style={{ marginTop:22 }}>{t.harvest.waysTitle}</div>
       <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
         <div className="rr-card" style={{ padding:'14px 16px', display:'flex', gap:13, alignItems:'center',
           border:'1.5px solid rgba(0,166,81,0.25)' }}>
@@ -141,8 +141,8 @@ function Harvest(){
             <Icon name="bolt" size={22} stroke="var(--green)"/>
           </span>
           <div style={{ flex:1 }}>
-            <div style={{ fontWeight:800, fontSize:13.5 }}>Aangemeld: gratis stroom</div>
-            <div className="rr-sub" style={{ fontSize:12 }}>Verbruik in het venster — stroom is gratis</div>
+            <div style={{ fontWeight:800, fontSize:13.5 }}>{t.harvest.enrolledTitle}</div>
+            <div className="rr-sub" style={{ fontSize:12 }}>{t.harvest.enrolledDesc}</div>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:4, color:'var(--green)', fontWeight:800, fontSize:15 }}>
             +10<SeedMark size={16}/>
@@ -154,8 +154,8 @@ function Harvest(){
             <Icon name="arrow" size={22} stroke="#6a7a00"/>
           </span>
           <div style={{ flex:1 }}>
-            <div style={{ fontWeight:800, fontSize:13.5 }}>Niet aangemeld: verschuiven</div>
-            <div className="rr-sub" style={{ fontSize:12 }}>Verschuif verbruik naar het venster</div>
+            <div style={{ fontWeight:800, fontSize:13.5 }}>{t.harvest.notEnrolledTitle}</div>
+            <div className="rr-sub" style={{ fontSize:12 }}>{t.harvest.notEnrolledDesc}</div>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:4, color:'#5f6d00', fontWeight:800, fontSize:15 }}>
             +20<SeedMark size={16} tone="lime"/>
@@ -165,17 +165,17 @@ function Harvest(){
 
       {/* Requirements */}
       <div style={{ marginTop:16, background:'rgba(26,26,46,0.04)', borderRadius:16, padding:'14px 16px' }}>
-        <div className="rr-eyebrow muted" style={{ marginBottom:10 }}>Vereisten</div>
+        <div className="rr-eyebrow muted" style={{ marginBottom:10 }}>{t.harvest.requirements}</div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           <div style={{ display:'flex', gap:10, alignItems:'center' }}>
             <Icon name="panel" size={19} stroke="var(--green)" sw={1.9}/>
-            <span className="rr-sub" style={{ fontSize:12.5, flex:1, color:'var(--navy)' }}>Zonnepanelen geregistreerd</span>
+            <span className="rr-sub" style={{ fontSize:12.5, flex:1, color:'var(--navy)' }}>{t.harvest.req1}</span>
             <Icon name="check" size={16} stroke="var(--green)" sw={2.6}/>
           </div>
           <div className="rr-divider"/>
           <div style={{ display:'flex', gap:10, alignItems:'center' }}>
             <Icon name="bolt" size={19} stroke="var(--green)"/>
-            <span className="rr-sub" style={{ fontSize:12.5, flex:1, color:'var(--navy)' }}>Slimme meter met werkelijke standen (niet geschat)</span>
+            <span className="rr-sub" style={{ fontSize:12.5, flex:1, color:'var(--navy)' }}>{t.harvest.req2}</span>
             <Icon name="check" size={16} stroke="var(--green)" sw={2.6}/>
           </div>
         </div>
