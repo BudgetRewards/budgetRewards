@@ -115,3 +115,27 @@ describe('loadFromConfig', () => {
     expect(result).toEqual(minimalState);
   });
 });
+
+describe('loadFromConfig — onboarding profile', () => {
+  test('folds onboarding seeds from rr-profile into balance and ledger', () => {
+    localStorage.setItem('rr-profile', JSON.stringify({
+      solarPanels: true, homeBattery: false, householdSize: 2, customerYears: 0, products: ['electricity'],
+    }));
+    const result = loadFromConfig(minimalState);
+    // 600 (solar) + 250×1 (product) + 50×2 (household) = 950
+    expect(result.balance).toBe(950);
+    expect(result.ledger.length).toBe(3);
+  });
+
+  test('no rr-profile leaves base ledger and balance untouched', () => {
+    const result = loadFromConfig(minimalState);
+    expect(result.balance).toBe(0);
+    expect(result.ledger).toEqual(minimalState.ledger);
+  });
+
+  test('malformed rr-profile is ignored', () => {
+    localStorage.setItem('rr-profile', 'not-json');
+    const result = loadFromConfig(minimalState);
+    expect(result.balance).toBe(0);
+  });
+});
