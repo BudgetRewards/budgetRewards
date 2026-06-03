@@ -7,7 +7,7 @@ const T = {
       home: 'Home', history: 'Historie', earn: 'Verdienen', tiers: 'Tiers', harvest: 'Oogsturen', usage: 'Verbruik',
     },
     dashboard: {
-      greeting: 'Goedemorgen,',
+      greeting: h => h >= 6 && h < 12 ? 'Goedemorgen,' : h >= 12 && h < 18 ? 'Goedemiddag,' : h >= 18 && h < 23 ? 'Goedenavond,' : 'Goedenacht,',
       balance: 'Jouw seeds-saldo',
       to: 'Naar',
       seedsToGo: 'seeds te gaan',
@@ -60,6 +60,7 @@ const T = {
       legendEarned: 'Verdiend',
       legendMissed: 'Gemist',
       legendUpcoming: 'Aankomend',
+      legendSimulated: 'Verbruik gesimuleerd',
       waysTitle: 'Twee manieren om te oogsten',
       enrolledTitle: 'Aangemeld: gratis stroom',
       enrolledDesc: 'Verbruik in het venster — stroom is gratis',
@@ -86,6 +87,15 @@ const T = {
       peakConsumption: 'Piek verbruik',
       peakProduction: 'Piek opwek',
       at: h => `om ${String(h).padStart(2, '0')}:00`,
+      homeBattery: 'Thuisbatterij',
+      homeBatteryDesc: 'Opwek rond de klok i.p.v. alleen overdag',
+      dateLabel: 'Simulatiedag',
+      dateHint: 'Kies een dag tot en met vandaag',
+    },
+    toast: {
+      delivered: n => `${n} seeds geleverd!`,
+      weekendEarned: w => `Oogstweekend ${w} — beide dagen verdiend`,
+      tapToView: 'Tik om je historie te bekijken',
     },
   },
   en: {
@@ -94,7 +104,7 @@ const T = {
       home: 'Home', history: 'History', earn: 'Earn', tiers: 'Tiers', harvest: 'Harvest', usage: 'Usage',
     },
     dashboard: {
-      greeting: 'Good morning,',
+      greeting: h => h >= 6 && h < 12 ? 'Good morning,' : h >= 12 && h < 18 ? 'Good afternoon,' : h >= 18 && h < 23 ? 'Good evening,' : 'Good night,',
       balance: 'Your seeds balance',
       to: 'To',
       seedsToGo: 'seeds to go',
@@ -147,6 +157,7 @@ const T = {
       legendEarned: 'Earned',
       legendMissed: 'Missed',
       legendUpcoming: 'Upcoming',
+      legendSimulated: 'Usage simulated',
       waysTitle: 'Two ways to harvest',
       enrolledTitle: 'Enrolled: free electricity',
       enrolledDesc: 'Consume in the window — electricity is free',
@@ -173,22 +184,60 @@ const T = {
       peakConsumption: 'Peak consumption',
       peakProduction: 'Peak production',
       at: h => `at ${String(h).padStart(2, '0')}:00`,
+      homeBattery: 'Home battery',
+      homeBatteryDesc: 'Production around the clock instead of daytime only',
+      dateLabel: 'Simulation day',
+      dateHint: 'Pick a day up to and including today',
+    },
+    toast: {
+      delivered: n => `${n} seeds delivered!`,
+      weekendEarned: w => `Harvest weekend ${w} — both days earned`,
+      tapToView: 'Tap to view your history',
     },
   },
 }
 
-const LangContext = React.createContext({ lang: 'nl', set: () => {}, userName: '', setUserName: () => {} })
+// Profile captured during onboarding (Step 3 + product picker).
+const DEFAULT_PROFILE = {
+  solarPanels: false, homeBattery: false, householdSize: 1, customerYears: 0, products: [],
+}
+
+function readProfile() {
+  try {
+    const raw = localStorage.getItem('rr-profile')
+    if (raw) return { ...DEFAULT_PROFILE, ...JSON.parse(raw) }
+  } catch {
+    /* ignore corrupt storage */
+  }
+  return DEFAULT_PROFILE
+}
+
+const LangContext = React.createContext({
+  lang: 'nl', set: () => {}, userName: '', setUserName: () => {},
+  profile: DEFAULT_PROFILE, setProfile: () => {},
+})
 
 export function LanguageProvider({ children }) {
   const [lang, setLang] = React.useState(() => localStorage.getItem('rr-lang') || 'nl')
   const [userName, setUserNameState] = React.useState(() => localStorage.getItem('rr-name') || '')
+  const [profile, setProfileState] = React.useState(readProfile)
   const set = l => { setLang(l); localStorage.setItem('rr-lang', l) }
   const setUserName = n => { setUserNameState(n); localStorage.setItem('rr-name', n) }
-  return <LangContext.Provider value={{ lang, set, userName, setUserName }}>{children}</LangContext.Provider>
+  const setProfile = p => { setProfileState(p); localStorage.setItem('rr-profile', JSON.stringify(p)) }
+  return (
+    <LangContext.Provider value={{ lang, set, userName, setUserName, profile, setProfile }}>
+      {children}
+    </LangContext.Provider>
+  )
 }
 
 export function useLang() {
   return React.useContext(LangContext)
+}
+
+/** Onboarding profile (solarPanels, homeBattery, householdSize, customerYears, products). */
+export function useProfile() {
+  return React.useContext(LangContext).profile
 }
 
 export function useT() {

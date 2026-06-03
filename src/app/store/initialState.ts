@@ -1,4 +1,5 @@
 import type { RRState, MonthData, HarvestCell } from './types';
+import { simulateDailyUsage } from './services/usageSimulator';
 
 function buildHarvestMonthsData(): MonthData[] {
   const year = 2026;
@@ -57,10 +58,11 @@ export const baseInitialState: RRState = {
   currentTier: 'tree',
   nextTier: { name: 'Bos', nameEn: 'Forest', threshold: 6000 },
 
+  // Harvest-hour entries are intentionally NOT seeded here — they are added to
+  // the ledger only when a weekend is earned via simulated usage (see reducer
+  // SET_USAGE → weekend reward).
   ledger: [
-    { id: 1, name: 'Harvest Hours — zaterdag',       nameEn: 'Harvest Hours — Saturday',     cat: 'Harvest Hours', date: '31 mei 2026',  base: 10,   mult: 1.5, amount: 15,   kind: 'pos' },
     { id: 2, name: 'Remote uitlezing uitgezet',       nameEn: 'Remote reading disabled',      cat: 'Energiegedrag', date: '24 mei 2026',  base: -60,  mult: 1.5, amount: -90,  kind: 'neg' },
-    { id: 3, name: 'Harvest Hours — zondag',          nameEn: 'Harvest Hours — Sunday',       cat: 'Harvest Hours', date: '18 mei 2026',  base: 10,   mult: 1.5, amount: 15,   kind: 'pos' },
     { id: 4, name: 'Maandelijkse meterstand',         nameEn: 'Monthly meter reading',        cat: 'App & Data',    date: '1 mei 2026',   base: 20,   mult: 1.5, amount: 30,   kind: 'pos' },
     { id: 5, name: 'Tweede product: Internet',        nameEn: 'Second product: Internet',     cat: 'Multi-product', date: '12 apr 2026',  base: 500,  mult: 1,   amount: 500,  kind: 'pos' },
     { id: 6, name: 'Boom-tier bereikt',               nameEn: 'Tree tier reached',            cat: 'Lifecycle',     date: '12 apr 2026',  base: 250,  mult: 1,   amount: 250,  kind: 'pos' },
@@ -111,6 +113,19 @@ export const baseInitialState: RRState = {
   },
 
   remoteReadEnabled: false,
+
+  usages: {
+    '2026-06-03': { // app "today" — matches harvestSeason
+      date: '2026-06-03',
+      generatedAt: new Date().toISOString(),
+      hasHomeBattery: false,
+      hours: simulateDailyUsage({ hasHomeBattery: false }),
+    },
+  },
+  currentUsageDate: '2026-06-03',
+  awardedWeekends: [],
+  historyUnseen: false,
+  pendingReward: null,
 };
 
 export function loadFromConfig(base: RRState): RRState {

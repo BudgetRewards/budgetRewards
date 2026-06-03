@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { reducer } from '../reducer';
 import { initialState } from '../initialState';
-import type { RRState, RRAction } from '../types';
+import type { RRState, TriggerPayload } from '../types';
 
 const freshState: RRState = {
   ...initialState,
@@ -13,7 +13,7 @@ const freshState: RRState = {
   remoteReadEnabled: true,
 };
 
-function apply(state: RRState, payload: RRAction['payload']): RRState {
+function apply(state: RRState, payload: TriggerPayload): RRState {
   return reducer(state, { type: 'APPLY_TRIGGER', payload });
 }
 

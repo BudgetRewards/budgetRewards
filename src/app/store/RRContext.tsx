@@ -7,6 +7,7 @@ import { optInGratisStroom, optInRenewalComms, optInAnalytics, toggleRemoteRead 
 import { harvestHoursEarned } from './services/harvestHours';
 import { addProduct } from './services/multiProduct';
 import { registerSolarPanels } from './services/energyBehaviour';
+import { simulateUsage, selectUsageDate, type SimulateUsageParams } from './services/usage';
 
 type RRContextType = {
   state: RRState;
@@ -42,5 +43,9 @@ export function useTrigger() {
     harvestHoursEarned:  (date: string, optedIn: boolean) => harvestHoursEarned(date, optedIn, state, dispatch),
     addProduct:          (productName: string)             => addProduct(productName, state, dispatch),
     registerSolarPanels: ()                               => registerSolarPanels(state, dispatch),
+    simulateUsage:       (params: SimulateUsageParams = {})  => simulateUsage(params, dispatch),
+    selectUsageDate:     (date: string)                      => selectUsageDate(date, dispatch),
+    markHistorySeen:     ()                                  => dispatch({ type: 'MARK_HISTORY_SEEN' }),
+    dismissReward:       ()                                  => dispatch({ type: 'DISMISS_REWARD' }),
   };
 }

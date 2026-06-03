@@ -1,16 +1,31 @@
 import React from 'react'
-import { useRR } from '../store/RRContext.tsx'
 import { Icon, SeedMark, ScreenHeader } from '../ui.jsx'
-import { useT, useFmt } from '../i18n.jsx'
+import { useT, useFmt, useProfile } from '../i18n.jsx'
+import { useRR, useTrigger } from '../store/RRContext.tsx'
+import { isGreenHoursEarned } from '../store/services/greenHours'
+
+const pad = n => String(n).padStart(2, '0');
+
+/* Small accent dot marking a day that has a simulated usage record. */
+function SimDot() {
+  return <span style={{ position:'absolute', top:3, right:3, width:5, height:5, borderRadius:'50%',
+    background:'var(--lime)', boxShadow:'0 0 0 1px rgba(26,26,46,0.15)' }}/>;
+}
 
 /* ───────────────── Screen 5 · Harvest Hours ───────────────── */
-function HarvestDay({ cell }){
+function HarvestDay({ cell, simulated, clickable, onClick }){
   const t = useT();
   if(!cell) return <div/>;
   const base = { width:'100%', aspectRatio:'1', display:'flex', alignItems:'center', justifyContent:'center',
-    fontSize:13, fontWeight:700, borderRadius:11, position:'relative' };
+    fontSize:13, fontWeight:700, borderRadius:11, position:'relative',
+    cursor: clickable ? 'pointer' : 'default' };
   if(!cell.weekend){
-    return <div style={{ ...base, color:'rgba(26,26,46,0.32)', fontWeight:600 }}>{cell.d}</div>;
+    return (
+      <div onClick={onClick} style={{ ...base, color:'rgba(26,26,46,0.32)', fontWeight:600 }}>
+        {cell.d}
+        {simulated && <SimDot/>}
+      </div>
+    );
   }
   const styles = {
     earned:   { background:'var(--green)', color:'#fff', boxShadow:'0 3px 8px rgba(0,166,81,0.30)' },
@@ -18,12 +33,13 @@ function HarvestDay({ cell }){
     upcoming: { background:'rgba(0,166,81,0.05)', color:'var(--green-700)', border:'1.5px dashed rgba(0,166,81,0.45)' },
   };
   return (
-    <div style={{ ...base, ...styles[cell.state] }}>
+    <div onClick={onClick} style={{ ...base, ...styles[cell.state] }}>
       {cell.state==='earned'
         ? <Icon name="leaf" size={15} stroke="#fff"/>
         : cell.d}
       {cell.today && <span style={{ position:'absolute', bottom:3, width:4, height:4, borderRadius:'50%',
         background: cell.state==='earned'?'#fff':'var(--green)' }}/>}
+      {simulated && <SimDot/>}
     </div>
   );
 }
@@ -33,8 +49,18 @@ function Harvest(){
   const H = R.harvest;
   const t = useT();
   const fmt = useFmt();
+  const { usages, harvestSeason } = R;
+  const { solarPanels } = useProfile();
+  const { simulateUsage } = useTrigger();
+  const today = `${harvestSeason.year}-${pad(harvestSeason.todayMonth + 1)}-${pad(harvestSeason.todayDate)}`;
   const [sel, setSel] = React.useState(1);
   const month = H.monthsData[sel];
+
+  // Clicking a day without usage data simulates it (only up to today).
+  const onDayClick = iso => {
+    if (!iso || iso > today || usages[iso]) return;
+    simulateUsage({ date: iso });
+  };
 
   return (
     <div className="rr-page">
@@ -112,7 +138,19 @@ function Harvest(){
         </div>
         {/* grid */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:5 }} key={sel} className="rr-fadein">
-          {month.cells.map((c,i)=><HarvestDay key={i} cell={c}/>)}
+          {month.cells.map((c,i)=>{
+            const iso = c ? `${H.year}-${pad(month.m+1)}-${pad(c.d)}` : null;
+            const sim = iso ? usages[iso] : null;
+            // A weekend day is only earned/missed when we have usage data for it.
+            // Days without a simulation are never marked "verdiend" — they show
+            // as pending (upcoming). The green-hours service decides earned vs missed.
+            const cell = (c && c.weekend)
+              ? { ...c, state: sim ? (isGreenHoursEarned(sim.hours) ? 'earned' : 'missed') : 'upcoming' }
+              : c;
+            const clickable = !!c && !!iso && iso <= today && !sim;
+            return <HarvestDay key={i} cell={cell} simulated={!!sim}
+              clickable={clickable} onClick={clickable ? () => onDayClick(iso) : undefined}/>;
+          })}
         </div>
 
         {/* legend */}
@@ -121,9 +159,10 @@ function Harvest(){
             { c:'var(--green)', l: t.harvest.legendEarned },
             { c:'rgba(26,26,46,0.12)', l: t.harvest.legendMissed },
             { c:'transparent', l: t.harvest.legendUpcoming, dash:true },
+            { c:'var(--lime)', l: t.harvest.legendSimulated, dot:true },
           ].map(x=>(
             <div key={x.l} style={{ display:'flex', alignItems:'center', gap:6 }}>
-              <span style={{ width:13, height:13, borderRadius:5, background:x.c,
+              <span style={{ width:x.dot?9:13, height:x.dot?9:13, borderRadius:x.dot?'50%':5, background:x.c,
                 border: x.dash?'1.5px dashed rgba(0,166,81,0.5)':'none' }}/>
               <span style={{ fontSize:11, fontWeight:600, color:'var(--navy-60)' }}>{x.l}</span>
             </div>
@@ -167,10 +206,12 @@ function Harvest(){
       <div style={{ marginTop:16, background:'rgba(26,26,46,0.04)', borderRadius:16, padding:'14px 16px' }}>
         <div className="rr-eyebrow muted" style={{ marginBottom:10 }}>{t.harvest.requirements}</div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-          <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-            <Icon name="panel" size={19} stroke="var(--green)" sw={1.9}/>
+          <div style={{ display:'flex', gap:10, alignItems:'center', opacity: solarPanels ? 1 : 0.55 }}>
+            <Icon name="panel" size={19} stroke={solarPanels ? 'var(--green)' : 'var(--grey-2)'} sw={1.9}/>
             <span className="rr-sub" style={{ fontSize:12.5, flex:1, color:'var(--navy)' }}>{t.harvest.req1}</span>
-            <Icon name="check" size={16} stroke="var(--green)" sw={2.6}/>
+            {solarPanels
+              ? <Icon name="check" size={16} stroke="var(--green)" sw={2.6}/>
+              : <span style={{ fontSize:15, fontWeight:800, color:'var(--grey-2)' }}>—</span>}
           </div>
           <div className="rr-divider"/>
           <div style={{ display:'flex', gap:10, alignItems:'center' }}>
