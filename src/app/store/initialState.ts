@@ -1,4 +1,4 @@
-import type { RRState, MonthData, HarvestCell } from './types';
+import type { RRState, MonthData, HarvestCell, LedgerEntry, TierKey, CatalogueItemStatus } from './types';
 import { simulateDailyUsage } from './services/usageSimulator';
 
 function buildHarvestMonthsData(): MonthData[] {
@@ -127,13 +127,21 @@ export const baseInitialState: RRState = {
   pendingReward: null,
 };
 
+function fakeDateFor(idx: number, total: number): string {
+  const startMs = new Date(2026, 0, 1).getTime();
+  const endMs   = new Date(2026, 4, 31).getTime();
+  const t = total <= 1 ? 0 : idx / (total - 1);
+  return new Date(startMs + t * (endMs - startMs))
+    .toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
 export function loadFromConfig(base: RRState): RRState {
   try {
     const saved = localStorage.getItem('rr-config');
     if (!saved) return base;
 
     const { catalogue: overrides } = JSON.parse(saved) as {
-      catalogue: { name: string; status: import('./types').CatalogueItemStatus }[];
+      catalogue: { name: string; status: CatalogueItemStatus }[];
     };
 
     if (!Array.isArray(overrides)) return base;
@@ -146,16 +154,38 @@ export function loadFromConfig(base: RRState): RRState {
       }),
     }));
 
+    // Collect active items in catalogue order (oldest → newest)
+    const activeItems: { name: string; nameEn?: string; cat: string; seeds: number }[] = [];
+    for (const cat of catalogue) {
+      for (const item of cat.items) {
+        if (item.status === 'claimed' || item.status === 'penalty') {
+          activeItems.push({ name: item.name, nameEn: item.nameEn, cat: cat.cat, seeds: item.seeds });
+        }
+      }
+    }
+
+    // Rebuild ledger from active items; reverse so newest (last in catalogue) appears first
+    let idCounter = 1;
+    const ledger: LedgerEntry[] = activeItems
+      .map((item, idx) => ({
+        id: idCounter++,
+        name: item.name,
+        nameEn: item.nameEn,
+        cat: item.cat,
+        date: fakeDateFor(idx, activeItems.length),
+        base: item.seeds,
+        mult: 1,
+        amount: item.seeds,
+        kind: (item.seeds < 0 ? 'neg' : 'pos') as 'pos' | 'neg',
+      }))
+      .reverse();
+
     const balance = Math.min(
       base.cap,
-      Math.max(0,
-        catalogue.flatMap(c => c.items)
-          .filter(i => i.status === 'claimed' || i.status === 'penalty')
-          .reduce((sum, i) => sum + i.seeds, 0)
-      )
+      Math.max(0, activeItems.reduce((sum, i) => sum + i.seeds, 0))
     );
 
-    const currentTier: import('./types').TierKey =
+    const currentTier: TierKey =
       balance >= 6000 ? 'forest' :
       balance >= 2500 ? 'tree' : 'seed';
 
@@ -166,7 +196,7 @@ export function loadFromConfig(base: RRState): RRState {
       currentTier === 'tree'   ? { name: 'Bos',  nameEn: 'Forest', threshold: 6000 } :
                                   { name: 'Boom', nameEn: 'Tree',   threshold: 2500 };
 
-    return { ...base, catalogue, balance, currentTier, multiplier, nextTier };
+    return { ...base, catalogue, balance, currentTier, multiplier, nextTier, ledger };
   } catch {
     return base;
   }
