@@ -54,10 +54,13 @@ function Dashboard({ onNav }){
 
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', position:'relative' }}>
           <div className="rr-eyebrow" style={{ color:'rgba(255,255,255,0.85)' }}>{t.dashboard.balance}</div>
-          <div style={{ background:'rgba(255,255,255,0.16)', borderRadius:99, padding:'5px 11px',
-            display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:800, letterSpacing:0.3,
-            backdropFilter:'blur(4px)' }}>
-            <span style={{ fontSize:15 }}>{tier.emoji}</span>{tierName} · {tier.mult}
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:5 }}>
+            <span className="rr-eyebrow" style={{ color:'rgba(255,255,255,0.85)' }}>{t.dashboard.currentTier}</span>
+            <div style={{ background:'rgba(255,255,255,0.16)', borderRadius:99, padding:'5px 11px',
+              display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:800, letterSpacing:0.3,
+              backdropFilter:'blur(4px)' }}>
+              <span style={{ fontSize:15 }}>{tier.emoji}</span>{tierName} · {tier.mult}
+            </div>
           </div>
         </div>
 

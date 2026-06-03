@@ -9,6 +9,7 @@ const T = {
     dashboard: {
       greeting: h => h >= 6 && h < 12 ? 'Goedemorgen,' : h >= 12 && h < 18 ? 'Goedemiddag,' : h >= 18 && h < 23 ? 'Goedenavond,' : 'Goedenacht,',
       balance: 'Jouw seeds-saldo',
+      currentTier: 'Huidige tier',
       to: 'Naar',
       seedsToGo: 'seeds te gaan',
       seeds: 'seeds',
@@ -107,6 +108,7 @@ const T = {
     dashboard: {
       greeting: h => h >= 6 && h < 12 ? 'Good morning,' : h >= 12 && h < 18 ? 'Good afternoon,' : h >= 18 && h < 23 ? 'Good evening,' : 'Good night,',
       balance: 'Your seeds balance',
+      currentTier: 'Current tier',
       to: 'To',
       seedsToGo: 'seeds to go',
       seeds: 'seeds',
