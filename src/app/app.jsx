@@ -60,7 +60,20 @@ function App(){
   );
 }
 
+function useIsMobile() {
+  const [mobile, setMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = (e) => setMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return mobile;
+}
+
 function Root(){
+  const isMobile = useIsMobile();
+  if (isMobile) return <App/>;
   return (
     <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center',
       background:'#E8E9EC', padding:'24px 0' }}>

@@ -108,3 +108,14 @@ html,body{ margin:0; padding:0; }
 .rr-stagger > *:nth-child(7){ animation-delay:.26s; }
 .rr-stagger > *:nth-child(8){ animation-delay:.30s; }
 @media (prefers-reduced-motion: reduce){ .rr-fadein, .rr-stagger > *{ animation:none; } }
+
+@media (max-width: 767px) {
+  html, body { height: 100%; }
+  .rr-app {
+    height: 100dvh;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .rr-tabbar {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+  }
+}
