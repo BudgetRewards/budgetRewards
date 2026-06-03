@@ -36,11 +36,11 @@ function Dashboard({ onNav }){
   return (
     <div className="rr-page rr-stagger">
       <div className="rr-header" style={{ padding:'4px 0 14px' }}>
-        <div>
-          <div className="rr-sub" style={{ fontWeight:600 }}>{t.dashboard.greeting}</div>
+        <Logo/>
+        <div style={{ textAlign:'right' }}>
+          <div className="rr-sub" style={{ fontWeight:600 }}>{t.dashboard.greeting(new Date().getHours())}</div>
           <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.4 }}>{userName || R.user.name} 👋</div>
         </div>
-        <Logo/>
       </div>
 
       {/* Hero balance card */}

@@ -7,7 +7,7 @@ const T = {
       home: 'Home', history: 'Historie', earn: 'Verdienen', tiers: 'Tiers', harvest: 'Oogsturen', usage: 'Verbruik',
     },
     dashboard: {
-      greeting: 'Goedemorgen,',
+      greeting: h => h >= 6 && h < 12 ? 'Goedemorgen,' : h >= 12 && h < 18 ? 'Goedemiddag,' : h >= 18 && h < 23 ? 'Goedenavond,' : 'Goedenacht,',
       balance: 'Jouw seeds-saldo',
       to: 'Naar',
       seedsToGo: 'seeds te gaan',
@@ -94,7 +94,7 @@ const T = {
       home: 'Home', history: 'History', earn: 'Earn', tiers: 'Tiers', harvest: 'Harvest', usage: 'Usage',
     },
     dashboard: {
-      greeting: 'Good morning,',
+      greeting: h => h >= 6 && h < 12 ? 'Good morning,' : h >= 12 && h < 18 ? 'Good afternoon,' : h >= 18 && h < 23 ? 'Good evening,' : 'Good night,',
       balance: 'Your seeds balance',
       to: 'To',
       seedsToGo: 'seeds to go',
