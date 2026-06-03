@@ -1,0 +1,110 @@
+/* ───────────────── RootedRewards · Budget Thuis design tokens ───────────────── */
+:root{
+  --green:#00A651;
+  --green-700:#008a44;
+  --green-900:#04412a;
+  --navy:#1A1A2E;
+  --navy-60:#5a5a6b;
+  --lime:#C8E600;
+  --white:#FFFFFF;
+  --grey:#F5F5F5;
+  --grey-line:#ECECEE;
+  --grey-2:#9a9aa6;
+  --red:#E2463F;
+  --card-shadow:0 1px 2px rgba(26,26,46,0.04), 0 6px 18px rgba(26,26,46,0.06);
+  --card-shadow-lg:0 2px 4px rgba(26,26,46,0.05), 0 18px 40px rgba(26,26,46,0.10);
+  --r-lg:22px;
+  --r-md:16px;
+  --r-sm:12px;
+}
+
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+
+.rr{
+  font-family:'Inter', -apple-system, system-ui, sans-serif;
+  color:var(--navy);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* App shell */
+.rr-app{ height:100%; display:flex; flex-direction:column; background:var(--grey); padding-top:50px; }
+.rr-scroll{ flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
+.rr-scroll::-webkit-scrollbar{ display:none; }
+.rr-page{ padding:0 18px 28px; }
+
+/* Type */
+.rr-eyebrow{ font-size:11px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--green); }
+.rr-eyebrow.muted{ color:var(--grey-2); }
+.rr-h1{ font-size:26px; font-weight:800; letter-spacing:-0.4px; line-height:1.08; text-transform:uppercase; margin:0; }
+.rr-h2{ font-size:15px; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; margin:0; color:var(--navy); }
+.rr-section-label{ font-size:12px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--navy-60); margin:0 0 10px 2px; }
+.rr-sub{ font-size:13px; font-weight:500; color:var(--navy-60); line-height:1.45; }
+
+/* Cards */
+.rr-card{ background:var(--white); border-radius:var(--r-lg); box-shadow:var(--card-shadow); }
+
+/* Header */
+.rr-header{ padding:8px 18px 14px; display:flex; align-items:center; justify-content:space-between; }
+
+/* Buttons */
+.rr-cta{
+  border:none; cursor:pointer; width:100%;
+  background:var(--green); color:#fff;
+  font-family:inherit; font-weight:800; font-size:14px; letter-spacing:0.4px; text-transform:uppercase;
+  padding:15px; border-radius:14px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  box-shadow:0 6px 16px rgba(0,166,81,0.28);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.rr-cta:active{ transform:translateY(1px) scale(0.995); box-shadow:0 3px 10px rgba(0,166,81,0.24); }
+
+/* Progress bar */
+.rr-track{ height:10px; border-radius:99px; background:rgba(26,26,46,0.08); overflow:hidden; }
+.rr-track.on-green{ background:rgba(255,255,255,0.25); }
+.rr-fill{ height:100%; border-radius:99px; background:var(--green); transition:width .9s cubic-bezier(.22,1,.36,1); }
+.rr-fill.lime{ background:var(--lime); }
+
+/* Chips */
+.rr-chip{
+  background:var(--white); border-radius:14px; padding:11px 12px;
+  box-shadow:var(--card-shadow); display:flex; flex-direction:column; gap:3px;
+}
+.rr-chip .v{ font-size:18px; font-weight:800; letter-spacing:-0.3px; }
+.rr-chip .l{ font-size:10.5px; font-weight:600; color:var(--navy-60); letter-spacing:0.2px; line-height:1.2; }
+
+/* Status pills */
+.rr-pill{ font-size:10.5px; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; padding:5px 9px; border-radius:99px; display:inline-flex; align-items:center; gap:4px; }
+.rr-pill.claimed{ background:rgba(0,166,81,0.12); color:var(--green-700); }
+.rr-pill.available{ background:rgba(165,190,0,0.18); color:#5f6d00; }
+.rr-pill.locked{ background:rgba(26,26,46,0.06); color:var(--grey-2); }
+
+/* Tab bar */
+.rr-tabbar{
+  display:flex; align-items:stretch; justify-content:space-around;
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(18px) saturate(180%);
+  -webkit-backdrop-filter:blur(18px) saturate(180%);
+  border-top:1px solid var(--grey-line);
+  padding:8px 6px 30px;
+}
+.rr-tab{ flex:1; background:none; border:none; cursor:pointer; font-family:inherit;
+  display:flex; flex-direction:column; align-items:center; gap:4px; padding:4px 0; color:var(--grey-2); }
+.rr-tab .lbl{ font-size:10px; font-weight:700; letter-spacing:0.2px; }
+.rr-tab.active{ color:var(--green); }
+
+/* misc */
+.rr-divider{ height:1px; background:var(--grey-line); }
+.rr-fadein{ animation:rrFade .45s cubic-bezier(.22,1,.36,1) both; }
+@keyframes rrFade{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+.rr-stagger > *{ animation:rrFade .5s cubic-bezier(.22,1,.36,1) both; }
+.rr-stagger > *:nth-child(1){ animation-delay:.02s; }
+.rr-stagger > *:nth-child(2){ animation-delay:.06s; }
+.rr-stagger > *:nth-child(3){ animation-delay:.10s; }
+.rr-stagger > *:nth-child(4){ animation-delay:.14s; }
+.rr-stagger > *:nth-child(5){ animation-delay:.18s; }
+.rr-stagger > *:nth-child(6){ animation-delay:.22s; }
+.rr-stagger > *:nth-child(7){ animation-delay:.26s; }
+.rr-stagger > *:nth-child(8){ animation-delay:.30s; }
+@media (prefers-reduced-motion: reduce){ .rr-fadein, .rr-stagger > *{ animation:none; } }
