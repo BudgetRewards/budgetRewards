@@ -26,8 +26,9 @@ function loadSaved(): Map<string, CatalogueItemStatus> {
 }
 
 function computeBalance(items: ItemState[]): number {
+  // Only claimed (earned) items count; missed harvests are informational.
   const raw = items
-    .filter(i => i.status === 'claimed' || i.status === 'penalty')
+    .filter(i => i.status === 'claimed')
     .reduce((sum, i) => sum + i.seeds, 0);
   return Math.min(10000, Math.max(0, raw));
 }
@@ -71,9 +72,7 @@ export function ConfigApp() {
       const next = prev.map(item => {
         if (item.name !== name) return item;
         const newStatus: CatalogueItemStatus =
-          item.seeds < 0
-            ? item.status === 'penalty'  ? 'available' : 'penalty'
-            : item.status === 'claimed' ? 'available' : 'claimed';
+          item.status === 'claimed' ? 'available' : 'claimed';
         return { ...item, status: newStatus };
       });
       persist(next);
@@ -142,7 +141,7 @@ export function ConfigApp() {
             </h3>
             <div style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e5e5' }}>
               {cat.items.map((item, idx) => {
-                const isOn = item.status === 'claimed' || item.status === 'penalty';
+                const isOn = item.status === 'claimed';
                 const seedColor = item.seeds < 0 ? '#e2463f' : '#00a651';
                 return (
                   <div key={item.name} style={{

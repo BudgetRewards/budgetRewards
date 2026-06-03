@@ -62,22 +62,22 @@ describe('optInAnalytics', () => {
 });
 
 describe('toggleRemoteRead', () => {
-  test('applies -60 penalty when disabling', () => {
+  test('records a 60-seed missed harvest when disabling (no penalty)', () => {
     const dispatch = vi.fn();
     toggleRemoteRead(false, cleanState, dispatch);
     expect(dispatch).toHaveBeenCalledWith({
       type: 'APPLY_TRIGGER',
-      payload: expect.objectContaining({ base: -60, kind: 'neg', setRemoteRead: false }),
+      payload: expect.objectContaining({ base: 60, kind: 'missed', setRemoteRead: false }),
     });
   });
 
-  test('applies +60 restoration when enabling', () => {
+  test('re-enabling clears the missed harvest without crediting seeds', () => {
     const dispatch = vi.fn();
     const disabled = { ...cleanState, remoteReadEnabled: false };
     toggleRemoteRead(true, disabled, dispatch);
     expect(dispatch).toHaveBeenCalledWith({
       type: 'APPLY_TRIGGER',
-      payload: expect.objectContaining({ base: 60, kind: 'pos', setRemoteRead: true }),
+      payload: expect.objectContaining({ base: 0, kind: 'pos', setRemoteRead: true }),
     });
   });
 

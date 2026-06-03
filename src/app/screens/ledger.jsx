@@ -14,11 +14,11 @@ function Ledger(){
   const filters = [
     { id:'all', label: t.ledger.all },
     { id:'pos', label: t.ledger.earned },
-    { id:'neg', label: t.ledger.penaltiesFilter },
+    { id:'missed', label: t.ledger.penaltiesFilter },
   ];
   const rows = R.ledger.filter(e => filter==='all' ? true : e.kind===filter);
   const earned = R.ledger.filter(e=>e.kind==='pos').reduce((s,e)=>s+e.amount,0);
-  const lost = R.ledger.filter(e=>e.kind==='neg').reduce((s,e)=>s+e.amount,0);
+  const missedTotal = R.ledger.filter(e=>e.kind==='missed').reduce((s,e)=>s+e.amount,0);
 
   return (
     <div className="rr-page">
@@ -36,7 +36,7 @@ function Ledger(){
         <div style={{ width:1, alignSelf:'stretch', background:'var(--grey-line)' }}/>
         <div style={{ flex:1 }}>
           <div className="rr-sub" style={{ fontSize:11.5, fontWeight:700 }}>{t.ledger.penalties}</div>
-          <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5, color:'var(--red)', marginTop:2 }}>{fmt(lost)}</div>
+          <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5, color:'var(--navy-60)', marginTop:2 }}>{fmt(missedTotal)}</div>
         </div>
       </div>
 
@@ -58,7 +58,7 @@ function Ledger(){
         {rows.map((e,i)=>(
           <div key={e.id}>
             <div style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px' }}>
-              <SeedMark size={34} tone={e.kind==='neg'?'lime':'green'}/>
+              <SeedMark size={34} tone={e.kind==='missed'?'lime':'green'}/>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontWeight:700, fontSize:14 }}>
                   {lang === 'en' ? (e.nameEn ?? e.name) : e.name}
@@ -72,9 +72,9 @@ function Ledger(){
                   </span>
                 </div>
               </div>
-              <div style={{ fontWeight:800, fontSize:16, color: e.kind==='neg'?'var(--red)':'var(--green)',
+              <div style={{ fontWeight:800, fontSize:16, color: e.kind==='missed'?'var(--navy-60)':'var(--green)',
                 fontVariantNumeric:'tabular-nums' }}>
-                {e.amount>0?'+':''}{fmt(e.amount)}
+                {e.kind==='missed'?'':'+'}{fmt(e.amount)}
               </div>
             </div>
             {i<rows.length-1 && <div className="rr-divider" style={{ marginLeft:62 }}/>}

@@ -39,9 +39,12 @@ describe('APPLY_TRIGGER', () => {
     expect(next.balance).toBe(10000);
   });
 
-  test('clamps balance to 0 — never negative', () => {
-    const next = apply(freshState, { name: 'Penalty', cat: 'App & Data', base: -500, kind: 'neg' });
-    expect(next.balance).toBe(0);
+  test('a missed harvest does not change the balance', () => {
+    const withBalance = { ...freshState, balance: 200 };
+    const next = apply(withBalance, { name: 'Gemiste oogst', cat: 'Energiegedrag', base: 60, kind: 'missed' });
+    expect(next.balance).toBe(200);
+    expect(next.ledger[0].kind).toBe('missed');
+    expect(next.ledger[0].amount).toBe(60);
   });
 
   test('upgrades tier from seed to tree when balance crosses 2500', () => {
@@ -60,9 +63,10 @@ describe('APPLY_TRIGGER', () => {
     expect(next.nextTier).toBeNull();
   });
 
-  test('tier never moves downward', () => {
+  test('a missed harvest never lowers the tier or balance', () => {
     const forest = { ...freshState, balance: 6000, currentTier: 'forest' as const, multiplier: 2 };
-    const next = apply(forest, { name: 'Penalty', cat: 'App & Data', base: -3000, kind: 'neg' });
+    const next = apply(forest, { name: 'Gemiste oogst', cat: 'Energiegedrag', base: 3000, kind: 'missed' });
+    expect(next.balance).toBe(6000);
     expect(next.currentTier).toBe('forest');
     expect(next.multiplier).toBe(2);
   });
@@ -95,19 +99,19 @@ describe('APPLY_TRIGGER', () => {
     expect(next.harvest.daysEarned).toBeGreaterThan(freshState.harvest.daysEarned);
   });
 
-  test('sets remoteReadEnabled when setRemoteRead provided', () => {
+  test('sets remoteReadEnabled and marks the item missed when setRemoteRead is false', () => {
     const next = apply(freshState, {
       name: 'Remote uitlezing uitgezet',
       cat: 'Energiegedrag',
-      base: -60,
-      kind: 'neg',
+      base: 60,
+      kind: 'missed',
       setRemoteRead: false,
     });
     expect(next.remoteReadEnabled).toBe(false);
-    const penaltyItem = next.catalogue
+    const missedItem = next.catalogue
       .find(c => c.cat === 'Energiegedrag')!
       .items.find(i => i.name === 'Remote uitlezing uitgezet');
-    expect(penaltyItem?.status).toBe('penalty');
+    expect(missedItem?.status).toBe('missed');
   });
 });
 

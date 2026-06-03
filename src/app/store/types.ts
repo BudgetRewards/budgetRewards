@@ -1,7 +1,7 @@
 import type { HourlyUsage } from './services/usageSimulator';
 
 export type TierKey = 'seed' | 'tree' | 'forest';
-export type CatalogueItemStatus = 'claimed' | 'available' | 'locked' | 'penalty';
+export type CatalogueItemStatus = 'claimed' | 'available' | 'locked' | 'missed';
 
 /** The most recent 24-hour usage simulation, held in app state. */
 export type UsageRecord = {
@@ -21,7 +21,8 @@ export type LedgerEntry = {
   base: number;
   mult: number;
   amount: number;
-  kind: 'pos' | 'neg';
+  /** 'pos' = earned (counts toward balance); 'missed' = a harvest you missed out on (informational, never changes the balance). */
+  kind: 'pos' | 'missed';
 };
 
 export type CatalogueItem = {
@@ -103,7 +104,7 @@ export type TriggerPayload = {
   nameEn?: string;
   cat: string;
   base: number;
-  kind: 'pos' | 'neg';
+  kind: 'pos' | 'missed';
   catalogueKey?: string;
   harvestDate?: string;
   setRemoteRead?: boolean;

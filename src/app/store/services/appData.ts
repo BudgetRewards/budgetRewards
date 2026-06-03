@@ -28,14 +28,17 @@ export function optInAnalytics(state: RRState, dispatch: Dispatch): void {
 export function toggleRemoteRead(enabled: boolean, state: RRState, dispatch: Dispatch): void {
   if (enabled === state.remoteReadEnabled) return;
   if (!enabled) {
+    // Disabling remote reading means missing the 60-seed harvest — recorded as a
+    // missed harvest (informational), not a penalty: the balance is unaffected.
     dispatch({
       type: 'APPLY_TRIGGER',
-      payload: { name: 'Remote uitlezing uitgezet', cat: 'Energiegedrag', base: -60, kind: 'neg', setRemoteRead: false },
+      payload: { name: 'Remote uitlezing uitgezet', cat: 'Energiegedrag', base: 60, kind: 'missed', setRemoteRead: false },
     });
   } else {
+    // Re-enabling just makes the harvest available again — no balance change.
     dispatch({
       type: 'APPLY_TRIGGER',
-      payload: { name: 'Remote uitlezing hersteld', cat: 'Energiegedrag', base: 60, kind: 'pos', setRemoteRead: true },
+      payload: { name: 'Remote uitlezing hersteld', cat: 'Energiegedrag', base: 0, kind: 'pos', setRemoteRead: true },
     });
   }
 }

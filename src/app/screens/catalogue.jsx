@@ -5,8 +5,8 @@ import { useT, useFmt, useLang } from '../i18n.jsx'
 
 /* ───────────────── Screen 3 · Earn more (Catalogue) ───────────────── */
 const STATUS_LABELS = {
-  nl: { claimed:'Geclaimd', available:'Beschikbaar', penalty:'Boete', locked:'Vergrendeld' },
-  en: { claimed:'Claimed',  available:'Available',   penalty:'Penalty', locked:'Locked' },
+  nl: { claimed:'Geclaimd', available:'Beschikbaar', missed:'Gemiste oogst', locked:'Vergrendeld' },
+  en: { claimed:'Claimed',  available:'Available',   missed:'Missed Harvest', locked:'Locked' },
 }
 
 function StatusPill({ status }){
@@ -15,7 +15,7 @@ function StatusPill({ status }){
   const L = STATUS_LABELS[lang];
   if(status==='claimed')  return <span className="rr-pill claimed"><Icon name="check" size={12} stroke="var(--green-700)" sw={2.6}/>{L.claimed}</span>;
   if(status==='available')return <span className="rr-pill available" style={{ cursor:'pointer' }}>{L.available} →</span>;
-  if(status==='penalty')  return <span className="rr-pill" style={{ background:'rgba(226,70,63,0.12)', color:'var(--red)' }}>{L.penalty}</span>;
+  if(status==='missed')   return <span className="rr-pill" style={{ background:'rgba(26,26,46,0.07)', color:'var(--navy-60)' }}>{L.missed}</span>;
   return <span className="rr-pill locked"><Icon name="lock" size={11} stroke="var(--grey-2)" sw={2.2}/>{L.locked}</span>;
 }
 
@@ -24,7 +24,7 @@ function TriggerRow({ item, catName, isLast, onClaim }){
   const { lang } = useLang();
   const t = useT();
   const [open, setOpen] = React.useState(false);
-  const neg = item.seeds < 0;
+  const missed = item.status === 'missed';
   const canClaim = item.status === 'available';
   const displayName = lang === 'en' ? (item.nameEn ?? item.name) : item.name;
   const displayNeed = lang === 'en' ? (item.needEn ?? item.need) : item.need;
@@ -49,16 +49,16 @@ function TriggerRow({ item, catName, isLast, onClaim }){
           <div><StatusPill status={item.status}/></div>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:5, flexShrink:0 }}>
-          <SeedMark size={18} tone={neg?'lime':'green'}/>
-          <span style={{ fontWeight:800, fontSize:15, color: neg?'var(--red)':'var(--navy)',
-            fontVariantNumeric:'tabular-nums' }}>{neg?'':'+'}{fmt(item.seeds)}</span>
+          <SeedMark size={18} tone={missed?'lime':'green'}/>
+          <span style={{ fontWeight:800, fontSize:15, color: missed?'var(--navy-60)':'var(--navy)',
+            fontVariantNumeric:'tabular-nums' }}>{missed?'':'+'}{fmt(item.seeds)}</span>
         </div>
       </div>
       {displayNeed && open && (
         <div className="rr-fadein" style={{ margin:'0 16px 13px 16px', background:'rgba(26,26,46,0.04)',
           borderRadius:12, padding:'10px 13px', display:'flex', gap:9, alignItems:'flex-start' }}>
-          <Icon name={item.status==='penalty'?'bolt':'lock'} size={15}
-            stroke={item.status==='penalty'?'var(--red)':'var(--navy-60)'} sw={2}/>
+          <Icon name={missed?'bolt':'lock'} size={15}
+            stroke="var(--navy-60)" sw={2}/>
           <span className="rr-sub" style={{ fontSize:12, flex:1 }}>{displayNeed}</span>
         </div>
       )}

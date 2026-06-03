@@ -65,7 +65,7 @@ export function useTrigger() {
           nameEn: item.nameEn,
           cat,
           base: item.seeds,
-          kind: item.seeds < 0 ? 'neg' : 'pos',
+          kind: 'pos',
           catalogueKey: item.name,
         },
       });

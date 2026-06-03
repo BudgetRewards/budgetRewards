@@ -12,7 +12,7 @@ const minimalState: RRState = {
     { cat: 'Test', items: [
       { name: 'Item A', seeds: 1000, status: 'available' },
       { name: 'Item B', seeds: 200,  status: 'available' },
-      { name: 'Item C', seeds: -60,  status: 'available' },
+      { name: 'Item C', seeds: 60,   status: 'available' },
     ]},
   ],
 };
@@ -54,20 +54,20 @@ describe('loadFromConfig', () => {
     expect(result.balance).toBe(1200);
   });
 
-  test('includes penalty items as negative in balance', () => {
+  test('missed items do not affect the balance', () => {
     localStorage.setItem('rr-config', JSON.stringify({
       catalogue: [
         { name: 'Item A', status: 'claimed' },
-        { name: 'Item C', status: 'penalty' },
+        { name: 'Item C', status: 'missed' },
       ],
     }));
     const result = loadFromConfig(minimalState);
-    expect(result.balance).toBe(940);
+    expect(result.balance).toBe(1000);
   });
 
-  test('clamps balance to 0 — never negative', () => {
+  test('a config with only missed items yields a 0 balance', () => {
     localStorage.setItem('rr-config', JSON.stringify({
-      catalogue: [{ name: 'Item C', status: 'penalty' }],
+      catalogue: [{ name: 'Item C', status: 'missed' }],
     }));
     const result = loadFromConfig(minimalState);
     expect(result.balance).toBe(0);
@@ -129,14 +129,14 @@ describe('loadFromConfig', () => {
     expect(names).toContain('Item B');
   });
 
-  test('penalty catalogue item becomes a neg ledger entry', () => {
+  test('missed catalogue item becomes a missed ledger entry', () => {
     localStorage.setItem('rr-config', JSON.stringify({
-      catalogue: [{ name: 'Item C', status: 'penalty' }],
+      catalogue: [{ name: 'Item C', status: 'missed' }],
     }));
     const result = loadFromConfig(minimalState);
     expect(result.ledger).toHaveLength(1);
-    expect(result.ledger[0].kind).toBe('neg');
-    expect(result.ledger[0].amount).toBe(-60);
+    expect(result.ledger[0].kind).toBe('missed');
+    expect(result.ledger[0].amount).toBe(60);
   });
 
   test('ledger is empty when no items are active', () => {

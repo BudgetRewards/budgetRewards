@@ -68,7 +68,7 @@ export const baseInitialState: RRState = {
     { cat: 'Energiegedrag', catEn: 'Energy behaviour', items: [
       { name: 'Slimme thermostaat gekoppeld', nameEn: 'Smart thermostat connected', seeds: 200, status: 'available' },
       { name: 'Verbruik onder gemiddelde',    nameEn: 'Consumption below average',  seeds: 120, status: 'available' },
-      { name: 'Remote uitlezing uitgezet',    nameEn: 'Remote reading disabled',    seeds: -60, status: 'available', need: 'Boete: zet remote uitlezing weer aan om dit te voorkomen', needEn: 'Penalty: re-enable remote reading to avoid this' },
+      { name: 'Remote uitlezing uitgezet',    nameEn: 'Remote reading disabled',    seeds: 60, status: 'available', need: 'Gemiste oogst: zet remote uitlezing aan om deze 60 zaden niet te missen', needEn: 'Missed harvest: enable remote reading so you don’t miss these 60 seeds' },
     ]},
     { cat: 'Multi-product', catEn: 'Multi-product', items: [
       { name: 'Tweede product: Internet',    nameEn: 'Second product: Internet', seeds: 500, status: 'available' },
@@ -114,16 +114,18 @@ function fakeDateFor(idx: number, total: number): string {
 }
 
 /**
- * Rebuild the ledger from the active (claimed/penalty) catalogue items, spread
- * across fake Jan–May 2026 dates and ordered newest-first. `idOffset` keeps ids
- * unique when onboarding entries are also present.
+ * Rebuild the ledger from the active catalogue items — those the customer has
+ * claimed (earned) or missed — spread across fake Jan–May 2026 dates and ordered
+ * newest-first. `idOffset` keeps ids unique when onboarding entries are also
+ * present. A missed item's seeds are shown as the amount missed; only claimed
+ * items count toward the balance (computed separately).
  */
 function buildLedgerFromCatalogue(catalogue: RRState['catalogue'], idOffset: number): LedgerEntry[] {
-  const activeItems: { name: string; nameEn?: string; cat: string; seeds: number }[] = [];
+  const activeItems: { name: string; nameEn?: string; cat: string; seeds: number; missed: boolean }[] = [];
   for (const cat of catalogue) {
     for (const item of cat.items) {
-      if (item.status === 'claimed' || item.status === 'penalty') {
-        activeItems.push({ name: item.name, nameEn: item.nameEn, cat: cat.cat, seeds: item.seeds });
+      if (item.status === 'claimed' || item.status === 'missed') {
+        activeItems.push({ name: item.name, nameEn: item.nameEn, cat: cat.cat, seeds: item.seeds, missed: item.status === 'missed' });
       }
     }
   }
@@ -138,7 +140,7 @@ function buildLedgerFromCatalogue(catalogue: RRState['catalogue'], idOffset: num
       base: item.seeds,
       mult: 1,
       amount: item.seeds,
-      kind: (item.seeds < 0 ? 'neg' : 'pos') as 'pos' | 'neg',
+      kind: (item.missed ? 'missed' : 'pos') as 'pos' | 'missed',
     }))
     .reverse();
 }
@@ -196,8 +198,10 @@ export function loadFromConfig(base: RRState): RRState {
             return override ? { ...item, status: override.status } : item;
           }),
         }));
+        // Only claimed (earned) items count toward the balance; missed harvests
+        // are informational and never affect it.
         catalogueBalance = catalogue.flatMap(c => c.items)
-          .filter(i => i.status === 'claimed' || i.status === 'penalty')
+          .filter(i => i.status === 'claimed')
           .reduce((sum, i) => sum + i.seeds, 0);
       }
     }
@@ -217,9 +221,9 @@ export function loadFromConfig(base: RRState): RRState {
   const balance = Math.min(base.cap, Math.max(0, catalogueBalance + onboarding.total));
   const { currentTier, multiplier, nextTier } = deriveTier(balance);
 
-  // Rebuild the ledger from whatever drove this state: catalogue claims/penalties
-  // (only when an rr-config was applied) plus any onboarding rewards. The static
-  // base ledger is intentionally replaced so history matches the live balance.
+  // Rebuild the ledger from whatever drove this state: claimed/missed catalogue
+  // items (only when an rr-config was applied) plus any onboarding rewards. The
+  // static base ledger is intentionally replaced so history matches the live balance.
   const configApplied = catalogue !== base.catalogue;
   const catalogueLedger = configApplied
     ? buildLedgerFromCatalogue(catalogue, onboarding.entries.length)

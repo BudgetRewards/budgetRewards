@@ -54,7 +54,7 @@ function applyRemoteReadCatalogue(
     ...cat,
     items: cat.items.map(item =>
       item.name === 'Remote uitlezing uitgezet'
-        ? { ...item, status: enabled ? ('available' as const) : ('penalty' as const) }
+        ? { ...item, status: enabled ? ('available' as const) : ('missed' as const) }
         : item
     ),
   }));
@@ -102,20 +102,23 @@ type EarningInput = {
   nameEn?: string;
   cat: string;
   base: number;
-  kind: 'pos' | 'neg';
+  kind: 'pos' | 'missed';
 };
 
 /**
- * Apply a seed earning/penalty: append a ledger entry and recompute balance,
- * tier, and multiplier. Returns the changed state fields plus the new entry
- * (so callers can read the awarded amount). Shared by APPLY_TRIGGER and the
- * weekend reward.
+ * Apply a seed earning or a missed harvest: append a ledger entry and recompute
+ * balance, tier, and multiplier. A 'missed' entry is purely informational — it
+ * records the seeds the customer missed out on but never changes the balance
+ * (the tier multiplier also does not apply, since nothing was actually earned).
+ * Returns the changed state fields plus the new entry (so callers can read the
+ * awarded amount). Shared by APPLY_TRIGGER and the weekend reward.
  */
 function applyEarning(state: RRState, input: EarningInput): {
   patch: Pick<RRState, 'balance' | 'multiplier' | 'currentTier' | 'nextTier' | 'ledger'>;
   entry: LedgerEntry;
 } {
-  const mult = TIER_MULTIPLIERS[state.currentTier];
+  const missed = input.kind === 'missed';
+  const mult = missed ? 1 : TIER_MULTIPLIERS[state.currentTier];
   const amount = Math.round(input.base * mult);
 
   const entry: LedgerEntry = {
@@ -130,7 +133,8 @@ function applyEarning(state: RRState, input: EarningInput): {
     kind: input.kind,
   };
 
-  const newBalance = Math.min(state.cap, Math.max(0, state.balance + amount));
+  const balanceDelta = missed ? 0 : amount;
+  const newBalance = Math.min(state.cap, Math.max(0, state.balance + balanceDelta));
   const newTier = evaluateTier(newBalance, state.currentTier);
 
   return {
@@ -199,7 +203,11 @@ export function reducer(state: RRState, action: RRAction): RRState {
 
   const { name, nameEn, cat, base, kind, catalogueKey, harvestDate, setRemoteRead } = action.payload;
 
-  const { patch } = applyEarning(state, { name, nameEn, cat, base, kind });
+  // A zero-value trigger (e.g. re-enabling remote reading) only flips flags and
+  // catalogue status — it must not add a ledger entry or move the balance.
+  const patch = base === 0
+    ? {}
+    : applyEarning(state, { name, nameEn, cat, base, kind }).patch;
 
   let newCatalogue = state.catalogue;
   if (catalogueKey) newCatalogue = applyCatalogueKey(newCatalogue, catalogueKey);

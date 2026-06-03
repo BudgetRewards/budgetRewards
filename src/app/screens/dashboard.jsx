@@ -138,15 +138,15 @@ function Dashboard({ onNav }){
         {R.ledger.slice(0,3).map((e,i)=>(
           <div key={e.id}>
             <div style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px' }}>
-              <SeedMark size={30} tone={e.kind==='neg'?'lime':'green'}/>
+              <SeedMark size={30} tone={e.kind==='missed'?'lime':'green'}/>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontWeight:700, fontSize:13.5, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                   {lang === 'en' ? (e.nameEn ?? e.name) : e.name}
                 </div>
                 <div className="rr-sub" style={{ fontSize:11.5 }}>{e.date}</div>
               </div>
-              <div style={{ fontWeight:800, fontSize:15, color: e.kind==='neg'?'var(--red)':'var(--green)' }}>
-                {e.amount>0?'+':''}{fmt(e.amount)}
+              <div style={{ fontWeight:800, fontSize:15, color: e.kind==='missed'?'var(--navy-60)':'var(--green)' }}>
+                {e.kind==='missed'?'':'+'}{fmt(e.amount)}
               </div>
             </div>
             {i<2 && <div className="rr-divider" style={{ marginLeft:58 }}/>}
