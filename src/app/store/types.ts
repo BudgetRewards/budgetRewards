@@ -108,8 +108,17 @@ export type TriggerPayload = {
   setRemoteRead?: boolean;
 };
 
+export type Profile = {
+  solarPanels: boolean;
+  homeBattery: boolean;
+  householdSize: number;
+  customerYears: number;
+  products: string[];
+};
+
 export type RRAction =
   | { type: 'APPLY_TRIGGER'; payload: TriggerPayload }
+  | { type: 'APPLY_ONBOARDING'; profile: Profile }
   | { type: 'SET_USAGE'; payload: UsageRecord }
   | { type: 'SELECT_USAGE_DATE'; payload: { date: string } }
   | { type: 'MARK_HISTORY_SEEN' }

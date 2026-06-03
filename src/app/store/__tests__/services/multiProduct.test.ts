@@ -34,7 +34,15 @@ describe('addProduct', () => {
 
   test('does not dispatch if product already claimed', () => {
     const dispatch = vi.fn();
-    addProduct('Internet', initialState, dispatch);
+    const claimed = {
+      ...cleanState,
+      catalogue: cleanState.catalogue.map(cat =>
+        cat.cat === 'Multi-product'
+          ? { ...cat, items: cat.items.map(i => i.name === 'Tweede product: Internet' ? { ...i, status: 'claimed' as const } : i) }
+          : cat
+      ),
+    };
+    addProduct('Internet', claimed, dispatch);
     expect(dispatch).not.toHaveBeenCalled();
   });
 

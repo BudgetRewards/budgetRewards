@@ -1,11 +1,11 @@
-import type { RRState, MonthData, HarvestCell } from './types';
+import type { RRState, MonthData, HarvestCell, Profile, TierKey } from './types';
+import { computeOnboardingRewards } from './services/onboarding';
 import { simulateDailyUsage } from './services/usageSimulator';
 
 function buildHarvestMonthsData(): MonthData[] {
   const year = 2026;
   const months = [3, 4, 5, 6, 7, 8];
   const today = new Date(2026, 5, 3);
-  const missed = new Set(['3-25', '4-3', '4-17']);
 
   return months.map(m => {
     const first = new Date(year, m, 1);
@@ -19,11 +19,9 @@ function buildHarvestMonthsData(): MonthData[] {
       const date = new Date(year, m, d);
       const dow = date.getDay();
       const weekend = dow === 0 || dow === 6;
+      // Clean slate: nothing earned/missed yet. Past weekends are 'none', future 'upcoming'.
       let state: 'none' | 'earned' | 'missed' | 'upcoming' = 'none';
-      if (weekend) {
-        if (date < today) state = missed.has(`${m}-${d}`) ? 'missed' : 'earned';
-        else state = 'upcoming';
-      }
+      if (weekend && date >= today) state = 'upcoming';
       cells.push({ d, weekend, state, today: date.getTime() === today.getTime() });
     }
 
@@ -31,23 +29,13 @@ function buildHarvestMonthsData(): MonthData[] {
   });
 }
 
-function countEarned(monthsData: MonthData[]): number {
-  let count = 0;
-  monthsData.forEach(mo =>
-    mo.cells.forEach(c => { if (c && c.state === 'earned') count++; })
-  );
-  return count;
-}
-
-const SEEDS_PER_DAY = 10;
 const harvestMonthsData = buildHarvestMonthsData();
-const harvestDaysEarned = countEarned(harvestMonthsData);
 
 export const baseInitialState: RRState = {
   user: { name: 'Jan', fullName: 'Jan de Vries' },
-  balance: 2600,
+  balance: 0,
   cap: 10000,
-  multiplier: 1.5,
+  multiplier: 1,
   period: { startLabel: '1 jan 2026', endLabel: '31 dec 2026', daysLeft: 211 },
 
   tiers: [
@@ -55,46 +43,35 @@ export const baseInitialState: RRState = {
     { id: 'tree',   emoji: '🌳', name: 'Boom', nameEn: 'Tree',   en: 'Tree',   min: 2500, max: 5999, mult: '1,5×', routes: ['2.500 seeds verzameld', 'of 12 maanden actief klant'],                                                           routesEn: ['2,500 seeds collected', 'or 12 months as an active customer'] },
     { id: 'forest', emoji: '🌲', name: 'Bos',  nameEn: 'Forest', en: 'Forest', min: 6000, max: null, mult: '2×',   routes: ['6.000 seeds verzameld', 'of 2+ producten + zonnepanelen', 'of 36 maanden actief klant'], routesEn: ['6,000 seeds collected', 'or 2+ products + solar panels', 'or 36 months as an active customer'] },
   ],
-  currentTier: 'tree',
-  nextTier: { name: 'Bos', nameEn: 'Forest', threshold: 6000 },
+  currentTier: 'seed',
+  nextTier: { name: 'Boom', nameEn: 'Tree', threshold: 2500 },
 
-  // Harvest-hour entries are intentionally NOT seeded here — they are added to
-  // the ledger only when a weekend is earned via simulated usage (see reducer
-  // SET_USAGE → weekend reward).
-  ledger: [
-    { id: 2, name: 'Remote uitlezing uitgezet',       nameEn: 'Remote reading disabled',      cat: 'Energiegedrag', date: '24 mei 2026',  base: -60,  mult: 1.5, amount: -90,  kind: 'neg' },
-    { id: 4, name: 'Maandelijkse meterstand',         nameEn: 'Monthly meter reading',        cat: 'App & Data',    date: '1 mei 2026',   base: 20,   mult: 1.5, amount: 30,   kind: 'pos' },
-    { id: 5, name: 'Tweede product: Internet',        nameEn: 'Second product: Internet',     cat: 'Multi-product', date: '12 apr 2026',  base: 500,  mult: 1,   amount: 500,  kind: 'pos' },
-    { id: 6, name: 'Boom-tier bereikt',               nameEn: 'Tree tier reached',            cat: 'Lifecycle',     date: '12 apr 2026',  base: 250,  mult: 1,   amount: 250,  kind: 'pos' },
-    { id: 7, name: 'Slimme thermostaat gekoppeld',    nameEn: 'Smart thermostat connected',   cat: 'Energiegedrag', date: '28 mrt 2026',  base: 200,  mult: 1,   amount: 200,  kind: 'pos' },
-    { id: 8, name: 'App geactiveerd',                 nameEn: 'App activated',                cat: 'App & Data',    date: '3 mrt 2026',   base: 150,  mult: 1,   amount: 150,  kind: 'pos' },
-    { id: 9, name: 'Welkomstbonus',                   nameEn: 'Welcome bonus',                cat: 'Lifecycle',     date: '1 jan 2026',   base: 1000, mult: 1,   amount: 1000, kind: 'pos' },
-  ],
+  ledger: [],
 
   catalogue: [
     { cat: 'Contract & Lifecycle', catEn: 'Contract & Lifecycle', items: [
-      { name: 'Welkomstbonus',              nameEn: 'Welcome bonus',             seeds: 1000, status: 'claimed' },
-      { name: 'Boom-tier bereikt',          nameEn: 'Tree tier reached',         seeds: 250,  status: 'claimed' },
+      { name: 'Welkomstbonus',              nameEn: 'Welcome bonus',             seeds: 1000, status: 'available' },
+      { name: 'Boom-tier bereikt',          nameEn: 'Tree tier reached',         seeds: 250,  status: 'available' },
       { name: 'Contract verlengd (1 jaar)', nameEn: 'Contract renewed (1 year)', seeds: 400,  status: 'available' },
       { name: '5 jaar trouw lid',           nameEn: '5 years loyal member',      seeds: 1500, status: 'locked', need: 'Word lid voor 5 jaar — nog 4 jaar te gaan', needEn: 'Become a member for 5 years — 4 years to go' },
     ]},
     { cat: 'App & Data', catEn: 'App & Data', items: [
-      { name: 'App geactiveerd',         nameEn: 'App activated',              seeds: 150, status: 'claimed' },
+      { name: 'App geactiveerd',         nameEn: 'App activated',              seeds: 150, status: 'available' },
       { name: 'Maandelijkse meterstand', nameEn: 'Monthly meter reading',      seeds: 20,  status: 'available' },
       { name: 'Pushmeldingen aangezet',  nameEn: 'Push notifications enabled', seeds: 50,  status: 'available' },
     ]},
     { cat: 'Harvest Hours', catEn: 'Harvest Hours', items: [
-      { name: 'Oogstdag — gratis stroom', nameEn: 'Harvest day — free electricity', seeds: 10,  status: 'claimed' },
+      { name: 'Oogstdag — gratis stroom', nameEn: 'Harvest day — free electricity', seeds: 10,  status: 'available' },
       { name: 'Oogstdag — verschuiving',  nameEn: 'Harvest day — shift',            seeds: 20,  status: 'available' },
       { name: 'Volledig oogstseizoen',    nameEn: 'Full harvest season',            seeds: 300, status: 'locked', need: 'Verzamel oogstdagen het hele seizoen (apr–sep)', needEn: 'Collect harvest days throughout the season (Apr–Sep)' },
     ]},
     { cat: 'Energiegedrag', catEn: 'Energy behaviour', items: [
-      { name: 'Slimme thermostaat gekoppeld', nameEn: 'Smart thermostat connected', seeds: 200, status: 'claimed' },
+      { name: 'Slimme thermostaat gekoppeld', nameEn: 'Smart thermostat connected', seeds: 200, status: 'available' },
       { name: 'Verbruik onder gemiddelde',    nameEn: 'Consumption below average',  seeds: 120, status: 'available' },
-      { name: 'Remote uitlezing uitgezet',    nameEn: 'Remote reading disabled',    seeds: -60, status: 'penalty', need: 'Boete: zet remote uitlezing weer aan om dit te voorkomen', needEn: 'Penalty: re-enable remote reading to avoid this' },
+      { name: 'Remote uitlezing uitgezet',    nameEn: 'Remote reading disabled',    seeds: -60, status: 'available', need: 'Boete: zet remote uitlezing weer aan om dit te voorkomen', needEn: 'Penalty: re-enable remote reading to avoid this' },
     ]},
     { cat: 'Multi-product', catEn: 'Multi-product', items: [
-      { name: 'Tweede product: Internet',    nameEn: 'Second product: Internet', seeds: 500, status: 'claimed' },
+      { name: 'Tweede product: Internet',    nameEn: 'Second product: Internet', seeds: 500, status: 'available' },
       { name: 'Derde product: Verzekering',  nameEn: 'Third product: Insurance', seeds: 750, status: 'locked', need: 'Voeg een derde Budget Thuis-product toe', needEn: 'Add a third Budget Thuis product' },
       { name: 'Zonnepanelen geregistreerd',  nameEn: 'Solar panels registered',  seeds: 600, status: 'available' },
     ]},
@@ -104,15 +81,15 @@ export const baseInitialState: RRState = {
 
   harvest: {
     optedIn: true,
-    daysEarned: harvestDaysEarned,
-    seasonSeeds: Math.round(harvestDaysEarned * SEEDS_PER_DAY * 1.5),
-    seedsPerDay: SEEDS_PER_DAY,
+    daysEarned: 0,
+    seasonSeeds: 0,
+    seedsPerDay: 10,
     year: 2026,
     months: [3, 4, 5, 6, 7, 8],
     monthsData: harvestMonthsData,
   },
 
-  remoteReadEnabled: false,
+  remoteReadEnabled: true,
 
   usages: {
     '2026-06-03': { // app "today" — matches harvestSeason
@@ -128,49 +105,82 @@ export const baseInitialState: RRState = {
   pendingReward: null,
 };
 
+function readProfile(): Profile | null {
+  try {
+    const raw = localStorage.getItem('rr-profile');
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    if (typeof p !== 'object' || p === null) return null;
+    return {
+      solarPanels: !!p.solarPanels,
+      homeBattery: !!p.homeBattery,
+      householdSize: Number(p.householdSize) || 0,
+      customerYears: Number(p.customerYears) || 0,
+      products: Array.isArray(p.products) ? p.products : [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+function deriveTier(balance: number): {
+  currentTier: TierKey;
+  multiplier: number;
+  nextTier: RRState['nextTier'];
+} {
+  const currentTier: TierKey = balance >= 6000 ? 'forest' : balance >= 2500 ? 'tree' : 'seed';
+  const multiplier = currentTier === 'forest' ? 2 : currentTier === 'tree' ? 1.5 : 1;
+  const nextTier =
+    currentTier === 'forest' ? null :
+    currentTier === 'tree'   ? { name: 'Bos',  nameEn: 'Forest', threshold: 6000 } :
+                                { name: 'Boom', nameEn: 'Tree',   threshold: 2500 };
+  return { currentTier, multiplier, nextTier };
+}
+
 export function loadFromConfig(base: RRState): RRState {
+  const profile = readProfile();
+
+  let catalogue = base.catalogue;
+  let catalogueBalance = 0;
+
   try {
     const saved = localStorage.getItem('rr-config');
-    if (!saved) return base;
-
-    const { catalogue: overrides } = JSON.parse(saved) as {
-      catalogue: { name: string; status: import('./types').CatalogueItemStatus }[];
-    };
-
-    if (!Array.isArray(overrides)) return base;
-
-    const catalogue = base.catalogue.map(cat => ({
-      ...cat,
-      items: cat.items.map(item => {
-        const override = overrides.find(o => o.name === item.name);
-        return override ? { ...item, status: override.status } : item;
-      }),
-    }));
-
-    const balance = Math.min(
-      base.cap,
-      Math.max(0,
-        catalogue.flatMap(c => c.items)
+    if (saved) {
+      const parsed = JSON.parse(saved) as {
+        catalogue: { name: string; status: import('./types').CatalogueItemStatus }[];
+      };
+      if (Array.isArray(parsed.catalogue)) {
+        const overrides = parsed.catalogue;
+        catalogue = base.catalogue.map(cat => ({
+          ...cat,
+          items: cat.items.map(item => {
+            const override = overrides.find(o => o.name === item.name);
+            return override ? { ...item, status: override.status } : item;
+          }),
+        }));
+        catalogueBalance = catalogue.flatMap(c => c.items)
           .filter(i => i.status === 'claimed' || i.status === 'penalty')
-          .reduce((sum, i) => sum + i.seeds, 0)
-      )
-    );
-
-    const currentTier: import('./types').TierKey =
-      balance >= 6000 ? 'forest' :
-      balance >= 2500 ? 'tree' : 'seed';
-
-    const multiplier = currentTier === 'forest' ? 2 : currentTier === 'tree' ? 1.5 : 1;
-
-    const nextTier =
-      currentTier === 'forest' ? null :
-      currentTier === 'tree'   ? { name: 'Bos',  nameEn: 'Forest', threshold: 6000 } :
-                                  { name: 'Boom', nameEn: 'Tree',   threshold: 2500 };
-
-    return { ...base, catalogue, balance, currentTier, multiplier, nextTier };
+          .reduce((sum, i) => sum + i.seeds, 0);
+      }
+    }
   } catch {
+    // malformed rr-config: ignore, fall back to base catalogue
+    catalogue = base.catalogue;
+    catalogueBalance = 0;
+  }
+
+  const onboarding = profile ? computeOnboardingRewards(profile) : { entries: [], total: 0 };
+
+  // No config and no profile → return base untouched (preserves referential expectations).
+  if (catalogueBalance === 0 && catalogue === base.catalogue && onboarding.entries.length === 0) {
     return base;
   }
+
+  const balance = Math.min(base.cap, Math.max(0, catalogueBalance + onboarding.total));
+  const { currentTier, multiplier, nextTier } = deriveTier(balance);
+  const ledger = [...onboarding.entries, ...base.ledger];
+
+  return { ...base, catalogue, balance, currentTier, multiplier, nextTier, ledger };
 }
 
 export const initialState: RRState = loadFromConfig(baseInitialState);

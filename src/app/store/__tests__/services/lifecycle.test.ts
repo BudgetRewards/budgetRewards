@@ -25,7 +25,15 @@ describe('signupBonus', () => {
 
   test('does not dispatch when already claimed', () => {
     const dispatch = vi.fn();
-    signupBonus(initialState, dispatch);
+    const claimed = {
+      ...cleanState,
+      catalogue: cleanState.catalogue.map(cat =>
+        cat.cat === 'Contract & Lifecycle'
+          ? { ...cat, items: cat.items.map(i => i.name === 'Welkomstbonus' ? { ...i, status: 'claimed' as const } : i) }
+          : cat
+      ),
+    };
+    signupBonus(claimed, dispatch);
     expect(dispatch).not.toHaveBeenCalled();
   });
 });
@@ -42,7 +50,15 @@ describe('appActivated', () => {
 
   test('does not dispatch when already claimed', () => {
     const dispatch = vi.fn();
-    appActivated(initialState, dispatch);
+    const claimed = {
+      ...cleanState,
+      catalogue: cleanState.catalogue.map(cat =>
+        cat.cat === 'App & Data'
+          ? { ...cat, items: cat.items.map(i => i.name === 'App geactiveerd' ? { ...i, status: 'claimed' as const } : i) }
+          : cat
+      ),
+    };
+    appActivated(claimed, dispatch);
     expect(dispatch).not.toHaveBeenCalled();
   });
 });

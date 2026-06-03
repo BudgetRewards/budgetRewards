@@ -1,4 +1,6 @@
 import type { RRState, RRAction, TierKey, LedgerEntry, CatalogueCategory } from './types';
+import { computeOnboardingRewards } from './services/onboarding';
+import { formatDate } from './format';
 import { weekendFor, isWeekendEarned, weekendLabels, weekendRewardSeeds } from './services/harvestWeekend';
 
 const TIER_MULTIPLIERS: Record<TierKey, number> = {
@@ -91,10 +93,6 @@ function applyHarvestDate(
   };
 }
 
-function formatDate(): string {
-  return new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
 function nextLedgerId(ledger: RRState['ledger']): number {
   return ledger.length > 0 ? Math.max(...ledger.map(e => e.id)) + 1 : 1;
 }
@@ -150,6 +148,19 @@ function applyEarning(state: RRState, input: EarningInput, multiplier?: number):
 }
 
 export function reducer(state: RRState, action: RRAction): RRState {
+  if (action.type === 'APPLY_ONBOARDING') {
+    const { entries, total } = computeOnboardingRewards(action.profile);
+    const balance = Math.min(state.cap, Math.max(0, total));
+    const tier = evaluateTier(balance, state.currentTier);
+    return {
+      ...state,
+      balance,
+      ledger: entries,
+      currentTier: tier,
+      multiplier: TIER_MULTIPLIERS[tier],
+      nextTier: nextTierFor(tier, state.tiers),
+    };
+  }
   if (action.type === 'SET_USAGE') {
     const usages = { ...state.usages, [action.payload.date]: action.payload };
     let next: RRState = { ...state, usages, currentUsageDate: action.payload.date };
