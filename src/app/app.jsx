@@ -6,26 +6,28 @@ import { Ledger } from './screens/ledger.jsx'
 import { Catalogue } from './screens/catalogue.jsx'
 import { Tiers } from './screens/tiers.jsx'
 import { Harvest } from './screens/harvest.jsx'
+import { LanguageProvider, useT, useLang } from './i18n.jsx'
 
 /* ───────────────── RootedRewards · App shell + tab bar ───────────────── */
 const TABS = [
-  { id:'home',    label:'Home',      icon:'home' },
-  { id:'history', label:'Historie',  icon:'ledger' },
-  { id:'earn',    label:'Verdienen', icon:'earn' },
-  { id:'tiers',   label:'Tiers',     icon:'tiers' },
-  { id:'harvest', label:'Oogsturen', icon:'harvest' },
+  { id:'home',    icon:'home' },
+  { id:'history', icon:'ledger' },
+  { id:'earn',    icon:'earn' },
+  { id:'tiers',   icon:'tiers' },
+  { id:'harvest', icon:'harvest' },
 ];
 
 function TabBar({ active, onChange }){
+  const t = useT();
   return (
     <div className="rr-tabbar">
-      {TABS.map(t=>{
-        const on = active===t.id;
+      {TABS.map(tab=>{
+        const on = active===tab.id;
         return (
-          <button key={t.id} className={'rr-tab'+(on?' active':'')} onClick={()=>onChange(t.id)}>
-            <Icon name={t.icon} size={24} stroke="currentColor" sw={on?2.3:2}
-              fill={on && (t.id==='home') ? 'rgba(0,166,81,0.12)' : 'none'}/>
-            <span className="lbl">{t.label}</span>
+          <button key={tab.id} className={'rr-tab'+(on?' active':'')} onClick={()=>onChange(tab.id)}>
+            <Icon name={tab.icon} size={24} stroke="currentColor" sw={on?2.3:2}
+              fill={on && (tab.id==='home') ? 'rgba(0,166,81,0.12)' : 'none'}/>
+            <span className="lbl">{t.tabs[tab.id]}</span>
           </button>
         );
       })}
@@ -36,6 +38,7 @@ function TabBar({ active, onChange }){
 function App(){
   const [tab, setTab] = React.useState(()=> localStorage.getItem('rr-tab') || 'home');
   const scrollRef = React.useRef(null);
+  const { lang, set } = useLang();
 
   const go = (id)=>{ setTab(id); localStorage.setItem('rr-tab', id);
     if(scrollRef.current) scrollRef.current.scrollTop = 0; };
@@ -52,6 +55,9 @@ function App(){
 
   return (
     <div className="rr rr-app">
+      <button className="rr-lang-toggle" onClick={() => set(lang === 'nl' ? 'en' : 'nl')}>
+        {lang === 'nl' ? 'EN' : 'NL'}
+      </button>
       <div className="rr-scroll" ref={scrollRef}>
         <div key={tab}>{screens[tab]}</div>
       </div>
@@ -73,14 +79,16 @@ function useIsMobile() {
 
 function Root(){
   const isMobile = useIsMobile();
-  if (isMobile) return <App/>;
+  if (isMobile) return <LanguageProvider><App/></LanguageProvider>;
   return (
-    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center',
-      background:'#E8E9EC', padding:'24px 0' }}>
-      <IOSDevice>
-        <App/>
-      </IOSDevice>
-    </div>
+    <LanguageProvider>
+      <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center',
+        background:'#E8E9EC', padding:'24px 0' }}>
+        <IOSDevice>
+          <App/>
+        </IOSDevice>
+      </div>
+    </LanguageProvider>
   );
 }
 

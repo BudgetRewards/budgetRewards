@@ -1,15 +1,20 @@
 import React from 'react'
 import RR from '../data.jsx'
-import { SeedMark, fmt, ScreenHeader } from '../ui.jsx'
+import { SeedMark, ScreenHeader } from '../ui.jsx'
+import { useT, useFmt, useLang } from '../i18n.jsx'
 
 /* ───────────────── Screen 2 · Seeds history (Ledger) ───────────────── */
 function Ledger(){
   const R = RR;
+  const t = useT();
+  const fmt = useFmt();
+  const { lang } = useLang();
+
   const [filter, setFilter] = React.useState('all');
   const filters = [
-    { id:'all', label:'Alles' },
-    { id:'pos', label:'Verdiend' },
-    { id:'neg', label:'Boetes' },
+    { id:'all', label: t.ledger.all },
+    { id:'pos', label: t.ledger.earned },
+    { id:'neg', label: t.ledger.penaltiesFilter },
   ];
   const rows = R.ledger.filter(e => filter==='all' ? true : e.kind===filter);
   const earned = R.ledger.filter(e=>e.kind==='pos').reduce((s,e)=>s+e.amount,0);
@@ -17,12 +22,12 @@ function Ledger(){
 
   return (
     <div className="rr-page">
-      <ScreenHeader eyebrow="Seeds-grootboek" title="Historie"/>
+      <ScreenHeader eyebrow={t.ledger.eyebrow} title={t.ledger.title}/>
 
       {/* Summary card */}
       <div className="rr-card rr-fadein" style={{ padding:'16px 18px', display:'flex', alignItems:'center', gap:14 }}>
         <div style={{ flex:1 }}>
-          <div className="rr-sub" style={{ fontSize:11.5, fontWeight:700 }}>Totaal verdiend</div>
+          <div className="rr-sub" style={{ fontSize:11.5, fontWeight:700 }}>{t.ledger.totalEarned}</div>
           <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:2 }}>
             <SeedMark size={22}/>
             <span style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5, color:'var(--green)' }}>+{fmt(earned)}</span>
@@ -30,7 +35,7 @@ function Ledger(){
         </div>
         <div style={{ width:1, alignSelf:'stretch', background:'var(--grey-line)' }}/>
         <div style={{ flex:1 }}>
-          <div className="rr-sub" style={{ fontSize:11.5, fontWeight:700 }}>Boetes</div>
+          <div className="rr-sub" style={{ fontSize:11.5, fontWeight:700 }}>{t.ledger.penalties}</div>
           <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5, color:'var(--red)', marginTop:2 }}>{fmt(lost)}</div>
         </div>
       </div>
@@ -55,13 +60,15 @@ function Ledger(){
             <div style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px' }}>
               <SeedMark size={34} tone={e.kind==='neg'?'lime':'green'}/>
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontWeight:700, fontSize:14 }}>{e.name}</div>
+                <div style={{ fontWeight:700, fontSize:14 }}>
+                  {lang === 'en' ? (e.nameEn ?? e.name) : e.name}
+                </div>
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:3, flexWrap:'wrap' }}>
                   <span className="rr-sub" style={{ fontSize:11.5, whiteSpace:'nowrap' }}>{e.date}</span>
                   <span style={{ fontSize:10.5, fontWeight:700, color:'var(--navy-60)',
                     background:'rgba(26,26,46,0.05)', padding:'2px 7px', borderRadius:99,
                     fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap' }}>
-                    {Math.abs(e.base)} × {e.mult.toLocaleString('nl-NL')}× = {Math.abs(e.amount)}
+                    {fmt(Math.abs(e.base))} × {e.mult.toLocaleString('nl-NL')}× = {fmt(Math.abs(e.amount))}
                   </span>
                 </div>
               </div>
@@ -74,12 +81,12 @@ function Ledger(){
           </div>
         ))}
         {rows.length===0 && (
-          <div style={{ padding:'30px', textAlign:'center' }} className="rr-sub">Geen transacties in deze categorie.</div>
+          <div style={{ padding:'30px', textAlign:'center' }} className="rr-sub">{t.ledger.empty}</div>
         )}
       </div>
 
       <div className="rr-sub" style={{ fontSize:11, textAlign:'center', marginTop:16, padding:'0 20px' }}>
-        Multiplier wordt toegepast op het moment van verdienen — op basis van je tier op dat moment.
+        {t.ledger.footnote}
       </div>
     </div>
   );
