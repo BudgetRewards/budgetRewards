@@ -16,7 +16,9 @@
       "Bash(git config *)",
       "Bash(git add *)",
       "Bash(Select-Object Name)",
-      "PowerShell(npm run *)"
+      "PowerShell(npm run *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)"
     ]
   }
 }

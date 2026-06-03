@@ -8,6 +8,7 @@ import { Tiers } from './screens/tiers.jsx'
 import { Harvest } from './screens/harvest.jsx'
 import { Usage } from './screens/usage.jsx'
 import { LanguageProvider, useT, useLang } from './i18n.jsx'
+import { OnboardingModal } from './OnboardingModal.jsx'
 
 /* ───────────────── RootedRewards · App shell + tab bar ───────────────── */
 const TABS = [
@@ -28,7 +29,7 @@ function TabBar({ active, onChange }){
         return (
           <button key={tab.id} className={'rr-tab'+(on?' active':'')} onClick={()=>onChange(tab.id)}>
             <Icon name={tab.icon} size={24} stroke="currentColor" sw={on?2.3:2}
-              fill={on && (tab.id==='home') ? 'rgba(0,166,81,0.12)' : 'none'}/>
+              fill={on && (tab.id==='home') ? 'rgba(255,255,255,0.18)' : 'none'}/>
             <span className="lbl">{t.tabs[tab.id]}</span>
           </button>
         );
@@ -40,7 +41,7 @@ function TabBar({ active, onChange }){
 function App(){
   const [tab, setTab] = React.useState(()=> localStorage.getItem('rr-tab') || 'home');
   const scrollRef = React.useRef(null);
-  const { lang, set } = useLang();
+  const { lang, set, userName } = useLang();
 
   const go = (id)=>{ setTab(id); localStorage.setItem('rr-tab', id);
     if(scrollRef.current) scrollRef.current.scrollTop = 0; };
@@ -58,6 +59,7 @@ function App(){
 
   return (
     <div className="rr rr-app">
+      {!userName && <OnboardingModal/>}
       <button className="rr-lang-toggle" onClick={() => set(lang === 'nl' ? 'en' : 'nl')}>
         {lang === 'nl' ? 'EN' : 'NL'}
       </button>
