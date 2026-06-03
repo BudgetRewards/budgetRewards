@@ -1,6 +1,6 @@
 import React from 'react'
 import { Icon, SeedMark, ScreenHeader } from '../ui.jsx'
-import { useT, useFmt } from '../i18n.jsx'
+import { useT, useFmt, useProfile } from '../i18n.jsx'
 import { useRR, useTrigger } from '../store/RRContext.tsx'
 import { isGreenHoursEarned } from '../store/services/greenHours'
 
@@ -50,6 +50,7 @@ function Harvest(){
   const t = useT();
   const fmt = useFmt();
   const { usages, harvestSeason } = R;
+  const { solarPanels } = useProfile();
   const { simulateUsage } = useTrigger();
   const today = `${harvestSeason.year}-${pad(harvestSeason.todayMonth + 1)}-${pad(harvestSeason.todayDate)}`;
   const [sel, setSel] = React.useState(1);
@@ -205,10 +206,12 @@ function Harvest(){
       <div style={{ marginTop:16, background:'rgba(26,26,46,0.04)', borderRadius:16, padding:'14px 16px' }}>
         <div className="rr-eyebrow muted" style={{ marginBottom:10 }}>{t.harvest.requirements}</div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-          <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-            <Icon name="panel" size={19} stroke="var(--green)" sw={1.9}/>
+          <div style={{ display:'flex', gap:10, alignItems:'center', opacity: solarPanels ? 1 : 0.55 }}>
+            <Icon name="panel" size={19} stroke={solarPanels ? 'var(--green)' : 'var(--grey-2)'} sw={1.9}/>
             <span className="rr-sub" style={{ fontSize:12.5, flex:1, color:'var(--navy)' }}>{t.harvest.req1}</span>
-            <Icon name="check" size={16} stroke="var(--green)" sw={2.6}/>
+            {solarPanels
+              ? <Icon name="check" size={16} stroke="var(--green)" sw={2.6}/>
+              : <span style={{ fontSize:15, fontWeight:800, color:'var(--grey-2)' }}>—</span>}
           </div>
           <div className="rr-divider"/>
           <div style={{ display:'flex', gap:10, alignItems:'center' }}>

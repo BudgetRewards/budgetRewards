@@ -254,7 +254,7 @@ function Step3({ profile, setField, c }) {
 
 /* ─── main modal ─────────────────────────────────────────── */
 export function OnboardingModal() {
-  const { set, setUserName } = useLang()
+  const { set, setUserName, setProfile: saveProfile } = useLang()
 
   const [step, setStep] = React.useState(0)
   const [name, setName] = React.useState('')
@@ -285,7 +285,7 @@ export function OnboardingModal() {
     // Final submit
     set(lang)
     setUserName(name.trim())
-    localStorage.setItem('rr-profile', JSON.stringify({ ...profile, products }))
+    saveProfile({ ...profile, products })
   }
 
   return (

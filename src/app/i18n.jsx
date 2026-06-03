@@ -197,18 +197,47 @@ const T = {
   },
 }
 
-const LangContext = React.createContext({ lang: 'nl', set: () => {}, userName: '', setUserName: () => {} })
+// Profile captured during onboarding (Step 3 + product picker).
+const DEFAULT_PROFILE = {
+  solarPanels: false, homeBattery: false, householdSize: 1, customerYears: 0, products: [],
+}
+
+function readProfile() {
+  try {
+    const raw = localStorage.getItem('rr-profile')
+    if (raw) return { ...DEFAULT_PROFILE, ...JSON.parse(raw) }
+  } catch {
+    /* ignore corrupt storage */
+  }
+  return DEFAULT_PROFILE
+}
+
+const LangContext = React.createContext({
+  lang: 'nl', set: () => {}, userName: '', setUserName: () => {},
+  profile: DEFAULT_PROFILE, setProfile: () => {},
+})
 
 export function LanguageProvider({ children }) {
   const [lang, setLang] = React.useState(() => localStorage.getItem('rr-lang') || 'nl')
   const [userName, setUserNameState] = React.useState(() => localStorage.getItem('rr-name') || '')
+  const [profile, setProfileState] = React.useState(readProfile)
   const set = l => { setLang(l); localStorage.setItem('rr-lang', l) }
   const setUserName = n => { setUserNameState(n); localStorage.setItem('rr-name', n) }
-  return <LangContext.Provider value={{ lang, set, userName, setUserName }}>{children}</LangContext.Provider>
+  const setProfile = p => { setProfileState(p); localStorage.setItem('rr-profile', JSON.stringify(p)) }
+  return (
+    <LangContext.Provider value={{ lang, set, userName, setUserName, profile, setProfile }}>
+      {children}
+    </LangContext.Provider>
+  )
 }
 
 export function useLang() {
   return React.useContext(LangContext)
+}
+
+/** Onboarding profile (solarPanels, homeBattery, householdSize, customerYears, products). */
+export function useProfile() {
+  return React.useContext(LangContext).profile
 }
 
 export function useT() {
