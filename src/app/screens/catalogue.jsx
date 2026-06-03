@@ -69,14 +69,23 @@ function ProductBonusSection({ items, catName, onClaim }) {
   const { lang } = useLang();
   const available = items.filter(i => i.status === 'available').length;
   return (
-    <div style={{ background:'rgba(26,26,46,0.03)', borderTop:'1px solid rgba(26,26,46,0.07)' }}>
-      <div style={{ padding:'8px 16px 2px', fontSize:10, fontWeight:800, color:'var(--navy-60)',
-        textTransform:'uppercase', letterSpacing:'0.07em', display:'flex', justifyContent:'space-between',
-        alignItems:'center' }}>
-        <span>{lang === 'en' ? 'Earn more' : 'Verdien meer'}</span>
+    <div style={{
+      background:'rgba(200,230,0,0.06)',
+      borderTop:'2px solid rgba(200,230,0,0.35)',
+      borderLeft:'3px solid rgba(200,230,0,0.55)',
+      marginLeft:16,
+      borderRadius:'0 0 0 4px',
+    }}>
+      <div style={{
+        padding:'9px 14px 3px',
+        display:'flex', justifyContent:'space-between', alignItems:'center',
+      }}>
+        <span style={{ fontSize:10, fontWeight:800, color:'#5a7200', textTransform:'uppercase', letterSpacing:'0.08em' }}>
+          {lang === 'en' ? '⚡ Earn more' : '⚡ Verdien meer'}
+        </span>
         {available > 0 && (
-          <span style={{ fontSize:10, fontWeight:700, color:'var(--green-700)',
-            background:'rgba(120,220,0,0.12)', borderRadius:8, padding:'2px 7px' }}>
+          <span style={{ fontSize:10, fontWeight:700, color:'#5a7200',
+            background:'rgba(200,230,0,0.25)', borderRadius:8, padding:'2px 7px' }}>
             {available} {lang === 'en' ? 'available' : 'beschikbaar'}
           </span>
         )}

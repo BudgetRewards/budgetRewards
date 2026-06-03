@@ -98,8 +98,10 @@ export const baseInitialState: RRState = {
       { name: 'Gasverbruik onder gemiddelde', nameEn: 'Gas usage below average', seeds: 50, status: 'available' },
     ]},
     { cat: 'Internet bonussen', catEn: 'Internet benefits', parentProduct: 'Internet', items: [
-      { name: 'Papierloze factuur',  nameEn: 'Paperless billing',   seeds: 15, status: 'available' },
-      { name: 'Maand zonder storing', nameEn: 'Month without outage', seeds: 20, status: 'available' },
+      { name: 'Internet 50 Mbps',    nameEn: 'Internet 50 Mbps',    seeds: 15, status: 'available' },
+      { name: 'Internet 200 Mbps',   nameEn: 'Internet 200 Mbps',   seeds: 30, status: 'available' },
+      { name: 'Internet 500 Mbps',   nameEn: 'Internet 500 Mbps',   seeds: 50, status: 'available' },
+      { name: 'Gigabit internet (1 Gbps)', nameEn: 'Gigabit internet (1 Gbps)', seeds: 80, status: 'available' },
     ]},
     { cat: 'TV bonussen', catEn: 'TV benefits', parentProduct: 'TV', items: [
       { name: 'Streaming pakket actief',  nameEn: 'Streaming package active',   seeds: 30, status: 'available' },
