@@ -13,7 +13,7 @@ const freshState: RRState = {
   remoteReadEnabled: true,
 };
 
-function apply(state: RRState, payload: RRAction['payload']): RRState {
+function apply(state: RRState, payload: Extract<RRAction, { type: 'APPLY_TRIGGER' }>['payload']): RRState {
   return reducer(state, { type: 'APPLY_TRIGGER', payload });
 }
 
@@ -108,5 +108,36 @@ describe('APPLY_TRIGGER', () => {
       .find(c => c.cat === 'Energiegedrag')!
       .items.find(i => i.name === 'Remote uitlezing uitgezet');
     expect(penaltyItem?.status).toBe('penalty');
+  });
+});
+
+describe('APPLY_ONBOARDING', () => {
+  test('sets balance and ledger from onboarding rewards', () => {
+    const next = reducer(freshState, {
+      type: 'APPLY_ONBOARDING',
+      profile: { solarPanels: true, homeBattery: false, householdSize: 1, customerYears: 0, products: [] },
+    });
+    expect(next.balance).toBe(650);
+    expect(next.ledger).toHaveLength(2);
+    expect(next.currentTier).toBe('seed');
+  });
+
+  test('recomputes tier when onboarding total crosses 2500', () => {
+    const next = reducer(freshState, {
+      type: 'APPLY_ONBOARDING',
+      profile: { solarPanels: true, homeBattery: true, householdSize: 6, customerYears: 20, products: ['a', 'b', 'c'] },
+    });
+    expect(next.balance).toBe(4050);
+    expect(next.currentTier).toBe('tree');
+    expect(next.multiplier).toBe(1.5);
+  });
+
+  test('clamps onboarding total to cap (10000)', () => {
+    const lowCap = { ...freshState, cap: 1000 };
+    const next = reducer(lowCap, {
+      type: 'APPLY_ONBOARDING',
+      profile: { solarPanels: true, homeBattery: true, householdSize: 6, customerYears: 20, products: ['a', 'b', 'c'] },
+    });
+    expect(next.balance).toBe(1000);
   });
 });
