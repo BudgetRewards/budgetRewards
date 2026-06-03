@@ -177,12 +177,14 @@ const T = {
   },
 }
 
-const LangContext = React.createContext({ lang: 'nl', set: () => {} })
+const LangContext = React.createContext({ lang: 'nl', set: () => {}, userName: '', setUserName: () => {} })
 
 export function LanguageProvider({ children }) {
   const [lang, setLang] = React.useState(() => localStorage.getItem('rr-lang') || 'nl')
+  const [userName, setUserNameState] = React.useState(() => localStorage.getItem('rr-name') || '')
   const set = l => { setLang(l); localStorage.setItem('rr-lang', l) }
-  return <LangContext.Provider value={{ lang, set }}>{children}</LangContext.Provider>
+  const setUserName = n => { setUserNameState(n); localStorage.setItem('rr-name', n) }
+  return <LangContext.Provider value={{ lang, set, userName, setUserName }}>{children}</LangContext.Provider>
 }
 
 export function useLang() {
