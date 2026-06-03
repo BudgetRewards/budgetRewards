@@ -1,7 +1,7 @@
 import type { RRState, Dispatch } from '../types';
 
 function isAlreadyEarned(state: RRState, isoDate: string): boolean {
-  const [year, month, day] = isoDate.split('-').map(Number);
+  const [, month, day] = isoDate.split('-').map(Number);
   const m = month - 1;
   const d = day;
   const monthData = state.harvest.monthsData.find(mo => mo.m === m);
