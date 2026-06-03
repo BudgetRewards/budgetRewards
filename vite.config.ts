@@ -23,6 +23,13 @@ export default defineConfig({
       },
     },
   ],
+  server: {
+    watch: {
+      // Visual Studio locks files under .vs/ (e.g. *.vsidx), which makes
+      // chokidar throw EBUSY. Exclude it and other generated dirs.
+      ignored: ['**/.vs/**', '**/node_modules/**', '**/dist/**'],
+    },
+  },
   build: {
     rollupOptions: {
       input: {
