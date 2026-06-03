@@ -38,6 +38,8 @@ export type CatalogueCategory = {
   cat: string;
   catEn?: string;
   items: CatalogueItem[];
+  /** When set, this category is a product bonus sub-section gated on owning the named Multi-product item. */
+  parentProduct?: string;
 };
 
 export type HarvestCell = {

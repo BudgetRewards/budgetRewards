@@ -9,6 +9,9 @@ import {
   claimedBalance,
   buildLedgerFromCatalogue,
   hasElectricity,
+  unlockProductBonuses,
+  restoreHarvestIfElectricity,
+  MULTI_PRODUCT_ITEM_NAMES,
 } from './catalogueDerive';
 
 const TIER_MULTIPLIERS: Record<TierKey, number> = {
@@ -233,7 +236,17 @@ export function reducer(state: RRState, action: RRAction): RRState {
     : applyEarning(state, { name, nameEn, cat, base, kind }).patch;
 
   let newCatalogue = state.catalogue;
-  if (catalogueKey) newCatalogue = applyCatalogueKey(newCatalogue, catalogueKey);
+  if (catalogueKey) {
+    newCatalogue = applyCatalogueKey(newCatalogue, catalogueKey);
+    // Activating a Multi-product item unlocks its bonus sub-category.
+    if (MULTI_PRODUCT_ITEM_NAMES.has(catalogueKey)) {
+      newCatalogue = unlockProductBonuses(newCatalogue, catalogueKey);
+      // Gaining electricity also restores Harvest Hours that were missed due to the harvest gate.
+      if (catalogueKey === 'Stroom') {
+        newCatalogue = restoreHarvestIfElectricity(newCatalogue);
+      }
+    }
+  }
   if (setRemoteRead !== undefined) newCatalogue = applyRemoteReadCatalogue(newCatalogue, setRemoteRead);
 
   const newHarvest = harvestDate

@@ -70,5 +70,20 @@ export function useTrigger() {
         },
       });
     },
+    /** Activate a missed Multi-product item (add a product the customer doesn't currently own). */
+    activateProduct:     (item: CatalogueItem, cat: string)  => {
+      if (item.status !== 'missed') return;
+      dispatch({
+        type: 'APPLY_TRIGGER',
+        payload: {
+          name: item.name,
+          nameEn: item.nameEn,
+          cat,
+          base: item.seeds,
+          kind: 'pos',
+          catalogueKey: item.name,
+        },
+      });
+    },
   };
 }

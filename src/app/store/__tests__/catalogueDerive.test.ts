@@ -27,11 +27,15 @@ describe('applyProfileToCatalogue', () => {
     expect(find(cat, 'Multi-product', 'Internet')?.status).toBe('missed');
   });
 
-  test('solar panels follow the profile flag', () => {
-    const withSolar = applyProfileToCatalogue(baseInitialState.catalogue, { ...EMPTY_PROFILE, solarPanels: true });
-    const without = applyProfileToCatalogue(baseInitialState.catalogue, EMPTY_PROFILE);
-    expect(find(withSolar, 'Multi-product', 'Zonnepanelen geregistreerd')?.status).toBe('claimed');
-    expect(find(without, 'Multi-product', 'Zonnepanelen geregistreerd')?.status).toBe('missed');
+  test('solar panels follow the profile flag and live under Stroom bonussen', () => {
+    // Solar panels is a bonus sub-item under Stroom — it requires electricity to be unlocked.
+    const withBoth = applyProfileToCatalogue(baseInitialState.catalogue, { ...EMPTY_PROFILE, solarPanels: true, products: ['electricity'] });
+    const elecOnly = applyProfileToCatalogue(baseInitialState.catalogue, { ...EMPTY_PROFILE, products: ['electricity'] });
+    const noElec   = applyProfileToCatalogue(baseInitialState.catalogue, { ...EMPTY_PROFILE, solarPanels: true });
+    expect(find(withBoth, 'Stroom bonussen', 'Zonnepanelen geregistreerd')?.status).toBe('claimed');
+    expect(find(elecOnly, 'Stroom bonussen', 'Zonnepanelen geregistreerd')?.status).toBe('available');
+    // Without electricity the bonus sub-category is fully locked.
+    expect(find(noElec, 'Stroom bonussen', 'Zonnepanelen geregistreerd')?.status).toBe('locked');
   });
 });
 

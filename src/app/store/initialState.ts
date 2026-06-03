@@ -79,13 +79,34 @@ export const baseInitialState: RRState = {
       { name: 'Remote uitlezing uitgezet',    nameEn: 'Remote reading disabled',    seeds: 60, status: 'available', need: 'Gemiste oogst: zet remote uitlezing aan om deze 60 zaden niet te missen', needEn: 'Missed harvest: enable remote reading so you don’t miss these 60 seeds' },
     ]},
     { cat: 'Multi-product', catEn: 'Multi-product', items: [
-      { name: 'Stroom',                      nameEn: 'Electricity',              seeds: 500, status: 'available', need: 'Gemiste oogst: voeg Stroom toe om deze 500 zaden te verdienen', needEn: 'Missed harvest: add Electricity to earn these 500 seeds' },
-      { name: 'Gas',                         nameEn: 'Gas',                      seeds: 400, status: 'available', need: 'Gemiste oogst: voeg Gas toe om deze 400 zaden te verdienen', needEn: 'Missed harvest: add Gas to earn these 400 seeds' },
-      { name: 'Internet',                    nameEn: 'Internet',                 seeds: 500, status: 'available', need: 'Gemiste oogst: voeg Internet toe om deze 500 zaden te verdienen', needEn: 'Missed harvest: add Internet to earn these 500 seeds' },
-      { name: 'TV',                          nameEn: 'TV',                       seeds: 300, status: 'available', need: 'Gemiste oogst: voeg TV toe om deze 300 zaden te verdienen', needEn: 'Missed harvest: add TV to earn these 300 seeds' },
-      { name: 'Mobiel',                      nameEn: 'Mobile',                   seeds: 300, status: 'available', need: 'Gemiste oogst: voeg Mobiel toe om deze 300 zaden te verdienen', needEn: 'Missed harvest: add Mobile to earn these 300 seeds' },
-      { name: 'Vaste lijn',                  nameEn: 'Landline',                 seeds: 200, status: 'available', need: 'Gemiste oogst: voeg Vaste lijn toe om deze 200 zaden te verdienen', needEn: 'Missed harvest: add Landline to earn these 200 seeds' },
-      { name: 'Zonnepanelen geregistreerd',  nameEn: 'Solar panels registered',  seeds: 600, status: 'available', need: 'Gemiste oogst: registreer zonnepanelen om deze 600 zaden te verdienen', needEn: 'Missed harvest: register solar panels to earn these 600 seeds' },
+      { name: 'Stroom',     nameEn: 'Electricity', seeds: 500, status: 'available' },
+      { name: 'Gas',        nameEn: 'Gas',         seeds: 400, status: 'available' },
+      { name: 'Internet',   nameEn: 'Internet',    seeds: 500, status: 'available' },
+      { name: 'TV',         nameEn: 'TV',          seeds: 300, status: 'available' },
+      { name: 'Mobiel',     nameEn: 'Mobile',      seeds: 300, status: 'available' },
+      { name: 'Vaste lijn', nameEn: 'Landline',    seeds: 200, status: 'available' },
+    ]},
+    { cat: 'Stroom bonussen', catEn: 'Electricity benefits', parentProduct: 'Stroom', items: [
+      { name: 'Remote uitlezing ingeschakeld',     nameEn: 'Remote reading enabled',           seeds: 10, status: 'available' },
+      { name: 'Groene energie propositie actief',  nameEn: 'Green energy proposition active',  seeds: 10, status: 'available' },
+      { name: 'Zonnepanelen geregistreerd',        nameEn: 'Solar panels registered',          seeds: 30, status: 'available' },
+      { name: 'Slimme meter geïnstalleerd',        nameEn: 'Smart meter installed',            seeds: 40, status: 'available' },
+      { name: 'Energietips gevolgd',               nameEn: 'Energy tips followed',             seeds: 20, status: 'available' },
+      { name: 'Gebruik onder stroom gemiddelde',   nameEn: 'Usage below electricity average',  seeds: 30, status: 'available' },
+    ]},
+    { cat: 'Gas bonussen', catEn: 'Gas benefits', parentProduct: 'Gas', items: [
+      { name: 'Gasverbruik onder gemiddelde', nameEn: 'Gas usage below average', seeds: 50, status: 'available' },
+    ]},
+    { cat: 'Internet bonussen', catEn: 'Internet benefits', parentProduct: 'Internet', items: [
+      { name: 'Papierloze factuur',  nameEn: 'Paperless billing',   seeds: 15, status: 'available' },
+      { name: 'Maand zonder storing', nameEn: 'Month without outage', seeds: 20, status: 'available' },
+    ]},
+    { cat: 'TV bonussen', catEn: 'TV benefits', parentProduct: 'TV', items: [
+      { name: 'Streaming pakket actief',  nameEn: 'Streaming package active',   seeds: 30, status: 'available' },
+      { name: 'Premium kanalen pakket',   nameEn: 'Premium channels package',   seeds: 50, status: 'available' },
+    ]},
+    { cat: 'Mobiel bonussen', catEn: 'Mobile benefits', parentProduct: 'Mobiel', items: [
+      { name: 'Familielid aangemeld', nameEn: 'Family member signed up', seeds: 50, status: 'available' },
     ]},
   ],
 

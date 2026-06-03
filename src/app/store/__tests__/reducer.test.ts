@@ -159,9 +159,10 @@ describe('APPLY_ONBOARDING', () => {
       type: 'APPLY_ONBOARDING',
       profile: { solarPanels: true, homeBattery: true, householdSize: 4, customerYears: 5, products: ['electricity', 'gas', 'internet', 'tv'] },
     });
-    // Welcome 1000 + Stroom 500 + Gas 400 + Internet 500 + TV 300 + Solar 600 = 3300
-    // + battery 400 + household 200 + years 500 = 4400
-    expect(next.balance).toBe(4400);
+    // Welcome 1000 + Stroom 500 + Gas 400 + Internet 500 + TV 300
+    // + Zonnepanelen (Stroom bonus sub-item, 30) = 2730
+    // + battery 400 + household 4×50=200 + years 5×100=500 = 3830
+    expect(next.balance).toBe(3830);
     expect(next.currentTier).toBe('tree');
     expect(next.multiplier).toBe(1.5);
   });

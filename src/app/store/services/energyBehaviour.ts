@@ -7,8 +7,9 @@ export function registerSolarPanels(state: RRState, dispatch: Dispatch): void {
     type: 'APPLY_TRIGGER',
     payload: {
       name: 'Zonnepanelen geregistreerd',
-      cat: 'Energiegedrag',
-      base: 600,
+      nameEn: 'Solar panels registered',
+      cat: 'Stroom bonussen',
+      base: 30,
       kind: 'pos',
       catalogueKey: 'Zonnepanelen geregistreerd',
     },

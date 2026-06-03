@@ -10,7 +10,6 @@ const STATUS_LABELS = {
 }
 
 function StatusPill({ status }){
-  const t = useT();
   const { lang } = useLang();
   const L = STATUS_LABELS[lang];
   if(status==='claimed')  return <span className="rr-pill claimed"><Icon name="check" size={12} stroke="var(--green-700)" sw={2.6}/>{L.claimed}</span>;
@@ -22,7 +21,6 @@ function StatusPill({ status }){
 function TriggerRow({ item, catName, isLast, onClaim }){
   const fmt = useFmt();
   const { lang } = useLang();
-  const t = useT();
   const [open, setOpen] = React.useState(false);
   const missed = item.status === 'missed';
   const canClaim = item.status === 'available';
@@ -57,12 +55,123 @@ function TriggerRow({ item, catName, isLast, onClaim }){
       {displayNeed && open && (
         <div className="rr-fadein" style={{ margin:'0 16px 13px 16px', background:'rgba(26,26,46,0.04)',
           borderRadius:12, padding:'10px 13px', display:'flex', gap:9, alignItems:'flex-start' }}>
-          <Icon name={missed?'bolt':'lock'} size={15}
-            stroke="var(--navy-60)" sw={2}/>
+          <Icon name={missed?'bolt':'lock'} size={15} stroke="var(--navy-60)" sw={2}/>
           <span className="rr-sub" style={{ fontSize:12, flex:1 }}>{displayNeed}</span>
         </div>
       )}
       {!isLast && <div className="rr-divider" style={{ marginLeft:16 }}/>}
+    </div>
+  );
+}
+
+/* ── Product bonus sub-section (sub-items under a claimed product) ── */
+function ProductBonusSection({ items, catName, onClaim }) {
+  const { lang } = useLang();
+  const available = items.filter(i => i.status === 'available').length;
+  return (
+    <div style={{ background:'rgba(26,26,46,0.03)', borderTop:'1px solid rgba(26,26,46,0.07)' }}>
+      <div style={{ padding:'8px 16px 2px', fontSize:10, fontWeight:800, color:'var(--navy-60)',
+        textTransform:'uppercase', letterSpacing:'0.07em', display:'flex', justifyContent:'space-between',
+        alignItems:'center' }}>
+        <span>{lang === 'en' ? 'Earn more' : 'Verdien meer'}</span>
+        {available > 0 && (
+          <span style={{ fontSize:10, fontWeight:700, color:'var(--green-700)',
+            background:'rgba(120,220,0,0.12)', borderRadius:8, padding:'2px 7px' }}>
+            {available} {lang === 'en' ? 'available' : 'beschikbaar'}
+          </span>
+        )}
+      </div>
+      {items.map((item, i) => (
+        <TriggerRow key={item.name} item={item} catName={catName}
+          isLast={i === items.length - 1}
+          onClaim={() => onClaim(item, catName)} />
+      ))}
+    </div>
+  );
+}
+
+/* ── Single product row in Multi-product section ── */
+function ProductRow({ product, bonusCat, lang, fmt, onActivate, onClaim, isLast }) {
+  const isClaimed = product.status === 'claimed';
+  const isMissed  = product.status === 'missed';
+  const displayName = lang === 'en' ? (product.nameEn ?? product.name) : product.name;
+  const bonusAvailable = isClaimed && bonusCat
+    ? bonusCat.items.filter(i => i.status === 'available').length
+    : 0;
+
+  return (
+    <div>
+      <div
+        onClick={() => isMissed && onActivate(product)}
+        style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px',
+          cursor: isMissed ? 'pointer' : 'default',
+          opacity: product.status === 'locked' ? 0.62 : 1 }}>
+        <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', gap:7 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+            <span style={{ fontWeight:700, fontSize:14, lineHeight:1.25 }}>{displayName}</span>
+            {isClaimed && bonusCat && bonusAvailable > 0 && (
+              <span style={{ fontSize:11, color:'var(--green-700)', fontWeight:600,
+                background:'rgba(120,220,0,0.12)', borderRadius:8, padding:'1px 7px' }}>
+                +{bonusAvailable} {lang === 'en' ? 'opportunities' : 'kansen'}
+              </span>
+            )}
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <StatusPill status={product.status}/>
+            {isMissed && (
+              <span style={{ fontSize:11, fontWeight:700, color:'var(--green-700)' }}>
+                {lang === 'en' ? 'Activate →' : 'Activeer →'}
+              </span>
+            )}
+          </div>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:5, flexShrink:0 }}>
+          <SeedMark size={18} tone={isMissed ? 'lime' : 'green'}/>
+          <span style={{ fontWeight:800, fontSize:15,
+            color: isMissed ? 'var(--navy-60)' : 'var(--navy)',
+            fontVariantNumeric:'tabular-nums' }}>
+            {isMissed ? '' : '+'}{fmt(product.seeds)}
+          </span>
+        </div>
+      </div>
+
+      {/* Bonus sub-items — only when product is claimed */}
+      {isClaimed && bonusCat && bonusCat.items.length > 0 && (
+        <ProductBonusSection
+          items={bonusCat.items}
+          catName={bonusCat.cat}
+          onClaim={onClaim}
+        />
+      )}
+
+      {!isLast && <div className="rr-divider" style={{ marginLeft:16 }}/>}
+    </div>
+  );
+}
+
+/* ── Multi-product section with expandable sub-sections ── */
+function MultiProductSection({ group, bonusCats, lang, fmt, trigger }) {
+  const catLabel = lang === 'en' ? (group.catEn ?? group.cat) : group.cat;
+  return (
+    <div style={{ marginBottom:18 }}>
+      <div className="rr-section-label">{catLabel}</div>
+      <div className="rr-card" style={{ overflow:'hidden' }}>
+        {group.items.map((product, i) => {
+          const bonusCat = bonusCats.find(c => c.parentProduct === product.name);
+          return (
+            <ProductRow
+              key={product.name}
+              product={product}
+              bonusCat={bonusCat}
+              lang={lang}
+              fmt={fmt}
+              isLast={i === group.items.length - 1}
+              onActivate={(p) => trigger.activateProduct(p, group.cat)}
+              onClaim={(item, catName) => trigger.claimItem(item, catName)}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -72,7 +181,15 @@ function Catalogue(){
   const trigger = useTrigger();
   const t = useT();
   const { lang } = useLang();
-  const total = R.catalogue.reduce((s,g)=>s+g.items.filter(i=>i.status==='available').length,0);
+  const fmt = useFmt();
+
+  // Split catalogue into regular, multi-product, and bonus sub-categories.
+  const bonusCats   = R.catalogue.filter(cat => cat.parentProduct);
+  const multiCat    = R.catalogue.find(cat => cat.cat === 'Multi-product');
+  const regularCats = R.catalogue.filter(cat => !cat.parentProduct && cat.cat !== 'Multi-product');
+
+  const total = R.catalogue.reduce((s,g)=>s+g.items.filter(i=>i.status==='available').length, 0);
+
   return (
     <div className="rr-page">
       <ScreenHeader eyebrow={t.catalogue.eyebrow} title={t.catalogue.title}/>
@@ -90,7 +207,7 @@ function Catalogue(){
       </div>
 
       <div className="rr-stagger" style={{ marginTop:18 }}>
-        {R.catalogue.map(group=>(
+        {regularCats.map(group=>(
           <div key={group.cat} style={{ marginBottom:18 }}>
             <div className="rr-section-label">{lang === 'en' ? (group.catEn ?? group.cat) : group.cat}</div>
             <div className="rr-card" style={{ overflow:'hidden' }}>
@@ -101,6 +218,16 @@ function Catalogue(){
             </div>
           </div>
         ))}
+
+        {multiCat && (
+          <MultiProductSection
+            group={multiCat}
+            bonusCats={bonusCats}
+            lang={lang}
+            fmt={fmt}
+            trigger={trigger}
+          />
+        )}
       </div>
     </div>
   );

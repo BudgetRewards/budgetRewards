@@ -14,12 +14,12 @@ const cleanState: RRState = {
 };
 
 describe('registerSolarPanels', () => {
-  test('dispatches 600 seeds when not yet claimed', () => {
+  test('dispatches 30 seeds under Stroom bonussen when not yet claimed', () => {
     const dispatch = vi.fn();
     registerSolarPanels(cleanState, dispatch);
     expect(dispatch).toHaveBeenCalledWith({
       type: 'APPLY_TRIGGER',
-      payload: expect.objectContaining({ base: 600, catalogueKey: 'Zonnepanelen geregistreerd' }),
+      payload: expect.objectContaining({ base: 30, cat: 'Stroom bonussen', catalogueKey: 'Zonnepanelen geregistreerd' }),
     });
   });
 
@@ -28,7 +28,7 @@ describe('registerSolarPanels', () => {
     const claimed = {
       ...cleanState,
       catalogue: cleanState.catalogue.map(cat =>
-        cat.cat === 'Multi-product'
+        cat.cat === 'Stroom bonussen'
           ? { ...cat, items: cat.items.map(i => i.name === 'Zonnepanelen geregistreerd' ? { ...i, status: 'claimed' as const } : i) }
           : cat
       ),

@@ -10,6 +10,9 @@ export const PRODUCT_ITEM_NAMES: Record<string, string> = {
   landline: 'Vaste lijn',
 };
 
+/** The set of Multi-product item names — used by the reducer to detect product activations. */
+export const MULTI_PRODUCT_ITEM_NAMES = new Set(Object.values(PRODUCT_ITEM_NAMES));
+
 const ITEM_TO_PRODUCT: Record<string, string> = Object.fromEntries(
   Object.entries(PRODUCT_ITEM_NAMES).map(([id, name]) => [name, id])
 );
@@ -37,7 +40,11 @@ export function hasElectricity(catalogue: CatalogueCategory[]): boolean {
  * Map an onboarding profile onto the catalogue:
  * - The Welcome bonus is always claimed (you have it by default).
  * - Each utility product is 'claimed' if owned, otherwise a missed harvest.
- * - Solar panels follow the profile's solarPanels answer.
+ * - Bonus sub-categories (parentProduct set) are unlocked only when the parent
+ *   product is owned; otherwise all their items become 'locked'.
+ * - Solar panels (now a Stroom bonus sub-item) follow the profile flag when
+ *   electricity is owned; they stay 'available' if electricity is owned but
+ *   solar isn't registered yet.
  * Harvest gating is applied separately by {@link applyHarvestGate}.
  */
 export function applyProfileToCatalogue(
@@ -45,18 +52,40 @@ export function applyProfileToCatalogue(
   profile: Profile,
 ): CatalogueCategory[] {
   const owned = new Set(profile.products);
-  return catalogue.map(cat => ({
-    ...cat,
-    items: cat.items.map(item => {
-      if (item.name === 'Welkomstbonus') return { ...item, status: 'claimed' as const };
-      const productId = ITEM_TO_PRODUCT[item.name];
-      if (productId) return { ...item, status: owned.has(productId) ? ('claimed' as const) : ('missed' as const) };
-      if (item.name === 'Zonnepanelen geregistreerd') {
-        return { ...item, status: profile.solarPanels ? ('claimed' as const) : ('missed' as const) };
+  // Build the set of owned product ITEM names (e.g. 'Stroom') for bonus-gate lookups.
+  const ownedProductItemNames = new Set(
+    profile.products.map(id => PRODUCT_ITEM_NAMES[id]).filter(Boolean)
+  );
+
+  return catalogue.map(cat => {
+    // Bonus sub-categories are gated on their parent product being owned.
+    if (cat.parentProduct) {
+      if (!ownedProductItemNames.has(cat.parentProduct)) {
+        return { ...cat, items: cat.items.map(item => ({ ...item, status: 'locked' as const })) };
       }
-      return item;
-    }),
-  }));
+      // Parent owned — apply item-level overrides (solar panels).
+      return {
+        ...cat,
+        items: cat.items.map(item => {
+          if (item.name === 'Zonnepanelen geregistreerd') {
+            return { ...item, status: profile.solarPanels ? ('claimed' as const) : ('available' as const) };
+          }
+          return item;
+        }),
+      };
+    }
+
+    // Regular categories.
+    return {
+      ...cat,
+      items: cat.items.map(item => {
+        if (item.name === 'Welkomstbonus') return { ...item, status: 'claimed' as const };
+        const productId = ITEM_TO_PRODUCT[item.name];
+        if (productId) return { ...item, status: owned.has(productId) ? ('claimed' as const) : ('missed' as const) };
+        return item;
+      }),
+    };
+  });
 }
 
 /**
@@ -123,6 +152,39 @@ export function buildLedgerFromCatalogue(catalogue: CatalogueCategory[], idOffse
       kind: (item.missed ? 'missed' : 'pos') as 'pos' | 'missed',
     }))
     .reverse();
+}
+
+/**
+ * When a Multi-product item is claimed mid-session, unlock its bonus sub-category
+ * by flipping all 'locked' items there to 'available'.
+ */
+export function unlockProductBonuses(catalogue: CatalogueCategory[], productName: string): CatalogueCategory[] {
+  return catalogue.map(cat => {
+    if (cat.parentProduct !== productName) return cat;
+    return {
+      ...cat,
+      items: cat.items.map(item =>
+        item.status === 'locked' ? { ...item, status: 'available' as const } : item
+      ),
+    };
+  });
+}
+
+/**
+ * After electricity is gained, flip any 'missed' Harvest Hours items back to
+ * 'available'. This reverses the harvest gate that was applied when electricity
+ * was absent — locked items stay locked (they need a different unlock path).
+ */
+export function restoreHarvestIfElectricity(catalogue: CatalogueCategory[]): CatalogueCategory[] {
+  if (!hasElectricity(catalogue)) return catalogue;
+  return catalogue.map(cat =>
+    cat.cat !== HARVEST_CAT ? cat : {
+      ...cat,
+      items: cat.items.map(item =>
+        item.status === 'missed' ? { ...item, status: 'available' as const } : item
+      ),
+    }
+  );
 }
 
 /** Derive tier, multiplier, and next-tier target from a balance. */
