@@ -186,9 +186,9 @@ export function reducer(state: RRState, action: RRAction): RRState {
   }
   if (action.type !== 'APPLY_TRIGGER') return state;
 
-  const { name, cat, base, kind, catalogueKey, harvestDate, setRemoteRead } = action.payload;
+  const { name, nameEn, cat, base, kind, catalogueKey, harvestDate, setRemoteRead } = action.payload;
 
-  const { patch } = applyEarning(state, { name, cat, base, kind });
+  const { patch } = applyEarning(state, { name, nameEn, cat, base, kind });
 
   let newCatalogue = state.catalogue;
   if (catalogueKey) newCatalogue = applyCatalogueKey(newCatalogue, catalogueKey);

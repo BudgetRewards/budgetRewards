@@ -1,5 +1,5 @@
 import React from 'react'
-import { useRR } from '../store/RRContext.tsx'
+import { useRR, useTrigger } from '../store/RRContext.tsx'
 import { Icon, SeedMark, ScreenHeader } from '../ui.jsx'
 import { useT, useFmt, useLang } from '../i18n.jsx'
 
@@ -14,24 +14,29 @@ function StatusPill({ status }){
   const { lang } = useLang();
   const L = STATUS_LABELS[lang];
   if(status==='claimed')  return <span className="rr-pill claimed"><Icon name="check" size={12} stroke="var(--green-700)" sw={2.6}/>{L.claimed}</span>;
-  if(status==='available')return <span className="rr-pill available">{L.available}</span>;
+  if(status==='available')return <span className="rr-pill available" style={{ cursor:'pointer' }}>{L.available} →</span>;
   if(status==='penalty')  return <span className="rr-pill" style={{ background:'rgba(226,70,63,0.12)', color:'var(--red)' }}>{L.penalty}</span>;
   return <span className="rr-pill locked"><Icon name="lock" size={11} stroke="var(--grey-2)" sw={2.2}/>{L.locked}</span>;
 }
 
-function TriggerRow({ item, isLast }){
+function TriggerRow({ item, catName, isLast, onClaim }){
   const fmt = useFmt();
   const { lang } = useLang();
   const t = useT();
   const [open, setOpen] = React.useState(false);
   const neg = item.seeds < 0;
+  const canClaim = item.status === 'available';
   const displayName = lang === 'en' ? (item.nameEn ?? item.name) : item.name;
   const displayNeed = lang === 'en' ? (item.needEn ?? item.need) : item.need;
+  const handleClick = () => {
+    if (canClaim) { onClaim?.(); }
+    else if (item.need) { setOpen(o => !o); }
+  };
   return (
     <div>
-      <div onClick={()=> item.need && setOpen(o=>!o)}
+      <div onClick={handleClick}
         style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px',
-          cursor: item.need?'pointer':'default', opacity: item.status==='locked'?0.62:1 }}>
+          cursor: (canClaim || item.need) ? 'pointer' : 'default', opacity: item.status==='locked'?0.62:1 }}>
         <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', gap:7 }}>
           <div style={{ display:'flex', alignItems:'flex-start', gap:7 }}>
             <span style={{ fontWeight:700, fontSize:14, lineHeight:1.25 }}>{displayName}</span>
@@ -64,6 +69,7 @@ function TriggerRow({ item, isLast }){
 
 function Catalogue(){
   const R = useRR();
+  const trigger = useTrigger();
   const t = useT();
   const { lang } = useLang();
   const total = R.catalogue.reduce((s,g)=>s+g.items.filter(i=>i.status==='available').length,0);
@@ -89,7 +95,8 @@ function Catalogue(){
             <div className="rr-section-label">{lang === 'en' ? (group.catEn ?? group.cat) : group.cat}</div>
             <div className="rr-card" style={{ overflow:'hidden' }}>
               {group.items.map((item,i)=>(
-                <TriggerRow key={item.name} item={item} isLast={i===group.items.length-1}/>
+                <TriggerRow key={item.name} item={item} catName={group.cat} isLast={i===group.items.length-1}
+                  onClaim={() => trigger.claimItem(item, group.cat)}/>
               ))}
             </div>
           </div>
