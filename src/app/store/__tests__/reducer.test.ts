@@ -104,5 +104,9 @@ describe('APPLY_TRIGGER', () => {
       setRemoteRead: false,
     });
     expect(next.remoteReadEnabled).toBe(false);
+    const penaltyItem = next.catalogue
+      .find(c => c.cat === 'Energiegedrag')!
+      .items.find(i => i.name === 'Remote uitlezing uitgezet');
+    expect(penaltyItem?.status).toBe('penalty');
   });
 });
