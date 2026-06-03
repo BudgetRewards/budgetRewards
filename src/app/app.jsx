@@ -140,6 +140,36 @@ function RewardToast({ onView }){
   );
 }
 
+const pad2 = n => String(n).padStart(2, '0');
+
+/* Once the customer is onboarded, simulate usage for every weekend day on the
+   harvest calendar up to today (using their profile's home-battery setting).
+   This populates the calendar and awards the weekends they earned. */
+function AutoSimulateWeekends(){
+  const { userName, profile } = useLang();
+  const state = useRR();
+  const { simulateUsage } = useTrigger();
+  const doneRef = React.useRef(false);
+
+  React.useEffect(()=>{
+    if(!userName || doneRef.current) return;
+    doneRef.current = true;
+    const hs = state.harvestSeason;
+    const today = `${hs.year}-${pad2(hs.todayMonth + 1)}-${pad2(hs.todayDate)}`;
+    state.harvest.monthsData.forEach(mo=>{
+      mo.cells.forEach(c=>{
+        if(!c || !c.weekend) return;
+        const iso = `${hs.year}-${pad2(mo.m + 1)}-${pad2(c.d)}`;
+        if(iso <= today && !state.usages[iso]){
+          simulateUsage({ date: iso, hasHomeBattery: profile.homeBattery });
+        }
+      });
+    });
+  }, [userName]);
+
+  return null;
+}
+
 function App(){
   const [tab, setTab] = React.useState(()=> localStorage.getItem('rr-tab') || 'home');
   const scrollRef = React.useRef(null);
@@ -166,6 +196,7 @@ function App(){
   return (
     <div className="rr rr-app">
       {!userName && <OnboardingModal/>}
+      <AutoSimulateWeekends/>
       <FullscreenHint/>
       <RewardToast onView={()=>go('history')}/>
       <div className="rr-scroll" ref={scrollRef}>
