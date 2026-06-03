@@ -1,0 +1,46 @@
+import { createContext, useContext, useReducer, type ReactNode } from 'react';
+import type { RRState, Dispatch } from './types';
+import { initialState } from './initialState';
+import { reducer } from './reducer';
+import { signupBonus, appActivated, renewContract } from './services/lifecycle';
+import { optInGratisStroom, optInRenewalComms, optInAnalytics, toggleRemoteRead } from './services/appData';
+import { harvestHoursEarned } from './services/harvestHours';
+import { addProduct } from './services/multiProduct';
+import { registerSolarPanels } from './services/energyBehaviour';
+
+type RRContextType = {
+  state: RRState;
+  dispatch: Dispatch;
+};
+
+const RRContext = createContext<RRContextType | null>(null);
+
+export function RRProvider({ children }: { children: ReactNode }) {
+  const [state, dispatch] = useReducer(reducer, initialState);
+  return <RRContext.Provider value={{ state, dispatch }}>{children}</RRContext.Provider>;
+}
+
+export function useRR(): RRState {
+  const ctx = useContext(RRContext);
+  if (!ctx) throw new Error('useRR must be used inside RRProvider');
+  return ctx.state;
+}
+
+export function useTrigger() {
+  const ctx = useContext(RRContext);
+  if (!ctx) throw new Error('useTrigger must be used inside RRProvider');
+  const { state, dispatch } = ctx;
+
+  return {
+    signupBonus:         ()                               => signupBonus(state, dispatch),
+    appActivated:        ()                               => appActivated(state, dispatch),
+    renewContract:       ()                               => renewContract(state, dispatch),
+    optInGratisStroom:   ()                               => optInGratisStroom(state, dispatch),
+    optInRenewalComms:   ()                               => optInRenewalComms(state, dispatch),
+    optInAnalytics:      ()                               => optInAnalytics(state, dispatch),
+    toggleRemoteRead:    (enabled: boolean)               => toggleRemoteRead(enabled, state, dispatch),
+    harvestHoursEarned:  (date: string, optedIn: boolean) => harvestHoursEarned(date, optedIn, state, dispatch),
+    addProduct:          (productName: string)             => addProduct(productName, state, dispatch),
+    registerSolarPanels: ()                               => registerSolarPanels(state, dispatch),
+  };
+}
