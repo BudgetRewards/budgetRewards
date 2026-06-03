@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react';
-import type { RRState, Dispatch, CatalogueItem } from './types';
+import type { RRState, Dispatch, CatalogueItem, Profile } from './types';
 import { initialState } from './initialState';
 import { reducer } from './reducer';
 import { signupBonus, appActivated, renewContract } from './services/lifecycle';
@@ -51,6 +51,7 @@ export function useTrigger() {
     harvestHoursEarned:  (date: string, optedIn: boolean) => harvestHoursEarned(date, optedIn, state, dispatch),
     addProduct:          (productName: string)             => addProduct(productName, state, dispatch),
     registerSolarPanels: ()                               => registerSolarPanels(state, dispatch),
+    applyOnboarding:     (profile: Profile)               => dispatch({ type: 'APPLY_ONBOARDING', profile }),
     simulateUsage:       (params: SimulateUsageParams = {})  => simulateUsage(params, dispatch),
     selectUsageDate:     (date: string)                      => selectUsageDate(date, dispatch),
     markHistorySeen:     ()                                  => dispatch({ type: 'MARK_HISTORY_SEEN' }),
