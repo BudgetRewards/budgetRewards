@@ -1,6 +1,6 @@
 import React from 'react'
 import { Icon } from '../ui.jsx'
-import { useT, useLang } from '../i18n.jsx'
+import { useT, useLang, useProfile } from '../i18n.jsx'
 import { useRR, useTrigger } from '../store/RRContext.tsx'
 
 const pad = n => String(n).padStart(2, '0');
@@ -73,22 +73,22 @@ function Usage() {
   // simulations rather than generating new ones.
   const state = useRR();
   const { simulateUsage, selectUsageDate } = useTrigger();
+  // Whether the customer has a home battery comes from their onboarding profile.
+  const { homeBattery } = useProfile();
   const date = state.currentUsageDate;
   const record = state.usages[date];
   const usage = record.hours;
-  const hasBattery = record.hasHomeBattery;
 
   // App "today" — the latest day the customer may simulate.
   const hs = state.harvestSeason;
   const today = `${hs.year}-${pad(hs.todayMonth + 1)}-${pad(hs.todayDate)}`;
 
-  const regenerate = (battery = hasBattery) => simulateUsage({ date, hasHomeBattery: battery });
-  const toggleBattery = () => regenerate(!hasBattery);
+  const regenerate = () => simulateUsage({ date, hasHomeBattery: homeBattery });
   const onDateChange = e => {
     const next = e.target.value;
     if (!next || next > today) return; // never simulate beyond today
     if (state.usages[next]) selectUsageDate(next);                       // already simulated → reuse
-    else simulateUsage({ date: next, hasHomeBattery: hasBattery });      // new day → simulate
+    else simulateUsage({ date: next, hasHomeBattery: homeBattery });     // new day → simulate
   };
 
   const fmtDate = iso =>
@@ -133,22 +133,6 @@ function Usage() {
             fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, color: 'var(--navy)', background: '#fff' }}/>
       </div>
 
-      {/* Home battery toggle */}
-      <button onClick={toggleBattery} className="rr-card" style={{ marginTop: 14, width: '100%', border: 'none',
-        cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', padding: '13px 16px',
-        display: 'flex', alignItems: 'center', gap: 13 }}>
-        <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: 'inline-flex',
-          alignItems: 'center', justifyContent: 'center',
-          background: hasBattery ? 'rgba(0,166,81,0.12)' : 'rgba(26,26,46,0.05)' }}>
-          <Icon name="bolt" size={20} stroke={hasBattery ? 'var(--green)' : 'var(--navy-60)'}/>
-        </span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 800, fontSize: 13.5 }}>{t.usage.homeBattery}</div>
-          <div className="rr-sub" style={{ fontSize: 12 }}>{t.usage.homeBatteryDesc}</div>
-        </div>
-        <Toggle on={hasBattery}/>
-      </button>
-
       {/* Chart */}
       <div className="rr-card" style={{ padding: '16px 14px 14px', marginTop: 14 }}>
         <div style={{ display: 'flex', gap: 16, marginBottom: 14 }}>
@@ -181,18 +165,6 @@ function Usage() {
         {t.usage.hint}
       </div>
     </div>
-  );
-}
-
-/* iOS-style on/off switch (visual only — state is owned by the parent). */
-function Toggle({ on }) {
-  return (
-    <span style={{ width: 42, height: 25, borderRadius: 99, flexShrink: 0, position: 'relative',
-      transition: 'background .2s', background: on ? 'var(--green)' : 'rgba(26,26,46,0.18)' }}>
-      <span style={{ position: 'absolute', top: 2.5, left: on ? 19.5 : 2.5, width: 20, height: 20,
-        borderRadius: '50%', background: '#fff', transition: 'left .2s',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }}/>
-    </span>
   );
 }
 
