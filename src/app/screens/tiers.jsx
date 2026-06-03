@@ -1,3 +1,7 @@
+import React from 'react'
+import RR from '../data.jsx'
+import { Icon, fmt, ScreenHeader, Progress } from '../ui.jsx'
+
 /* ───────────────── Screen 4 · Tier overview ───────────────── */
 function TierCard({ tier, current, achieved, isNext }){
   const range = tier.max==null ? `${fmt(tier.min)}+ seeds` : `${fmt(tier.min)} – ${fmt(tier.max)} seeds`;
@@ -51,7 +55,7 @@ function TierCard({ tier, current, achieved, isNext }){
 }
 
 function Tiers(){
-  const R = window.RR;
+  const R = RR;
   const order = ['seed','tree','forest'];
   const curIdx = order.indexOf(R.currentTier);
   const pct = (R.balance / R.nextTier.threshold) * 100;
@@ -102,4 +106,4 @@ function Tiers(){
   );
 }
 
-Object.assign(window, { Tiers, TierCard });
+export { Tiers, TierCard };

@@ -1,3 +1,5 @@
+import React from 'react'
+
 // @ds-adherence-ignore -- omelette starter scaffold (raw elements/hex/px by design)
 
 /* BEGIN USAGE */
@@ -344,6 +346,4 @@ function IOSKeyboard({ dark = false }) {
   );
 }
 
-Object.assign(window, {
-  IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard,
-});
+export { IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard };

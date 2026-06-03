@@ -102,4 +102,4 @@ const RR = {
   };
 })();
 
-window.RR = RR;
+export default RR;

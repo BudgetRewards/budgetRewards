@@ -1,3 +1,7 @@
+import React from 'react'
+import RR from '../data.jsx'
+import { Icon, SeedMark, useCountUp, fmt, Progress } from '../ui.jsx'
+
 /* ───────────────── Screen 1 · Dashboard ───────────────── */
 function Logo({ light=false }){
   return (
@@ -14,7 +18,7 @@ function Logo({ light=false }){
 }
 
 function Dashboard({ onNav }){
-  const R = window.RR;
+  const R = RR;
   const tier = R.tiers.find(t=>t.id===R.currentTier);
   const bal = useCountUp(R.balance);
   const pct = (R.balance / R.nextTier.threshold) * 100;
@@ -143,4 +147,4 @@ function Dashboard({ onNav }){
   );
 }
 
-Object.assign(window, { Dashboard, Logo });
+export { Dashboard, Logo };

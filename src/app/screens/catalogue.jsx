@@ -1,3 +1,7 @@
+import React from 'react'
+import RR from '../data.jsx'
+import { Icon, SeedMark, fmt, ScreenHeader } from '../ui.jsx'
+
 /* ───────────────── Screen 3 · Earn more (Catalogue) ───────────────── */
 function StatusPill({ status }){
   if(status==='claimed')  return <span className="rr-pill claimed"><Icon name="check" size={12} stroke="var(--green-700)" sw={2.6}/>Geclaimd</span>;
@@ -46,7 +50,7 @@ function TriggerRow({ item, isLast }){
 }
 
 function Catalogue(){
-  const R = window.RR;
+  const R = RR;
   const total = R.catalogue.reduce((s,g)=>s+g.items.filter(i=>i.status==='available').length,0);
   return (
     <div className="rr-page">
@@ -80,4 +84,4 @@ function Catalogue(){
   );
 }
 
-Object.assign(window, { Catalogue, TriggerRow, StatusPill });
+export { Catalogue, TriggerRow, StatusPill };

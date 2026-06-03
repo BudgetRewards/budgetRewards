@@ -1,3 +1,12 @@
+import React from 'react'
+import { IOSDevice } from './ios-frame.jsx'
+import { Icon } from './ui.jsx'
+import { Dashboard } from './screens/dashboard.jsx'
+import { Ledger } from './screens/ledger.jsx'
+import { Catalogue } from './screens/catalogue.jsx'
+import { Tiers } from './screens/tiers.jsx'
+import { Harvest } from './screens/harvest.jsx'
+
 /* ───────────────── RootedRewards · App shell + tab bar ───────────────── */
 const TABS = [
   { id:'home',    label:'Home',      icon:'home' },
@@ -62,4 +71,4 @@ function Root(){
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<Root/>);
+export { Root };

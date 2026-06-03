@@ -1,3 +1,7 @@
+import React from 'react'
+import RR from '../data.jsx'
+import { Icon, SeedMark, fmt, ScreenHeader } from '../ui.jsx'
+
 /* ───────────────── Screen 5 · Harvest Hours ───────────────── */
 const MONTH_FULL = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
 const MONTH_ABBR = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
@@ -27,7 +31,7 @@ function HarvestDay({ cell }){
 }
 
 function Harvest(){
-  const R = window.RR;
+  const R = RR;
   const H = R.harvest;
   const [sel, setSel] = React.useState(1); // default May (shows earned + missed)
   const month = H.monthsData[sel];
@@ -180,4 +184,4 @@ function Harvest(){
   );
 }
 
-Object.assign(window, { Harvest, HarvestDay });
+export { Harvest, HarvestDay };

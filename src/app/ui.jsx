@@ -1,3 +1,5 @@
+import React from 'react'
+
 /* ───────────────── RootedRewards · shared UI ───────────────── */
 
 /* Simple line/solid icons (functional UI glyphs only) */
@@ -69,4 +71,4 @@ function ScreenHeader({ eyebrow, title }){
   );
 }
 
-Object.assign(window, { Icon, SeedMark, useCountUp, fmt, Progress, ScreenHeader });
+export { Icon, SeedMark, useCountUp, fmt, Progress, ScreenHeader };

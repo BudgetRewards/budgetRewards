@@ -1,6 +1,10 @@
+import React from 'react'
+import RR from '../data.jsx'
+import { SeedMark, fmt, ScreenHeader } from '../ui.jsx'
+
 /* ───────────────── Screen 2 · Seeds history (Ledger) ───────────────── */
 function Ledger(){
-  const R = window.RR;
+  const R = RR;
   const [filter, setFilter] = React.useState('all');
   const filters = [
     { id:'all', label:'Alles' },
@@ -81,4 +85,4 @@ function Ledger(){
   );
 }
 
-Object.assign(window, { Ledger });
+export { Ledger };
