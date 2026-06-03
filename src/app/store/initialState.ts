@@ -1,4 +1,4 @@
-import type { RRState, MonthData, HarvestCell, Profile, TierKey } from './types';
+import type { RRState, MonthData, HarvestCell, LedgerEntry, TierKey, CatalogueItemStatus, Profile } from './types';
 import { computeOnboardingRewards } from './services/onboarding';
 import { simulateDailyUsage } from './services/usageSimulator';
 
@@ -105,6 +105,44 @@ export const baseInitialState: RRState = {
   pendingReward: null,
 };
 
+function fakeDateFor(idx: number, total: number): string {
+  const startMs = new Date(2026, 0, 1).getTime();
+  const endMs   = new Date(2026, 4, 31).getTime();
+  const t = total <= 1 ? 0 : idx / (total - 1);
+  return new Date(startMs + t * (endMs - startMs))
+    .toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+/**
+ * Rebuild the ledger from the active (claimed/penalty) catalogue items, spread
+ * across fake Jan–May 2026 dates and ordered newest-first. `idOffset` keeps ids
+ * unique when onboarding entries are also present.
+ */
+function buildLedgerFromCatalogue(catalogue: RRState['catalogue'], idOffset: number): LedgerEntry[] {
+  const activeItems: { name: string; nameEn?: string; cat: string; seeds: number }[] = [];
+  for (const cat of catalogue) {
+    for (const item of cat.items) {
+      if (item.status === 'claimed' || item.status === 'penalty') {
+        activeItems.push({ name: item.name, nameEn: item.nameEn, cat: cat.cat, seeds: item.seeds });
+      }
+    }
+  }
+
+  return activeItems
+    .map((item, idx) => ({
+      id: idOffset + idx + 1,
+      name: item.name,
+      nameEn: item.nameEn,
+      cat: item.cat,
+      date: fakeDateFor(idx, activeItems.length),
+      base: item.seeds,
+      mult: 1,
+      amount: item.seeds,
+      kind: (item.seeds < 0 ? 'neg' : 'pos') as 'pos' | 'neg',
+    }))
+    .reverse();
+}
+
 function readProfile(): Profile | null {
   try {
     const raw = localStorage.getItem('rr-profile');
@@ -147,7 +185,7 @@ export function loadFromConfig(base: RRState): RRState {
     const saved = localStorage.getItem('rr-config');
     if (saved) {
       const parsed = JSON.parse(saved) as {
-        catalogue: { name: string; status: import('./types').CatalogueItemStatus }[];
+        catalogue: { name: string; status: CatalogueItemStatus }[];
       };
       if (Array.isArray(parsed.catalogue)) {
         const overrides = parsed.catalogue;
@@ -178,7 +216,15 @@ export function loadFromConfig(base: RRState): RRState {
 
   const balance = Math.min(base.cap, Math.max(0, catalogueBalance + onboarding.total));
   const { currentTier, multiplier, nextTier } = deriveTier(balance);
-  const ledger = [...onboarding.entries, ...base.ledger];
+
+  // Rebuild the ledger from whatever drove this state: catalogue claims/penalties
+  // (only when an rr-config was applied) plus any onboarding rewards. The static
+  // base ledger is intentionally replaced so history matches the live balance.
+  const configApplied = catalogue !== base.catalogue;
+  const catalogueLedger = configApplied
+    ? buildLedgerFromCatalogue(catalogue, onboarding.entries.length)
+    : [];
+  const ledger = [...catalogueLedger, ...onboarding.entries];
 
   return { ...base, catalogue, balance, currentTier, multiplier, nextTier, ledger };
 }

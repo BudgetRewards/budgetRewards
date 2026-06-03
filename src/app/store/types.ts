@@ -100,6 +100,7 @@ export type RRState = {
 
 export type TriggerPayload = {
   name: string;
+  nameEn?: string;
   cat: string;
   base: number;
   kind: 'pos' | 'neg';

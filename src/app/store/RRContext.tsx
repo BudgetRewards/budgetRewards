@@ -1,5 +1,5 @@
-import { createContext, useContext, useReducer, type ReactNode } from 'react';
-import type { RRState, Dispatch, Profile } from './types';
+import { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react';
+import type { RRState, Dispatch, CatalogueItem, Profile } from './types';
 import { initialState } from './initialState';
 import { reducer } from './reducer';
 import { signupBonus, appActivated, renewContract } from './services/lifecycle';
@@ -18,6 +18,14 @@ const RRContext = createContext<RRContextType | null>(null);
 
 export function RRProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  useEffect(() => {
+    const overrides = state.catalogue.flatMap(cat =>
+      cat.items.map(i => ({ name: i.name, status: i.status }))
+    );
+    localStorage.setItem('rr-config', JSON.stringify({ catalogue: overrides }));
+  }, [state.catalogue]);
+
   return <RRContext.Provider value={{ state, dispatch }}>{children}</RRContext.Provider>;
 }
 
@@ -48,5 +56,19 @@ export function useTrigger() {
     selectUsageDate:     (date: string)                      => selectUsageDate(date, dispatch),
     markHistorySeen:     ()                                  => dispatch({ type: 'MARK_HISTORY_SEEN' }),
     dismissReward:       ()                                  => dispatch({ type: 'DISMISS_REWARD' }),
+    claimItem:           (item: CatalogueItem, cat: string)  => {
+      if (item.status !== 'available') return;
+      dispatch({
+        type: 'APPLY_TRIGGER',
+        payload: {
+          name: item.name,
+          nameEn: item.nameEn,
+          cat,
+          base: item.seeds,
+          kind: item.seeds < 0 ? 'neg' : 'pos',
+          catalogueKey: item.name,
+        },
+      });
+    },
   };
 }

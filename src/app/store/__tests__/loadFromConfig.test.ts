@@ -114,6 +114,49 @@ describe('loadFromConfig', () => {
     const result = loadFromConfig(minimalState);
     expect(result).toEqual(minimalState);
   });
+
+  test('builds a ledger entry for each claimed item', () => {
+    localStorage.setItem('rr-config', JSON.stringify({
+      catalogue: [
+        { name: 'Item A', status: 'claimed' },
+        { name: 'Item B', status: 'claimed' },
+      ],
+    }));
+    const result = loadFromConfig(minimalState);
+    expect(result.ledger).toHaveLength(2);
+    const names = result.ledger.map(e => e.name);
+    expect(names).toContain('Item A');
+    expect(names).toContain('Item B');
+  });
+
+  test('penalty catalogue item becomes a neg ledger entry', () => {
+    localStorage.setItem('rr-config', JSON.stringify({
+      catalogue: [{ name: 'Item C', status: 'penalty' }],
+    }));
+    const result = loadFromConfig(minimalState);
+    expect(result.ledger).toHaveLength(1);
+    expect(result.ledger[0].kind).toBe('neg');
+    expect(result.ledger[0].amount).toBe(-60);
+  });
+
+  test('ledger is empty when no items are active', () => {
+    localStorage.setItem('rr-config', JSON.stringify({ catalogue: [] }));
+    const result = loadFromConfig(minimalState);
+    expect(result.ledger).toHaveLength(0);
+  });
+
+  test('ledger is ordered newest (last in catalogue) first', () => {
+    localStorage.setItem('rr-config', JSON.stringify({
+      catalogue: [
+        { name: 'Item A', status: 'claimed' },
+        { name: 'Item B', status: 'claimed' },
+      ],
+    }));
+    const result = loadFromConfig(minimalState);
+    // Item B is last in catalogue order → should appear first in ledger
+    expect(result.ledger[0].name).toBe('Item B');
+    expect(result.ledger[1].name).toBe('Item A');
+  });
 });
 
 describe('loadFromConfig — onboarding profile', () => {
