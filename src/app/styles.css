@@ -135,12 +135,21 @@ html,body{ margin:0; padding:0; }
 @keyframes rrSlideUp{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
 
 @media (max-width: 767px) {
+  html {
+    height: -webkit-fill-available;
+    height: 100svh;
+  }
+  body, #root {
+    height: 100%;
+    overflow: hidden;
+  }
   .rr-app {
-    position: fixed;
-    inset: 0;
+    height: 100%;
     padding-top: env(safe-area-inset-top, 0px);
+    overflow: hidden;
   }
   .rr-tabbar {
+    flex-shrink: 0;
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
   }
 }
