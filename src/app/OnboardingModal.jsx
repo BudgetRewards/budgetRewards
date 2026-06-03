@@ -2,6 +2,7 @@ import React from 'react'
 import { useLang } from './i18n.jsx'
 import { Icon } from './ui.jsx'
 import { BTLogo } from './BTLogo.jsx'
+import { useTrigger } from './store/RRContext.tsx'
 
 /* ─── copy ─────────────────────────────────────────────── */
 const C = {
@@ -255,6 +256,7 @@ function Step3({ profile, setField, c }) {
 /* ─── main modal ─────────────────────────────────────────── */
 export function OnboardingModal() {
   const { set, setUserName } = useLang()
+  const { applyOnboarding } = useTrigger()
 
   const [step, setStep] = React.useState(0)
   const [name, setName] = React.useState('')
@@ -285,7 +287,9 @@ export function OnboardingModal() {
     // Final submit
     set(lang)
     setUserName(name.trim())
-    localStorage.setItem('rr-profile', JSON.stringify({ ...profile, products }))
+    const fullProfile = { ...profile, products }
+    localStorage.setItem('rr-profile', JSON.stringify(fullProfile))
+    applyOnboarding(fullProfile)
   }
 
   return (
