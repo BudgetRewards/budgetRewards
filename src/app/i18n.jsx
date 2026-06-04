@@ -99,6 +99,11 @@ const T = {
       weekendEarned: w => `Oogstweekend ${w} — beide dagen verdiend`,
       tapToView: 'Tik om je historie te bekijken',
     },
+    tierUp: {
+      title: name => `Je bent gegroeid naar ${name}!`,
+      multiplierNow: m => `Je multiplier is nu ${m}×`,
+      continue: 'Doorgaan',
+    },
   },
   en: {
     fmt: n => n.toLocaleString('en-US'),
@@ -197,6 +202,11 @@ const T = {
       delivered: n => `${n} seeds delivered!`,
       weekendEarned: w => `Harvest weekend ${w} — both days earned`,
       tapToView: 'Tap to view your history',
+    },
+    tierUp: {
+      title: name => `You've grown to ${name}!`,
+      multiplierNow: m => `Your multiplier is now ${m}×`,
+      continue: 'Continue',
     },
   },
 }
