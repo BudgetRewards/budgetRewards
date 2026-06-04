@@ -73,7 +73,10 @@ function MonthCompareCard({ monthCons, daysSimulated, monthlyAvg, householdSize,
   const expectedByNow = (monthlyAvg / 30) * daysSimulated;
   const diff = expectedByNow - monthCons; // positive = below expected (good)
   const isBelow = diff > 0;
-  const seeds = Math.max(1, Math.round(Math.abs(diff) * 2)); // 2 seeds per kWh
+  // Reward on the PERCENTAGE under/over the household average, so a 1-person home
+  // earns the same as a 5-person home for the same relative saving (fair across sizes).
+  const pct = Math.abs(diff) / Math.max(expectedByNow, 0.1);
+  const seeds = Math.max(1, Math.round(pct * 300)); // ~30 seeds at 10% below average
 
   // Scale bars so both fit nicely regardless of which is bigger
   const scale = Math.max(monthCons, expectedByNow, 0.1) * 1.3;
@@ -188,7 +191,9 @@ function UsageInner() {
   const { homeBattery, householdSize } = useProfile();
 
   const monthlyAvg = monthlyAvgForSize(householdSize);
-  const dailyTarget = monthlyAvg / 30;
+  // Simulate ~10% below the household average so an efficient home can realistically
+  // come in under the benchmark and earn — regardless of household size.
+  const dailyTarget = (monthlyAvg / 30) * 0.9;
 
   const date = state.currentUsageDate;
   const record = state.usages[date];
