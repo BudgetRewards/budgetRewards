@@ -1,7 +1,7 @@
 import type { RRState, RRAction, TierKey, LedgerEntry, CatalogueCategory } from './types';
 import { computeOnboardingRewards } from './services/onboarding';
 import { formatDate } from './format';
-import { weekendFor, isWeekendEarned, weekendLabels, weekendRewardSeeds } from './services/harvestWeekend';
+// harvestWeekend helpers are still used by harvest.jsx; the reducer uses per-day logic only.
 import { baseInitialState } from './initialState';
 import {
   applyProfileToCatalogue,
@@ -187,31 +187,44 @@ export function reducer(state: RRState, action: RRAction): RRState {
     const usages = { ...state.usages, [action.payload.date]: action.payload };
     let next: RRState = { ...state, usages, currentUsageDate: action.payload.date };
 
-    // Award seeds when this simulation completes a weekend: both Saturday and
-    // Sunday must have earned green hours, and the weekend not yet rewarded.
-    const weekend = weekendFor(action.payload.date);
-    if (weekend && !state.awardedWeekends.includes(weekend.id) && isWeekendEarned(weekend, usages)) {
-      const labels = weekendLabels(weekend);
-      // Without electricity the harvest is missed, not earned: it lands in the
-      // history as a missed harvest and never adds to the balance.
-      const earned = hasElectricity(state.catalogue);
-      // Award the configured value as-is (no tier multiplier) so the points
-      // shown on the harvest screen match exactly what lands in the history.
-      const { patch, entry } = applyEarning(next, {
-        name: `Oogstweekend ${labels.nl}`,
-        nameEn: `Harvest weekend ${labels.en}`,
-        cat: 'Harvest Hours',
-        base: weekendRewardSeeds(state.catalogue) || 2 * state.harvest.seedsPerDay,
-        kind: earned ? 'pos' : 'missed',
-      }, 1);
-      next = {
-        ...next,
-        ...patch,
-        awardedWeekends: [...state.awardedWeekends, weekend.id],
-        historyUnseen: true,
-        // Only celebrate an actual earning; a missed weekend just shows in history.
-        pendingReward: earned ? { amount: entry.amount, weekend: labels.nl, weekendEn: labels.en } : state.pendingReward,
-      };
+    // Per-day harvest: every simulated weekend day is processed exactly once.
+    // Electricity ownership (gratis stroom) is the only gate — no green-hours
+    // check needed; if you participate you earn, if you don't own electricity
+    // the day is logged as a missed harvest.
+    const date = action.payload.date;
+    if (!state.awardedHarvestDays.includes(date)) {
+      const d   = new Date(`${date}T00:00:00`);
+      const dow = d.getDay(); // 0 = Sun, 6 = Sat
+      if (dow === 0 || dow === 6) {
+        const electricity = hasElectricity(state.catalogue);
+        const kind: 'pos' | 'missed' = electricity ? 'pos' : 'missed';
+
+        const MONTHS_NL = ['januari','februari','maart','april','mei','juni','juli',
+          'augustus','september','oktober','november','december'];
+        const MONTHS_EN = ['January','February','March','April','May','June','July',
+          'August','September','October','November','December'];
+        const dayNL = `${d.getDate()} ${MONTHS_NL[d.getMonth()]}`;
+        const dayEN = `${d.getDate()} ${MONTHS_EN[d.getMonth()]}`;
+
+        const { patch, entry } = applyEarning(next, {
+          name:   `Oogstdag ${dayNL}`,
+          nameEn: `Harvest day ${dayEN}`,
+          cat:    'Harvest Hours',
+          base:   next.harvest.seedsPerDay, // 10 seeds per day
+          kind,
+        }, 1); // fixed 1× — harvest days use the configured value, not tier multiplier
+
+        next = {
+          ...next,
+          ...patch,
+          awardedHarvestDays: [...state.awardedHarvestDays, date],
+          harvest: electricity ? applyHarvestDate(next.harvest, date, 1) : next.harvest,
+          historyUnseen: true,
+          pendingReward: electricity
+            ? { amount: entry.amount, weekend: dayNL, weekendEn: dayEN }
+            : next.pendingReward,
+        };
+      }
     }
     return next;
   }
@@ -276,5 +289,9 @@ export function reducer(state: RRState, action: RRAction): RRState {
     catalogue: newCatalogue,
     harvest: newHarvest,
     remoteReadEnabled: setRemoteRead !== undefined ? setRemoteRead : state.remoteReadEnabled,
+    // Keep awardedHarvestDays in sync when a harvest day is triggered manually.
+    awardedHarvestDays: harvestDate && !state.awardedHarvestDays.includes(harvestDate)
+      ? [...state.awardedHarvestDays, harvestDate]
+      : state.awardedHarvestDays,
   };
 }

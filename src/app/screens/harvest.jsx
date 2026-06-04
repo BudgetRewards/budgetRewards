@@ -2,8 +2,8 @@ import React from 'react'
 import { Icon, SeedMark, ScreenHeader } from '../ui.jsx'
 import { useT, useFmt, useProfile } from '../i18n.jsx'
 import { useRR, useTrigger } from '../store/RRContext.tsx'
-import { isGreenHoursEarned } from '../store/services/greenHours'
 import { weekendRewardSeeds } from '../store/services/harvestWeekend'
+import { hasElectricity } from '../store/catalogueDerive'
 
 const pad = n => String(n).padStart(2, '0');
 
@@ -54,7 +54,7 @@ function Harvest(){
   const { solarPanels } = useProfile();
   const { simulateUsage } = useTrigger();
   const today = `${harvestSeason.year}-${pad(harvestSeason.todayMonth + 1)}-${pad(harvestSeason.todayDate)}`;
-  const [sel, setSel] = React.useState(1);
+  const [sel, setSel] = React.useState(2); // default to June (index 2 in [Apr,May,Jun,Jul,Aug,Sep])
   const month = H.monthsData[sel];
 
   // Clicking a day without usage data simulates it (only up to today).
@@ -142,11 +142,15 @@ function Harvest(){
           {month.cells.map((c,i)=>{
             const iso = c ? `${H.year}-${pad(month.m+1)}-${pad(c.d)}` : null;
             const sim = iso ? usages[iso] : null;
-            // A weekend day is only earned/missed when we have usage data for it.
-            // Days without a simulation are never marked "verdiend" — they show
-            // as pending (upcoming). The green-hours service decides earned vs missed.
+            const isPast = iso && iso < today;
+            const elec = hasElectricity(R.catalogue);
+            // Simulated weekend: earned if electricity owned, missed otherwise.
+            // Unsimulated past weekend: always missed (you didn't participate).
+            // Unsimulated future weekend: upcoming.
             const cell = (c && c.weekend)
-              ? { ...c, state: sim ? (isGreenHoursEarned(sim.hours) ? 'earned' : 'missed') : 'upcoming' }
+              ? { ...c, state: sim
+                  ? (elec ? 'earned' : 'missed')
+                  : (isPast ? 'missed' : 'upcoming') }
               : c;
             const clickable = !!c && !!iso && iso <= today && !sim;
             return <HarvestDay key={i} cell={cell} simulated={!!sim}
