@@ -279,6 +279,12 @@ function UsageInner() {
     c.items.some(i => i.name === 'Zonnepanelen geregistreerd' && i.status === 'claimed'));
   const hasSolar = solarPanels || solarClaimed;
 
+  // Meter-reading gate: consumption data is only shown once monthly meter
+  // readings are switched on (the 'Maandelijkse meterstand' catalogue item).
+  const meter = state.catalogue.find(c => c.cat === 'App & Data')?.items.find(i => i.name === 'Maandelijkse meterstand');
+  const hasMeterReadings = meter?.status === 'claimed';
+  const activateMeter = () => { if (meter && meter.status === 'available') claimItem(meter, 'App & Data'); };
+
   const monthlyAvg = monthlyAvgForSize(householdSize);
   const dailyTarget = householdDailyTarget(householdSize);
   const simOpts = { hasHomeBattery: homeBattery, hasSolar, dailyTargetKwh: dailyTarget };
@@ -353,64 +359,70 @@ function UsageInner() {
         </div>
       )}
 
-      {/* ───── Per dag ───── */}
-      <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--navy-60)', textTransform: 'uppercase',
-        letterSpacing: '0.08em', marginBottom: 8 }}>
-        {sectionLabelDay}
-      </div>
-
-      {/* Daily summary — production/net only shown with solar panels */}
-      <div style={{ display: 'grid', gridTemplateColumns: hasSolar ? '1fr 1fr 1fr' : '1fr', gap: 9 }}>
-        <StatCard label={t.usage.totalConsumption} value={kwh(totalCons)} unit={t.usage.kwh} color={CONS}/>
-        {hasSolar && <StatCard label={t.usage.totalProduction} value={kwh(totalProd)} unit={t.usage.kwh} color={PROD}/>}
-        {hasSolar && <StatCard label={t.usage.net} value={kwh(net)} unit={t.usage.kwh} color="var(--green-700)"/>}
-      </div>
-
-      {/* Date picker */}
-      <div className="rr-card" style={{ marginTop: 14, padding: '13px 16px', display: 'flex',
-        alignItems: 'center', gap: 13 }}>
-        <span style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(26,26,46,0.05)', flexShrink: 0,
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name="calendar" size={20} stroke="var(--navy-60)"/>
-        </span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 800, fontSize: 13.5 }}>{t.usage.dateLabel}</div>
-          <div className="rr-sub" style={{ fontSize: 12 }}>{t.usage.dateHint}</div>
-        </div>
-        <input type="date" value={date} max={today} onChange={onDateChange}
-          style={{ border: '1px solid var(--grey-line)', borderRadius: 10, padding: '7px 10px',
-            fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, color: 'var(--navy)', background: '#fff' }}/>
-      </div>
-
-      {/* Consumption graph + peaks — shown when the customer has electricity
-          (production half + peak only when they also have solar). */}
+      {/* ───── Per dag — only when electricity is active ───── */}
       {hasElec && (
         <>
-          {/* Chart */}
-          <div className="rr-card" style={{ padding: '16px 14px 14px', marginTop: 14 }}>
-            <div style={{ display: 'flex', gap: 16, marginBottom: 14 }}>
-              <Legend color={CONS} label={t.usage.consumption}/>
-              {hasSolar && <Legend color={PROD} label={t.usage.production}/>}
-            </div>
-            <Bars usage={usage} showProduction={hasSolar}/>
-            <div style={{ display: 'flex', marginTop: 7 }}>
-              {usage.map(u => (
-                <div key={u.hour} style={{ flex: 1, textAlign: 'center', fontSize: 9, fontWeight: 600, color: 'var(--grey-2)' }}>
-                  {u.hour % 6 === 0 ? String(u.hour).padStart(2, '0') : ''}
-                </div>
-              ))}
-            </div>
+          <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--navy-60)', textTransform: 'uppercase',
+            letterSpacing: '0.08em', marginBottom: 8 }}>
+            {sectionLabelDay}
           </div>
 
-          {/* Peaks — peak production only shown with solar panels */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
-            <PeakRow icon="bolt" color={CONS} label={t.usage.peakConsumption}
-              value={`${kwh(pCons.consumption)} ${t.usage.kwh}`} when={t.usage.at(pCons.hour)}/>
-            {hasSolar && (
-              <PeakRow icon="sun" color={PROD} label={t.usage.peakProduction}
-                value={`${kwh(pProd.production)} ${t.usage.kwh}`} when={t.usage.at(pProd.hour)}/>
-            )}
-          </div>
+          {hasMeterReadings ? (
+            <>
+              {/* Daily summary — production/net only shown with solar panels */}
+              <div style={{ display: 'grid', gridTemplateColumns: hasSolar ? '1fr 1fr 1fr' : '1fr', gap: 9 }}>
+                <StatCard label={t.usage.totalConsumption} value={kwh(totalCons)} unit={t.usage.kwh} color={CONS}/>
+                {hasSolar && <StatCard label={t.usage.totalProduction} value={kwh(totalProd)} unit={t.usage.kwh} color={PROD}/>}
+                {hasSolar && <StatCard label={t.usage.net} value={kwh(net)} unit={t.usage.kwh} color="var(--green-700)"/>}
+              </div>
+
+              {/* Date picker */}
+              <div className="rr-card" style={{ marginTop: 14, padding: '13px 16px', display: 'flex',
+                alignItems: 'center', gap: 13 }}>
+                <span style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(26,26,46,0.05)', flexShrink: 0,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="calendar" size={20} stroke="var(--navy-60)"/>
+                </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 800, fontSize: 13.5 }}>{t.usage.dateLabel}</div>
+                  <div className="rr-sub" style={{ fontSize: 12 }}>{t.usage.dateHint}</div>
+                </div>
+                <input type="date" value={date} max={today} onChange={onDateChange}
+                  style={{ border: '1px solid var(--grey-line)', borderRadius: 10, padding: '7px 10px',
+                    fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, color: 'var(--navy)', background: '#fff' }}/>
+              </div>
+
+              {/* Chart — production half + peak only when the customer has solar */}
+              <div className="rr-card" style={{ padding: '16px 14px 14px', marginTop: 14 }}>
+                <div style={{ display: 'flex', gap: 16, marginBottom: 14 }}>
+                  <Legend color={CONS} label={t.usage.consumption}/>
+                  {hasSolar && <Legend color={PROD} label={t.usage.production}/>}
+                </div>
+                <Bars usage={usage} showProduction={hasSolar}/>
+                <div style={{ display: 'flex', marginTop: 7 }}>
+                  {usage.map(u => (
+                    <div key={u.hour} style={{ flex: 1, textAlign: 'center', fontSize: 9, fontWeight: 600, color: 'var(--grey-2)' }}>
+                      {u.hour % 6 === 0 ? String(u.hour).padStart(2, '0') : ''}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Peaks */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
+                <PeakRow icon="bolt" color={CONS} label={t.usage.peakConsumption}
+                  value={`${kwh(pCons.consumption)} ${t.usage.kwh}`} when={t.usage.at(pCons.hour)}/>
+                {hasSolar && (
+                  <PeakRow icon="sun" color={PROD} label={t.usage.peakProduction}
+                    value={`${kwh(pProd.production)} ${t.usage.kwh}`} when={t.usage.at(pProd.hour)}/>
+                )}
+              </div>
+            </>
+          ) : (
+            /* Meter readings off → prompt to switch them on before showing consumption data */
+            <ActivateCard icon="calendar" title={t.usage.meterTitle} desc={t.usage.meterDesc}
+              cta={t.usage.meterActivate} onClick={activateMeter}/>
+          )}
         </>
       )}
 
