@@ -176,3 +176,46 @@ describe('APPLY_ONBOARDING', () => {
     expect(next.balance).toBe(1000);
   });
 });
+
+describe('SELECT_EXCLUSIVE (mutually-exclusive groups)', () => {
+  // Own the Mobile product so the 'Mobiel bonussen' sub-section is unlocked.
+  const mobileOwned = reducer(freshState, {
+    type: 'APPLY_ONBOARDING',
+    profile: { solarPanels: false, homeBattery: false, householdSize: 1, customerYears: 0, products: ['mobile'] },
+  });
+  const bonus = (s: RRState, name: string) =>
+    s.catalogue.find(c => c.cat === 'Mobiel bonussen')!.items.find(i => i.name === name);
+
+  test('selecting a bundle claims it and adds its seeds', () => {
+    const before = mobileOwned.balance;
+    const next = reducer(mobileOwned, { type: 'SELECT_EXCLUSIVE', cat: 'Mobiel bonussen', catalogueKey: 'Databundel 10 GB' });
+    expect(bonus(next, 'Databundel 10 GB')?.status).toBe('claimed');
+    expect(next.balance).toBe(before + 25);
+  });
+
+  test('switching bundles swaps the claim and nets the balance (no stacking)', () => {
+    let s = reducer(mobileOwned, { type: 'SELECT_EXCLUSIVE', cat: 'Mobiel bonussen', catalogueKey: 'Databundel 10 GB' });
+    const after10 = s.balance;
+    s = reducer(s, { type: 'SELECT_EXCLUSIVE', cat: 'Mobiel bonussen', catalogueKey: 'Onbeperkte databundel' });
+    expect(bonus(s, 'Databundel 10 GB')?.status).toBe('available');
+    expect(bonus(s, 'Onbeperkte databundel')?.status).toBe('claimed');
+    expect(s.balance).toBe(after10 - 25 + 100);
+    // Exactly one bundle option is claimed.
+    const claimed = s.catalogue.find(c => c.cat === 'Mobiel bonussen')!
+      .items.filter(i => i.group === 'mobile-bundle' && i.status === 'claimed');
+    expect(claimed).toHaveLength(1);
+  });
+
+  test('mobile speed: 100 Mbps claimed by default, upgrading swaps to 200', () => {
+    expect(bonus(mobileOwned, 'Mobiel 100 Mbps (standaard)')?.status).toBe('claimed');
+    const s = reducer(mobileOwned, { type: 'SELECT_EXCLUSIVE', cat: 'Mobiel bonussen', catalogueKey: 'Upgrade naar 200 Mbps' });
+    expect(bonus(s, 'Mobiel 100 Mbps (standaard)')?.status).toBe('available');
+    expect(bonus(s, 'Upgrade naar 200 Mbps')?.status).toBe('claimed');
+    expect(s.balance).toBe(mobileOwned.balance - 10 + 25);
+  });
+
+  test('re-selecting the already-claimed option is a no-op', () => {
+    const s = reducer(mobileOwned, { type: 'SELECT_EXCLUSIVE', cat: 'Mobiel bonussen', catalogueKey: 'Mobiel 100 Mbps (standaard)' });
+    expect(s).toBe(mobileOwned);
+  });
+});

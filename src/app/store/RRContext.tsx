@@ -60,6 +60,13 @@ export function useTrigger() {
                                                                 dispatch({ type: 'RENEW_PRODUCT', product, name, nameEn, seeds }),
     dismissRenewal:      ()                                  => dispatch({ type: 'DISMISS_RENEWAL' }),
     claimItem:           (item: CatalogueItem, cat: string)  => {
+      // Mutually-exclusive group (e.g. internet speed, mobile bundle): selecting
+      // one swaps out the current sibling instead of stacking.
+      if (item.group) {
+        if (item.status === 'claimed') return;
+        dispatch({ type: 'SELECT_EXCLUSIVE', cat, catalogueKey: item.name });
+        return;
+      }
       if (item.status !== 'available') return;
       dispatch({
         type: 'APPLY_TRIGGER',
