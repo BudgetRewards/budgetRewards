@@ -114,17 +114,16 @@ function Harvest(){
         </div>
       </div>
 
-      {/* Status note — tells the customer exactly how to earn or why it's missed */}
-      <div className="rr-card" style={{ marginTop:14, padding:'12px 14px', display:'flex', gap:11, alignItems:'flex-start',
-        background: electricity ? 'rgba(0,166,81,0.07)' : 'rgba(224,92,74,0.07)',
-        border: `1px solid ${electricity ? 'rgba(0,166,81,0.22)' : 'rgba(224,92,74,0.2)'}` }}>
-        <Icon name={electricity ? 'sun' : 'bolt'} size={18}
-          stroke={electricity ? 'var(--green)' : '#e05c4a'} sw={2}/>
-        <span style={{ fontSize:12.5, fontWeight:600, lineHeight:1.45,
-          color: electricity ? 'var(--green-700)' : '#b23b2e' }}>
-          {electricity ? t.harvest.participatingNote : t.harvest.missedNote}
-        </span>
-      </div>
+      {/* Status note — only shown when electricity isn't active (missed-harvest warning) */}
+      {!electricity && (
+        <div className="rr-card" style={{ marginTop:14, padding:'12px 14px', display:'flex', gap:11, alignItems:'flex-start',
+          background:'rgba(224,92,74,0.07)', border:'1px solid rgba(224,92,74,0.2)' }}>
+          <Icon name="bolt" size={18} stroke="#e05c4a" sw={2}/>
+          <span style={{ fontSize:12.5, fontWeight:600, lineHeight:1.45, color:'#b23b2e' }}>
+            {t.harvest.missedNote}
+          </span>
+        </div>
+      )}
 
       {/* Calendar */}
       <div className="rr-card" style={{ padding:'16px 16px 18px', marginTop:14 }}>
