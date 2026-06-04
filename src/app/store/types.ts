@@ -93,14 +93,18 @@ export type RRState = {
   usages: Record<string, UsageRecord>;
   /** The day currently shown on the Usage screen. */
   currentUsageDate: string;
-  /** Weekend ids (the Saturday's yyyy-mm-dd) already rewarded, to avoid double-awarding. */
-  awardedWeekends: string[];
+  /** Individual harvest weekend days (yyyy-mm-dd) already awarded, to avoid double-awarding. */
+  awardedHarvestDays: string[];
   /** Whether the history has new entries the customer hasn't viewed (drives the tab dot). */
   historyUnseen: boolean;
   /** The most recent weekend reward, shown as a toast until dismissed. */
   pendingReward: { amount: number; weekend: string; weekendEn: string } | null;
   /** The most recent upward tier crossing, shown as a full-screen celebration until dismissed. */
   pendingTierUp: { from: TierKey; to: TierKey } | null;
+  /** Product ids (e.g. 'electricity', 'internet') whose contract has been renewed. */
+  renewals: string[];
+  /** The most recent renewal, shown as a popup until dismissed. */
+  pendingRenewal: { product: string; name: string; nameEn: string; seeds: number } | null;
 };
 
 export type TriggerPayload = {
@@ -129,6 +133,10 @@ export type RRAction =
   | { type: 'SELECT_USAGE_DATE'; payload: { date: string } }
   | { type: 'MARK_HISTORY_SEEN' }
   | { type: 'DISMISS_REWARD' }
-  | { type: 'DISMISS_TIER_UP' };
+  | { type: 'DISMISS_TIER_UP' }
+  /** Replace an existing ledger entry in-place and adjust the balance by the delta. */
+  | { type: 'UPDATE_LEDGER_ENTRY'; id: number; base: number; amount: number }
+  | { type: 'RENEW_PRODUCT'; product: string; name: string; nameEn: string; seeds: number }
+  | { type: 'DISMISS_RENEWAL' };
 
 export type Dispatch = (action: RRAction) => void;

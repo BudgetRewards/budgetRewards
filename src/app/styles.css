@@ -145,6 +145,14 @@ html,body{ margin:0; padding:0; }
 }
 .rr-notif-claim:active{ transform:scale(0.97); box-shadow:0 3px 8px rgba(0,166,81,0.22); }
 
+/* Profile bottom sheet */
+.rr-profile-panel{
+  background:var(--grey); border-radius:24px 24px 0 0;
+  max-height:88%; display:flex; flex-direction:column;
+  box-shadow:0 -4px 32px rgba(26,26,46,0.16);
+  animation:rrSlideUp .35s cubic-bezier(.22,1,.36,1) both;
+}
+
 /* Onboarding modal */
 .rr-onboarding-backdrop{
   position:fixed; inset:0; z-index:100;

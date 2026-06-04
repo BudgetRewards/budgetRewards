@@ -67,11 +67,11 @@ describe('hasElectricity & claimedBalance', () => {
 
   test('claimedBalance counts only claimed items (Welcome by default)', () => {
     const cat = applyProfileToCatalogue(baseInitialState.catalogue, EMPTY_PROFILE);
-    expect(claimedBalance(cat)).toBe(1000); // Welcome bonus only
+    expect(claimedBalance(cat)).toBe(1150); // Welcome 1000 + App geactiveerd 150 (both claimed by default)
   });
 
   test('claimedBalance adds owned product seeds', () => {
     const cat = applyProfileToCatalogue(baseInitialState.catalogue, { ...EMPTY_PROFILE, products: ['electricity', 'gas'] });
-    expect(claimedBalance(cat)).toBe(1900); // Welcome 1000 + Stroom 500 + Gas 400
+    expect(claimedBalance(cat)).toBe(2050); // Welcome 1000 + App 150 + Stroom 500 + Gas 400
   });
 });

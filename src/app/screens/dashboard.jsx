@@ -1,8 +1,41 @@
 import React from 'react'
-import { useRR } from '../store/RRContext.tsx'
+import { useRR, useTrigger } from '../store/RRContext.tsx'
 import { Icon, SeedMark, useCountUp, Progress } from '../ui.jsx'
-import { useT, useFmt, useLang } from '../i18n.jsx'
+import { useT, useFmt, useLang, useProfile } from '../i18n.jsx'
 import { BTLogo } from '../BTLogo.jsx'
+
+/* Contract renewals offered on the home screen, per product the customer has. */
+const RENEWALS = {
+  electricity: { product: 'electricity', kind: 'elec',     seeds: 1000,
+    name: 'Contract verlengd: Stroom',   nameEn: 'Contract renewed: Electricity' },
+  internet:    { product: 'internet',    kind: 'internet', seeds: 1000,
+    name: 'Contract verlengd: Internet', nameEn: 'Contract renewed: Internet' },
+};
+
+function RenewalCard({ kind, seeds, onRenew }){
+  const t = useT();
+  const r = t.renewal;
+  return (
+    <div className="rr-card rr-fadein" style={{ marginTop:14, padding:'15px 16px', display:'flex',
+      alignItems:'center', gap:13, border:'1.5px solid rgba(0,166,81,0.30)',
+      background:'linear-gradient(120deg, rgba(0,166,81,0.07), rgba(200,230,0,0.07))' }}>
+      <span style={{ width:42, height:42, borderRadius:13, background:'rgba(0,166,81,0.14)', flexShrink:0,
+        display:'inline-flex', alignItems:'center', justifyContent:'center' }}>
+        <Icon name="tiers" size={22} stroke="var(--green)"/>
+      </span>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div className="rr-eyebrow" style={{ marginBottom:3 }}>{r.eyebrow}</div>
+        <div style={{ fontWeight:800, fontSize:14 }}>{r[kind]}</div>
+        <div className="rr-sub" style={{ fontSize:12 }}>{r.desc(seeds)}</div>
+      </div>
+      <button onClick={onRenew} style={{ border:'none', background:'var(--green)', color:'#fff',
+        cursor:'pointer', fontFamily:'inherit', fontWeight:800, fontSize:12.5, borderRadius:12,
+        padding:'10px 14px', flexShrink:0, boxShadow:'0 6px 16px rgba(0,166,81,0.28)' }}>
+        {r.cta}
+      </button>
+    </div>
+  );
+}
 
 /* ───────────────── Screen 1 · Dashboard ───────────────── */
 function Logo({ light=false }){
@@ -16,13 +49,26 @@ function Logo({ light=false }){
   );
 }
 
-function Dashboard({ onNav }){
+function Dashboard({ onNav, onProfileOpen }){
   const R = useRR();
   const t = useT();
   const fmt = useFmt();
   const { lang } = useLang();
 
   const { userName } = useLang();
+  const { products } = useProfile();
+  const { renewProduct } = useTrigger();
+
+  // The internet renewal appears a short while after the home screen opens.
+  const [showInternet, setShowInternet] = React.useState(false);
+  React.useEffect(() => {
+    const id = setTimeout(() => setShowInternet(true), 10000);
+    return () => clearTimeout(id);
+  }, []);
+
+  const elecOpen     = products.includes('electricity') && !R.renewals.includes('electricity');
+  const internetOpen = products.includes('internet')    && !R.renewals.includes('internet') && showInternet;
+
   const tier = R.tiers.find(tr => tr.id === R.currentTier);
   const tierName = lang === 'en' ? tier.nameEn : tier.name;
   const nextTierName = lang === 'en' ? R.nextTier.nameEn : R.nextTier.name;
@@ -37,10 +83,13 @@ function Dashboard({ onNav }){
     <div className="rr-page rr-stagger">
       <div className="rr-header" style={{ padding:'4px 0 14px' }}>
         <Logo/>
-        <div style={{ textAlign:'right' }}>
+        <button onClick={onProfileOpen} style={{
+          textAlign:'right', background:'none', border:'none', cursor:'pointer',
+          fontFamily:'inherit', padding:0,
+        }}>
           <div className="rr-sub" style={{ fontWeight:600 }}>{t.dashboard.greeting(new Date().getHours())}</div>
-          <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.4 }}>{userName || R.user.name} 👋</div>
-        </div>
+          <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.4, color:'var(--navy)' }}>{userName || R.user.name} 👋</div>
+        </button>
       </div>
 
       {/* Hero balance card */}
@@ -90,6 +139,16 @@ function Dashboard({ onNav }){
           {t.dashboard.period} {R.period.startLabel} – {R.period.endLabel}
         </div>
       </div>
+
+      {/* Contract renewals (per product the customer has) */}
+      {elecOpen && (
+        <RenewalCard kind="elec" seeds={RENEWALS.electricity.seeds}
+          onRenew={() => renewProduct('electricity', RENEWALS.electricity.name, RENEWALS.electricity.nameEn, RENEWALS.electricity.seeds)}/>
+      )}
+      {internetOpen && (
+        <RenewalCard kind="internet" seeds={RENEWALS.internet.seeds}
+          onRenew={() => renewProduct('internet', RENEWALS.internet.name, RENEWALS.internet.nameEn, RENEWALS.internet.seeds)}/>
+      )}
 
       {/* Stat chips */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:9, marginTop:14 }}>

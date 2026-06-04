@@ -20,7 +20,7 @@ describe('ConfigApp', () => {
     expect(screen.getByText('Welkomstbonus')).toBeInTheDocument();
     expect(screen.getByText('Contract verlengd (1 jaar)')).toBeInTheDocument();
     expect(screen.getByText('App geactiveerd')).toBeInTheDocument();
-    expect(screen.getByText('Remote uitlezing uitgezet')).toBeInTheDocument();
+    expect(screen.getByText('Remote uitlezing aangezet')).toBeInTheDocument();
   });
 
   test('toggling a toggle writes to localStorage', () => {
