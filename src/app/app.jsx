@@ -10,6 +10,7 @@ import { Usage } from './screens/usage.jsx'
 import { LanguageProvider, useT, useLang } from './i18n.jsx'
 import { OnboardingModal } from './OnboardingModal.jsx'
 import { NotificationQueue } from './NotificationQueue.jsx'
+import { TierUpCelebration } from './TierUpCelebration.jsx'
 import { useRR, useTrigger } from './store/RRContext.tsx'
 
 /* ───────────────── RootedRewards · App shell + tab bar ───────────────── */
@@ -201,6 +202,7 @@ function App(){
       <AutoSimulateWeekends/>
       <FullscreenHint/>
       <RewardToast onView={()=>go('history')}/>
+      <TierUpCelebration/>
       <div className="rr-scroll" ref={scrollRef}>
         <div key={tab}>{screens[tab]}</div>
       </div>
