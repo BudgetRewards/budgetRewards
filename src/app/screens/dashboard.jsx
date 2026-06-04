@@ -3,6 +3,7 @@ import { useRR, useTrigger } from '../store/RRContext.tsx'
 import { Icon, SeedMark, useCountUp, Progress } from '../ui.jsx'
 import { useT, useFmt, useLang, useProfile } from '../i18n.jsx'
 import { BTLogo } from '../BTLogo.jsx'
+import { LiveFeed } from '../LiveFeed.jsx'
 
 /* Contract renewals offered on the home screen, per product the customer has. */
 const RENEWALS = {
@@ -190,6 +191,9 @@ function DashboardInner({ onNav, onProfileOpen }){
           <span className="l">{t.dashboard.daysLeft}</span>
         </div>
       </div>
+
+      {/* Live community feed (global activity from the KV store) */}
+      <LiveFeed/>
 
       {/* Quick action strip */}
       <button className="rr-card" onClick={()=>onNav('earn')} style={{ marginTop:14, width:'100%', border:'none',

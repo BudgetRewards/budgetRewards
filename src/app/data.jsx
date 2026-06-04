@@ -26,7 +26,7 @@ const RR = {
     { id:3, name:'Harvest Hours — zondag',    nameEn:'Harvest Hours — Sunday',     cat:'Harvest Hours', catEn:'Harvest Hours', date:'18 mei 2026', base:10, mult:1.5, amount:15,   kind:'pos' },
     { id:4, name:'Maandelijkse meterstand',   nameEn:'Monthly meter reading',      cat:'App & Data',    catEn:'App & Data', date:'1 mei 2026',  base:20, mult:1.5, amount:30,   kind:'pos' },
     { id:5, name:'Tweede product: Internet',  nameEn:'Second product: Internet',   cat:'Multi-product', catEn:'Multi-product', date:'12 apr 2026', base:500, mult:1, amount:500,  kind:'pos' },
-    { id:6, name:'Boom-tier bereikt',         nameEn:'Tree tier reached',          cat:'Lifecycle',     catEn:'Lifecycle', date:'12 apr 2026', base:250, mult:1, amount:250,  kind:'pos' },
+    { id:6, name:'Boom-niveau bereikt',         nameEn:'Tree level reached',          cat:'Lifecycle',     catEn:'Lifecycle', date:'12 apr 2026', base:250, mult:1, amount:250,  kind:'pos' },
     { id:7, name:'Slimme thermostaat gekoppeld', nameEn:'Smart thermostat connected', cat:'Energiegedrag', catEn:'Energy behaviour', date:'28 mrt 2026', base:200, mult:1, amount:200, kind:'pos' },
     { id:8, name:'App geactiveerd',           nameEn:'App activated',              cat:'App & Data',    catEn:'App & Data', date:'3 mrt 2026',  base:150, mult:1, amount:150,  kind:'pos' },
     { id:9, name:'Welkomstbonus',             nameEn:'Welcome bonus',              cat:'Lifecycle',     catEn:'Lifecycle', date:'1 jan 2026',  base:1000, mult:1, amount:1000, kind:'pos' },
@@ -35,7 +35,7 @@ const RR = {
   catalogue: [
     { cat:'Contract & Lifecycle', catEn:'Contract & Lifecycle', items:[
       { name:'Welkomstbonus',              nameEn:'Welcome bonus',           seeds:1000, status:'claimed' },
-      { name:'Boom-tier bereikt',          nameEn:'Tree tier reached',       seeds:250,  status:'claimed' },
+      { name:'Boom-niveau bereikt',          nameEn:'Tree level reached',       seeds:250,  status:'claimed' },
       { name:'Contract verlengd (1 jaar)', nameEn:'Contract renewed (1 year)', seeds:400, status:'available' },
       { name:'5 jaar trouw lid',           nameEn:'5 years loyal member',    seeds:1500, status:'locked',
         need:'Word lid voor 5 jaar — nog 4 jaar te gaan',

@@ -13,6 +13,7 @@ import { ProfileSheet } from './ProfileSheet.jsx'
 import { NotificationQueue } from './NotificationQueue.jsx'
 import { TierUpCelebration } from './TierUpCelebration.jsx'
 import { useRR, useTrigger } from './store/RRContext.tsx'
+import { useLiveSync } from './live.ts'
 
 /* ───────────────── RootedRewards · App shell + tab bar ───────────────── */
 const TABS = [
@@ -249,6 +250,7 @@ function App(){
   const scrollRef = React.useRef(null);
   const { userName } = useLang();
   const { markHistorySeen } = useTrigger();
+  useLiveSync(); // records each new positive ledger entry to the live store
 
   const go = (id)=>{ setTab(id); localStorage.setItem('rr-tab', id);
     if(scrollRef.current) scrollRef.current.scrollTop = 0; };

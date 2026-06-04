@@ -4,15 +4,15 @@ const T = {
   nl: {
     fmt: n => n.toLocaleString('nl-NL'),
     tabs: {
-      home: 'Home', history: 'Historie', earn: 'Verdienen', tiers: 'Tiers', harvest: 'Oogsturen', usage: 'Verbruik',
+      home: 'Home', history: 'Historie', earn: 'Verdienen', tiers: 'Niveaus', harvest: 'Oogsturen', usage: 'Verbruik',
     },
     dashboard: {
       greeting: h => h >= 6 && h < 12 ? 'Goedemorgen,' : h >= 12 && h < 18 ? 'Goedemiddag,' : h >= 18 && h < 23 ? 'Goedenavond,' : 'Goedenacht,',
       balance: 'Jouw seeds-saldo',
-      currentTier: 'Huidige tier',
+      currentTier: 'Huidig niveau',
       to: 'Naar',
       seedsToGo: 'seeds te gaan',
-      topTier: 'Hoogste tier bereikt 🌲',
+      topTier: 'Hoogste niveau bereikt 🌲',
       seeds: 'seeds',
       period: 'Periode',
       multiplier: 'Multiplier actief',
@@ -22,6 +22,13 @@ const T = {
       actionsAvailable: n => `${n} acties beschikbaar om te claimen`,
       recentActivity: 'Recente activiteit',
       seeAll: 'Alles →',
+      live: {
+        title: 'Live community',
+        total: 'Totaal verdiend (iedereen)',
+        users: 'Deelnemers',
+        recent: 'Recent verdiend',
+        empty: 'Nog geen activiteit',
+      },
     },
     ledger: {
       eyebrow: 'Seeds-grootboek',
@@ -32,25 +39,25 @@ const T = {
       earned: 'Verdiend',
       penaltiesFilter: 'Gemist',
       empty: 'Geen transacties in deze categorie.',
-      footnote: 'Multiplier wordt toegepast op het moment van verdienen — op basis van je tier op dat moment.',
+      footnote: 'Multiplier wordt toegepast op het moment van verdienen — op basis van je niveau op dat moment.',
     },
     catalogue: {
       eyebrow: 'Catalogus',
       title: 'Verdienen',
       actionsReady: n => `${n} acties klaar om te claimen`,
-      tierNote: 'Elke seed telt 1,5× mee in jouw Boom-tier',
+      tierNote: 'Elke seed telt 1,5× mee in jouw Boom-niveau',
     },
     tiers: {
       eyebrow: 'Levenslange status',
-      title: 'Tiers',
+      title: 'Niveaus',
       nog: n => `nog ${n} seeds`,
       seedsLabel: n => `${n} seeds`,
       multiplier: 'multiplier',
       qualify: 'Zo kwalificeer je',
-      currentBadge: '★ Jouw huidige tier',
-      topTier: 'Hoogste tier bereikt — je bent op het hoogste niveau',
-      neverDown: 'Tiers gaan nooit omlaag',
-      neverDownDesc: 'Eenmaal bereikt, behoud je je tier levenslang — ook als je seeds-saldo daalt. Je status is voor altijd van jou.',
+      currentBadge: '★ Jouw huidige niveau',
+      topTier: 'Hoogste niveau bereikt — je bent op het hoogste niveau',
+      neverDown: 'Niveaus gaan nooit omlaag',
+      neverDownDesc: 'Eenmaal bereikt, behoud je je niveau levenslang — ook als je seeds-saldo daalt. Je status is voor altijd van jou.',
     },
     harvest: {
       eyebrow: 'Apr – sep · in het weekend',
@@ -189,20 +196,89 @@ const T = {
         },
         yearLabel: 'Jaar', selectYear: 'Kies een jaar',
       },
+      questionnaireSection: 'Vragenlijst',
+      questionnaire: {
+        subtitle: 'Help ons je beter te leren kennen voor de beste beloningen. Duurt ~2 minuten.',
+        maxHint: n => `Kies max. 3 · ${n}/3`,
+        save: 'Opslaan',
+        doneTitle: 'Vragenlijst ingevuld',
+        seedsEarned: n => `+${n} seeds verdiend`,
+        hobbies: {
+          title: 'Wat je graag doet',
+          q: "Selecteer je top 3 hobby's",
+          options: [
+            { value:'movies',  label:'Kijken naar films & series' },
+            { value:'gaming',  label:'Gamen' },
+            { value:'sport',   label:'Sport & fitness' },
+            { value:'reading', label:'Lezen & podcasts' },
+            { value:'cooking', label:'Koken & recepten' },
+            { value:'travel',  label:'Reizen & avonturen' },
+            { value:'social',  label:'Socializen & events' },
+            { value:'diy',     label:'DIY & klussen' },
+          ],
+        },
+        sustainability: {
+          title: 'Duurzaamheid',
+          q: 'Hoe belangrijk is duurzaamheid voor jou?',
+          options: [
+            { value:'very',    label:'🌱 Erg belangrijk, ik let erop' },
+            { value:'fairly',  label:'🌍 Best belangrijk, waar mogelijk' },
+            { value:'neutral', label:'⚖️ Neutraal, maakt niet veel uit' },
+            { value:'not',     label:'💭 Niet mijn prioriteit' },
+          ],
+        },
+        rewards: {
+          title: 'Hoe je beloond wilt worden',
+          q: 'Wat spreekt jou aan?',
+          options: [
+            { value:'cashback',    label:'Korting op mijn rekening (cashback)' },
+            { value:'experiences', label:'Ervaringen (dinners, events, toegangen)' },
+            { value:'streaming',   label:'Gratis streaming/apps (Netflix, Spotify, etc)' },
+            { value:'shopping',    label:'Kortingen op winkelen' },
+            { value:'sustainable', label:'Duurzame producten/diensten' },
+            { value:'donation',    label:'Donatie aan goed doel namens mij' },
+            { value:'upgrades',    label:'Gratis upgrades (sneller internet, meer data)' },
+            { value:'earlyaccess', label:'Exclusieve early access (eerste naar nieuwe aanbiedingen)' },
+          ],
+        },
+        internet: {
+          title: 'Internet & online leven',
+          q: 'Hoe gebruik je internet het meest?',
+          options: [
+            { value:'streaming',  label:'Video streamen (Netflix, YouTube, etc)' },
+            { value:'videocalls', label:'Veel videobellen (Teams, WhatsApp, Zoom)' },
+            { value:'wfh',        label:'Thuis werken/studeren' },
+            { value:'gaming',     label:'Online gamen' },
+            { value:'social',     label:'Social media & content creëren' },
+            { value:'news',       label:'Nieuws & informatie' },
+            { value:'banking',    label:'Online bankieren & winkelen' },
+          ],
+        },
+        enthusiasm: {
+          title: 'Wat je ervan vindt',
+          q: 'Hoe enthousiast ben je over Rooted Rewards?',
+          options: [
+            { value:'super',       label:'🚀 Super enthousiast, vertel me alles!' },
+            { value:'interested',  label:'👍 Interessant, graag meer info' },
+            { value:'nice',        label:'😌 Leuk meegenomen' },
+            { value:'considering', label:'🤔 Even bekijken' },
+          ],
+        },
+      },
     },
   },
   en: {
     fmt: n => n.toLocaleString('en-US'),
     tabs: {
-      home: 'Home', history: 'History', earn: 'Earn', tiers: 'Tiers', harvest: 'Harvest', usage: 'Usage',
+      home: 'Home', history: 'History', earn: 'Earn', tiers: 'Levels', harvest: 'Harvest', usage: 'Usage',
     },
     dashboard: {
       greeting: h => h >= 6 && h < 12 ? 'Good morning,' : h >= 12 && h < 18 ? 'Good afternoon,' : h >= 18 && h < 23 ? 'Good evening,' : 'Good night,',
       balance: 'Your seeds balance',
-      currentTier: 'Current tier',
+      currentTier: 'Current level',
       to: 'To',
       seedsToGo: 'seeds to go',
-      topTier: 'Top tier reached 🌲',
+      topTier: 'Top level reached 🌲',
       seeds: 'seeds',
       period: 'Period',
       multiplier: 'Multiplier active',
@@ -212,6 +288,13 @@ const T = {
       actionsAvailable: n => `${n} actions available to claim`,
       recentActivity: 'Recent activity',
       seeAll: 'All →',
+      live: {
+        title: 'Live community',
+        total: 'Total earned (everyone)',
+        users: 'Participants',
+        recent: 'Recently earned',
+        empty: 'No activity yet',
+      },
     },
     ledger: {
       eyebrow: 'Seeds ledger',
@@ -222,25 +305,25 @@ const T = {
       earned: 'Earned',
       penaltiesFilter: 'Missed',
       empty: 'No transactions in this category.',
-      footnote: 'Multiplier is applied at the time of earning — based on your tier at that moment.',
+      footnote: 'Multiplier is applied at the time of earning — based on your level at that moment.',
     },
     catalogue: {
       eyebrow: 'Catalogue',
       title: 'Earn',
       actionsReady: n => `${n} actions ready to claim`,
-      tierNote: 'Every seed counts 1.5× in your Tree tier',
+      tierNote: 'Every seed counts 1.5× in your Tree level',
     },
     tiers: {
       eyebrow: 'Lifetime status',
-      title: 'Tiers',
+      title: 'Levels',
       nog: n => `${n} seeds to go`,
       seedsLabel: n => `${n} seeds`,
       multiplier: 'multiplier',
       qualify: 'How to qualify',
-      currentBadge: '★ Your current tier',
-      topTier: 'Top tier reached — you are at the highest level',
-      neverDown: 'Tiers never go down',
-      neverDownDesc: 'Once reached, you keep your tier for life — even if your seeds balance drops. Your status is yours forever.',
+      currentBadge: '★ Your current level',
+      topTier: 'Top level reached — you are at the highest level',
+      neverDown: 'Levels never go down',
+      neverDownDesc: 'Once reached, you keep your level for life — even if your seeds balance drops. Your status is yours forever.',
     },
     harvest: {
       eyebrow: 'Apr – Sep · on weekends',
@@ -379,6 +462,75 @@ const T = {
         },
         yearLabel: 'Year', selectYear: 'Select year',
       },
+      questionnaireSection: 'Questionnaire',
+      questionnaire: {
+        subtitle: 'Help us get to know you for the best rewards. Takes ~2 minutes.',
+        maxHint: n => `Choose max. 3 · ${n}/3`,
+        save: 'Save',
+        doneTitle: 'Questionnaire completed',
+        seedsEarned: n => `+${n} seeds earned`,
+        hobbies: {
+          title: 'What you enjoy',
+          q: 'Select your top 3 hobbies',
+          options: [
+            { value:'movies',  label:'Watching films & series' },
+            { value:'gaming',  label:'Gaming' },
+            { value:'sport',   label:'Sport & fitness' },
+            { value:'reading', label:'Reading & podcasts' },
+            { value:'cooking', label:'Cooking & recipes' },
+            { value:'travel',  label:'Travel & adventures' },
+            { value:'social',  label:'Socialising & events' },
+            { value:'diy',     label:'DIY & home projects' },
+          ],
+        },
+        sustainability: {
+          title: 'Sustainability',
+          q: 'How important is sustainability to you?',
+          options: [
+            { value:'very',    label:'🌱 Very important, I pay attention to it' },
+            { value:'fairly',  label:'🌍 Fairly important, where possible' },
+            { value:'neutral', label:"⚖️ Neutral, doesn't matter much" },
+            { value:'not',     label:'💭 Not my priority' },
+          ],
+        },
+        rewards: {
+          title: 'How you want to be rewarded',
+          q: 'What appeals to you?',
+          options: [
+            { value:'cashback',    label:'Discount on my bill (cashback)' },
+            { value:'experiences', label:'Experiences (dinners, events, access)' },
+            { value:'streaming',   label:'Free streaming/apps (Netflix, Spotify, etc)' },
+            { value:'shopping',    label:'Shopping discounts' },
+            { value:'sustainable', label:'Sustainable products/services' },
+            { value:'donation',    label:'Donation to charity on my behalf' },
+            { value:'upgrades',    label:'Free upgrades (faster internet, more data)' },
+            { value:'earlyaccess', label:'Exclusive early access (first to new offers)' },
+          ],
+        },
+        internet: {
+          title: 'Internet & online life',
+          q: 'How do you use the internet most?',
+          options: [
+            { value:'streaming',  label:'Streaming video (Netflix, YouTube, etc)' },
+            { value:'videocalls', label:'Lots of video calls (Teams, WhatsApp, Zoom)' },
+            { value:'wfh',        label:'Working/studying from home' },
+            { value:'gaming',     label:'Online gaming' },
+            { value:'social',     label:'Social media & creating content' },
+            { value:'news',       label:'News & information' },
+            { value:'banking',    label:'Online banking & shopping' },
+          ],
+        },
+        enthusiasm: {
+          title: 'What you think',
+          q: 'How excited are you about Rooted Rewards?',
+          options: [
+            { value:'super',       label:'🚀 Super excited, tell me everything!' },
+            { value:'interested',  label:"👍 Interesting, I'd like more info" },
+            { value:'nice',        label:'😌 Nice bonus' },
+            { value:'considering', label:'🤔 Just taking a look' },
+          ],
+        },
+      },
     },
   },
 }
@@ -391,6 +543,9 @@ const DEFAULT_PROFILE = {
   heatingType: null, heatpumpSince: null,
   evType: null, evCharging: null,
   moreCompleted: false,
+  hobbies: [], rewardPrefs: [], internetUse: [],
+  sustainability: '', enthusiasm: '',
+  questionnaireCompleted: false,
 }
 
 function readProfile() {
@@ -414,7 +569,11 @@ export function LanguageProvider({ children }) {
   const [profile, setProfileState] = React.useState(readProfile)
   const set = l => { setLang(l); localStorage.setItem('rr-lang', l) }
   const setUserName = n => { setUserNameState(n); localStorage.setItem('rr-name', n) }
-  const setProfile = p => { setProfileState(p); localStorage.setItem('rr-profile', JSON.stringify(p)) }
+  const setProfile = updater => setProfileState(prev => {
+    const next = typeof updater === 'function' ? updater(prev) : updater
+    try { localStorage.setItem('rr-profile', JSON.stringify(next)) } catch { /* ignore quota/serialisation errors */ }
+    return next
+  })
   return (
     <LangContext.Provider value={{ lang, set, userName, setUserName, profile, setProfile }}>
       {children}

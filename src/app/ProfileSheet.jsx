@@ -54,7 +54,7 @@ function StyledSelect({ value, onChange, children }) {
 
 const YEARS = Array.from({ length: 27 }, (_, i) => 2000 + i).reverse() // 2026 → 2000
 
-function RadioGroup({ options, value, onChange }) {
+export function RadioGroup({ options, value, onChange }) {
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
       {options.map(opt => {
@@ -72,6 +72,49 @@ function RadioGroup({ options, value, onChange }) {
               border: on ? '5px solid var(--green)' : '2px solid var(--grey-line)',
               background: '#fff', transition:'all .15s',
             }}/>
+            {opt.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+export function CheckboxGroup({ options, value, max = 3, onChange }) {
+  function toggle(v) {
+    if (value.includes(v)) {
+      onChange(value.filter(x => x !== v))
+    } else if (value.length < max) {
+      onChange([...value, v])
+    } else {
+      // Soft cap: drop the oldest pick and append the new one (rolling top-N).
+      onChange([...value.slice(1), v])
+    }
+  }
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+      {options.map(opt => {
+        const on = value.includes(opt.value)
+        return (
+          <button key={opt.value} type="button" onClick={() => toggle(opt.value)} style={{
+            border: on ? '2px solid var(--green)' : '1.5px solid var(--grey-line)',
+            borderRadius:12, padding:'11px 14px', background: on ? 'rgba(0,166,81,0.07)' : '#fff',
+            fontFamily:'inherit', fontWeight:700, fontSize:13.5, cursor:'pointer',
+            color: on ? 'var(--green)' : 'var(--navy)', transition:'all .15s',
+            textAlign:'left', display:'flex', alignItems:'center', gap:10,
+          }}>
+            <span style={{
+              width:18, height:18, borderRadius:6, flexShrink:0,
+              border: on ? '2px solid var(--green)' : '2px solid var(--grey-line)',
+              background: on ? 'var(--green)' : '#fff', transition:'all .15s',
+              display:'flex', alignItems:'center', justifyContent:'center',
+            }}>
+              {on && (
+                <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                  <path d="M1 4l3 3 5-6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </span>
             {opt.label}
           </button>
         )
@@ -231,6 +274,80 @@ function MoreAboutYou({ profile, setProfile, onClose }) {
             <div style={{ fontWeight:800, fontSize:13.5, color:'var(--navy)' }}>{m.closing.title}</div>
             <div style={{ fontSize:12.5, color:'var(--green)', fontWeight:700, marginTop:2 }}>
               {m.closing.seedsEarned(MORE_SEEDS)}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const QUESTIONNAIRE_SEEDS = 10
+
+export function Questionnaire({ profile, setProfile }) {
+  const t = useT()
+  const q = t.profile.questionnaire
+  const { claimNotification } = useTrigger()
+
+  function update(key, value) {
+    setProfile(prev => ({ ...prev, [key]: value }))
+  }
+
+  function handleSave() {
+    const wasCompleted = profile.questionnaireCompleted
+    setProfile(prev => ({ ...prev, questionnaireCompleted: true }))
+    if (!wasCompleted) {
+      claimNotification('Vragenlijst ingevuld', 'Questionnaire completed', 'App & Data', QUESTIONNAIRE_SEEDS)
+    }
+  }
+
+  const multiSection = (section, key) => (
+    <>
+      <SectionLabel>{section.title}</SectionLabel>
+      <p style={{ fontSize:13, color:'var(--navy)', fontWeight:600, margin:'0 0 4px' }}>{section.q}</p>
+      <p style={{ fontSize:11, color:'var(--navy-60)', fontWeight:600, margin:'0 0 10px' }}>
+        {q.maxHint((profile[key] || []).length)}
+      </p>
+      <CheckboxGroup options={section.options} value={profile[key] || []} max={3}
+        onChange={v => update(key, v)}/>
+    </>
+  )
+
+  const singleSection = (section, key) => (
+    <>
+      <SectionLabel>{section.title}</SectionLabel>
+      <p style={{ fontSize:13, color:'var(--navy)', fontWeight:600, margin:'0 0 10px' }}>{section.q}</p>
+      <RadioGroup options={section.options} value={profile[key]} onChange={v => update(key, v)}/>
+    </>
+  )
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
+      <p style={{ fontSize:13, color:'var(--navy-60)', lineHeight:1.5, margin:'0 0 6px' }}>{q.subtitle}</p>
+
+      {multiSection(q.hobbies, 'hobbies')}
+      {singleSection(q.sustainability, 'sustainability')}
+      {multiSection(q.rewards, 'rewardPrefs')}
+      {multiSection(q.internet, 'internetUse')}
+      {singleSection(q.enthusiasm, 'enthusiasm')}
+
+      <button onClick={handleSave} style={{
+        marginTop:20, border:'none', borderRadius:14, padding:'14px',
+        background:'var(--green)', color:'#fff',
+        fontFamily:'inherit', fontWeight:800, fontSize:14, letterSpacing:0.4,
+        cursor:'pointer', boxShadow:'0 6px 16px rgba(0,166,81,0.28)',
+      }}>
+        {q.save}
+      </button>
+
+      {profile.questionnaireCompleted && (
+        <div style={{ marginTop:14, background:'rgba(0,166,81,0.08)', borderRadius:14,
+          padding:'14px 16px', display:'flex', alignItems:'center', gap:10 }}>
+          <span style={{ fontSize:22 }}>✅</span>
+          <div>
+            <div style={{ fontWeight:800, fontSize:13.5, color:'var(--navy)' }}>{q.doneTitle}</div>
+            <div style={{ fontSize:12.5, color:'var(--green)', fontWeight:700, marginTop:2 }}>
+              {q.seedsEarned(QUESTIONNAIRE_SEEDS)}
             </div>
           </div>
         </div>
@@ -400,6 +517,10 @@ export function ProfileSheet({ onClose }) {
           {/* ── More about you ── */}
           <SectionLabel>{p.moreSection}</SectionLabel>
           <MoreAboutYou profile={profile} setProfile={setProfile} onClose={onClose}/>
+
+          {/* ── Questionnaire ── */}
+          <SectionLabel>{p.questionnaireSection}</SectionLabel>
+          <Questionnaire profile={profile} setProfile={setProfile}/>
 
         </div>
       </div>
