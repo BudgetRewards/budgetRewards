@@ -19,7 +19,7 @@
 }
 
 *{ box-sizing:border-box; }
-html,body{ margin:0; padding:0; }
+html,body{ margin:0; padding:0; max-width:100%; overflow-x:hidden; }
 
 .rr{
   font-family:'Inter', -apple-system, system-ui, sans-serif;
@@ -151,6 +151,7 @@ html,body{ margin:0; padding:0; }
   max-height:88%; display:flex; flex-direction:column;
   box-shadow:0 -4px 32px rgba(26,26,46,0.16);
   animation:rrSlideUp .35s cubic-bezier(.22,1,.36,1) both;
+  overflow:hidden; z-index:1;
 }
 
 /* Onboarding modal */

@@ -14,7 +14,7 @@ import {
   MULTI_PRODUCT_ITEM_NAMES,
 } from './catalogueDerive';
 
-const TIER_MULTIPLIERS: Record<TierKey, number> = {
+export const TIER_MULTIPLIERS: Record<TierKey, number> = {
   seed: 1,
   tree: 1.5,
   forest: 2,
@@ -35,6 +35,13 @@ function evaluateTier(balance: number, current: TierKey): TierKey {
     }
   }
   return current;
+}
+
+/** Returns the crossing when newTier is a higher tier than oldTier, else null. */
+function tierUpFor(oldTier: TierKey, newTier: TierKey): { from: TierKey; to: TierKey } | null {
+  return TIER_ORDER.indexOf(newTier) > TIER_ORDER.indexOf(oldTier)
+    ? { from: oldTier, to: newTier }
+    : null;
 }
 
 function nextTierFor(tier: TierKey, tiers: RRState['tiers']): RRState['nextTier'] {
@@ -181,6 +188,7 @@ export function reducer(state: RRState, action: RRAction): RRState {
       currentTier: tier,
       multiplier: TIER_MULTIPLIERS[tier],
       nextTier: nextTierFor(tier, state.tiers),
+      pendingTierUp: null,
     };
   }
   if (action.type === 'SET_USAGE') {
@@ -214,6 +222,8 @@ export function reducer(state: RRState, action: RRAction): RRState {
           kind,
         }, 1); // fixed 1× — harvest days use the configured value, not tier multiplier
 
+        // A harvest day that pushes the balance over a threshold celebrates too.
+        const dayTierUp = tierUpFor(next.currentTier, patch.currentTier);
         next = {
           ...next,
           ...patch,
@@ -223,6 +233,7 @@ export function reducer(state: RRState, action: RRAction): RRState {
           pendingReward: electricity
             ? { amount: entry.amount, weekend: dayNL, weekendEn: dayEN }
             : next.pendingReward,
+          pendingTierUp: dayTierUp ?? next.pendingTierUp,
         };
       }
     }
@@ -237,6 +248,9 @@ export function reducer(state: RRState, action: RRAction): RRState {
   }
   if (action.type === 'DISMISS_REWARD') {
     return state.pendingReward ? { ...state, pendingReward: null } : state;
+  }
+  if (action.type === 'DISMISS_TIER_UP') {
+    return state.pendingTierUp ? { ...state, pendingTierUp: null } : state;
   }
   if (action.type === 'UPDATE_LEDGER_ENTRY') {
     const existing = state.ledger.find(e => e.id === action.id);
@@ -253,6 +267,57 @@ export function reducer(state: RRState, action: RRAction): RRState {
       ledger:      state.ledger.map(e =>
         e.id === action.id ? { ...e, base: action.base, amount: action.amount } : e
       ),
+    };
+  }
+  if (action.type === 'SELECT_EXCLUSIVE') {
+    const category = state.catalogue.find(c => c.cat === action.cat);
+    const target = category?.items.find(i => i.name === action.catalogueKey);
+    if (!category || !target || !target.group || target.status === 'claimed') return state;
+
+    // The currently-claimed sibling (if any) is swapped out; balance moves by the
+    // net difference so only one option in the group ever counts.
+    const claimedSiblings = category.items.filter(
+      i => i.group === target.group && i.status === 'claimed' && i.name !== target.name
+    );
+    const removed = claimedSiblings.reduce((s, i) => s + i.seeds, 0);
+    const newBalance = Math.min(state.cap, Math.max(0, state.balance + target.seeds - removed));
+    const newTier = evaluateTier(newBalance, state.currentTier);
+
+    const catalogue = state.catalogue.map(c =>
+      c.cat !== action.cat ? c : {
+        ...c,
+        items: c.items.map(i => {
+          if (i.name === target.name) return { ...i, status: 'claimed' as const };
+          if (i.group === target.group && i.status === 'claimed') return { ...i, status: 'available' as const };
+          return i;
+        }),
+      }
+    );
+
+    // Drop the swapped-out sibling's ledger row and record the newly-selected one.
+    const siblingNames = new Set(claimedSiblings.map(s => s.name));
+    const prunedLedger = state.ledger.filter(e => !siblingNames.has(e.name));
+    const entry: LedgerEntry = {
+      id: nextLedgerId(prunedLedger),
+      name: target.name,
+      nameEn: target.nameEn,
+      cat: action.cat,
+      date: formatDate(),
+      base: target.seeds,
+      mult: 1,
+      amount: target.seeds,
+      kind: 'pos',
+    };
+
+    return {
+      ...state,
+      balance: newBalance,
+      currentTier: newTier,
+      multiplier: TIER_MULTIPLIERS[newTier],
+      nextTier: nextTierFor(newTier, state.tiers),
+      catalogue,
+      ledger: [entry, ...prunedLedger],
+      historyUnseen: true,
     };
   }
   if (action.type === 'RENEW_PRODUCT') {
@@ -281,7 +346,7 @@ export function reducer(state: RRState, action: RRAction): RRState {
 
   // A zero-value trigger (e.g. re-enabling remote reading) only flips flags and
   // catalogue status — it must not add a ledger entry or move the balance.
-  const patch = base === 0
+  const patch: Partial<ReturnType<typeof applyEarning>['patch']> = base === 0
     ? {}
     : applyEarning(state, { name, nameEn, cat, base, kind }).patch;
 
@@ -303,12 +368,17 @@ export function reducer(state: RRState, action: RRAction): RRState {
     ? applyHarvestDate(state.harvest, harvestDate, TIER_MULTIPLIERS[state.currentTier])
     : state.harvest;
 
+  const triggerTierUp = patch.currentTier
+    ? tierUpFor(state.currentTier, patch.currentTier)
+    : null;
+
   return {
     ...state,
     ...patch,
     catalogue: newCatalogue,
     harvest: newHarvest,
     remoteReadEnabled: setRemoteRead !== undefined ? setRemoteRead : state.remoteReadEnabled,
+    pendingTierUp: triggerTierUp ?? state.pendingTierUp,
     // Keep awardedHarvestDays in sync when a harvest day is triggered manually.
     awardedHarvestDays: harvestDate && !state.awardedHarvestDays.includes(harvestDate)
       ? [...state.awardedHarvestDays, harvestDate]

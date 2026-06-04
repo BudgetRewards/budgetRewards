@@ -64,6 +64,13 @@ function TriggerRow({ item, catName, isLast, onClaim }){
   );
 }
 
+/* Labels for mutually-exclusive "pick one" groups. */
+const GROUP_LABELS = {
+  'internet-speed': { nl: 'Internetsnelheid', en: 'Internet speed' },
+  'mobile-speed':   { nl: 'Mobiele snelheid', en: 'Mobile speed' },
+  'mobile-bundle':  { nl: 'Databundel',       en: 'Data bundle' },
+};
+
 /* ── Product bonus sub-section (sub-items under a claimed product) ── */
 function ProductBonusSection({ items, catName, onClaim }) {
   const { lang } = useLang();
@@ -90,11 +97,30 @@ function ProductBonusSection({ items, catName, onClaim }) {
           </span>
         )}
       </div>
-      {items.map((item, i) => (
-        <TriggerRow key={item.name} item={item} catName={catName}
-          isLast={i === items.length - 1}
-          onClaim={() => onClaim(item, catName)} />
-      ))}
+      {items.map((item, i) => {
+        // Caption above the first item of a mutually-exclusive group.
+        const prevGroup = items[i - 1]?.group;
+        const showCaption = item.group && item.group !== prevGroup;
+        const gl = item.group ? GROUP_LABELS[item.group] : null;
+        return (
+          <React.Fragment key={item.name}>
+            {showCaption && (
+              <div style={{ padding:'9px 14px 1px', display:'flex', gap:6, alignItems:'baseline' }}>
+                <span style={{ fontSize:10, fontWeight:800, color:'#5a7200',
+                  textTransform:'uppercase', letterSpacing:'0.06em' }}>
+                  {gl ? (lang === 'en' ? gl.en : gl.nl) : ''}
+                </span>
+                <span style={{ fontSize:10, fontWeight:600, color:'var(--navy-60)' }}>
+                  · {lang === 'en' ? 'pick one' : 'kies één'}
+                </span>
+              </div>
+            )}
+            <TriggerRow item={item} catName={catName}
+              isLast={i === items.length - 1}
+              onClaim={() => onClaim(item, catName)} />
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 }

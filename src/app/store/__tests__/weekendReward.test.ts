@@ -91,6 +91,17 @@ describe('harvest day reward (SET_USAGE)', () => {
     expect(s.awardedHarvestDays).not.toContain('2026-05-04');
   });
 
+  test('a harvest day that crosses a threshold sets pendingTierUp', () => {
+    // Harvest days award 10 seeds each; start at 2480 with electricity so the
+    // second day pushes the balance to 2500 (seed → tree).
+    let s = withElectricity({ ...initialState, balance: 2480, currentTier: 'seed', multiplier: 1, pendingTierUp: null });
+    s = setUsage(s, '2026-05-02', 2, 1); // Saturday earned → 2490, still seed
+    expect(s.pendingTierUp).toBeNull();
+    s = setUsage(s, '2026-05-03', 2, 1); // Sunday earned → 2500, crosses to tree
+    expect(s.currentTier).toBe('tree');
+    expect(s.pendingTierUp).toEqual({ from: 'seed', to: 'tree' });
+  });
+
   test('MARK_HISTORY_SEEN and DISMISS_REWARD clear their flags', () => {
     let s = withElectricity(initialState);
     s = setUsage(s, '2026-05-02', 2, 1);

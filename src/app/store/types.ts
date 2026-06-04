@@ -32,6 +32,9 @@ export type CatalogueItem = {
   status: CatalogueItemStatus;
   need?: string;
   needEn?: string;
+  /** Items sharing a group (within one category) are mutually exclusive — only one
+   *  can be 'claimed' at a time (e.g. internet speed, mobile data bundle). */
+  group?: string;
 };
 
 export type CatalogueCategory = {
@@ -99,6 +102,8 @@ export type RRState = {
   historyUnseen: boolean;
   /** The most recent weekend reward, shown as a toast until dismissed. */
   pendingReward: { amount: number; weekend: string; weekendEn: string } | null;
+  /** The most recent upward tier crossing, shown as a full-screen celebration until dismissed. */
+  pendingTierUp: { from: TierKey; to: TierKey } | null;
   /** Product ids (e.g. 'electricity', 'internet') whose contract has been renewed. */
   renewals: string[];
   /** The most recent renewal, shown as a popup until dismissed. */
@@ -131,8 +136,12 @@ export type RRAction =
   | { type: 'SELECT_USAGE_DATE'; payload: { date: string } }
   | { type: 'MARK_HISTORY_SEEN' }
   | { type: 'DISMISS_REWARD' }
+  | { type: 'DISMISS_TIER_UP' }
   /** Replace an existing ledger entry in-place and adjust the balance by the delta. */
   | { type: 'UPDATE_LEDGER_ENTRY'; id: number; base: number; amount: number }
+  /** Select one item from a mutually-exclusive group: claim it, un-claim the
+   *  current sibling, and adjust the balance by the net seed difference. */
+  | { type: 'SELECT_EXCLUSIVE'; cat: string; catalogueKey: string }
   | { type: 'RENEW_PRODUCT'; product: string; name: string; nameEn: string; seeds: number }
   | { type: 'DISMISS_RENEWAL' };
 
