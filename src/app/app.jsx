@@ -229,14 +229,14 @@ function AutoSimulateWeekends(){
         if(iso <= today && !state.usages[iso]){
           // Use the household-scaled target so accumulated days stay below the
           // benchmark (otherwise non-2-person homes can never go positive).
-          simulateUsage({ date: iso, hasHomeBattery: profile.homeBattery,
+          simulateUsage({ date: iso, hasHomeBattery: profile.homeBattery, hasSolar: profile.solarPanels,
             dailyTargetKwh: householdDailyTarget(profile.householdSize) });
         }
       });
     });
     // Refresh today's seed day to the household level so the month-to-date
     // comparison starts below the benchmark (claimable) for every household size.
-    simulateUsage({ date: today, hasHomeBattery: profile.homeBattery,
+    simulateUsage({ date: today, hasHomeBattery: profile.homeBattery, hasSolar: profile.solarPanels,
       dailyTargetKwh: householdDailyTarget(profile.householdSize) });
   }, [userName]);
 

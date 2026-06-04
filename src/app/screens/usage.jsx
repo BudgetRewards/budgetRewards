@@ -47,9 +47,27 @@ function StatCard({ label, value, unit, color }) {
   );
 }
 
-/* ── Hourly mirror bar chart ── */
-function Bars({ usage }) {
-  const max = Math.max(...usage.flatMap(u => [u.consumption, u.production]), 0.001);
+/* ── Hourly bar chart. Mirrored (consumption up / production down) when the
+   customer has solar; consumption-only otherwise. ── */
+function Bars({ usage, showProduction = true }) {
+  const max = Math.max(...usage.flatMap(u => showProduction ? [u.consumption, u.production] : [u.consumption]), 0.001);
+
+  // Consumption-only: single upward bar chart, no production half or centre axis.
+  if (!showProduction) {
+    const H = 140;
+    return (
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: H }}>
+        {usage.map(u => (
+          <div key={u.hour}
+            title={`${String(u.hour).padStart(2, '0')}:00 — ${kwh(u.consumption)} kWh`}
+            style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+            <div style={{ height: `${(u.consumption / max) * 100}%`, background: CONS, borderRadius: '3px 3px 0 0', opacity: 0.88 }}/>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   const HALF = 70;
   return (
     <div style={{ display: 'flex', alignItems: 'stretch', gap: 2, height: HALF * 2 }}>
@@ -71,34 +89,39 @@ function Bars({ usage }) {
 }
 
 /* ── Month-to-date comparison card ── */
-function MonthCompareCard({ monthCons, daysSimulated, monthlyAvg, householdSize, monthLabel, onClaim }) {
+function MonthCompareCard({ monthNet, hasSolar, daysSimulated, monthlyAvg, householdSize, monthLabel, onClaim }) {
   const { lang } = useLang();
   const [claimed, setClaimed] = React.useState(false);
-  // Reset when monthCons changes (regenerate or new day) so the button is available again.
-  React.useEffect(() => { setClaimed(false); }, [monthCons]);
+  // The grid draw can't be negative for the comparison (solar surplus is netted to 0).
+  const net = Math.max(0, monthNet);
+  // Reset when the net changes (regenerate or new day) so the button is available again.
+  React.useEffect(() => { setClaimed(false); }, [net]);
 
   const expectedByNow = (monthlyAvg / 30) * daysSimulated;
-  const diff = expectedByNow - monthCons; // positive = below expected (good)
+  const diff = expectedByNow - net; // positive = below expected (good)
   const isBelow = diff > 0;
   // Reward on the PERCENTAGE under/over the household average, so a 1-person home
   // earns the same as a 5-person home for the same relative saving (fair across sizes).
-  const pct = Math.abs(diff) / Math.max(expectedByNow, 0.1);
-  const seeds = Math.max(1, Math.round(pct * 300)); // ~30 seeds at 10% below average
+  const pct = Math.min(0.6, Math.abs(diff) / Math.max(expectedByNow, 0.1)); // cap to keep seeds sane
+  const seeds = Math.max(1, Math.round(pct * 300)); // ~30 seeds at 10% below; up to ~180
 
   // Scale bars so both fit nicely regardless of which is bigger
-  const scale = Math.max(monthCons, expectedByNow, 0.1) * 1.3;
-  const consPct     = Math.min(100, (monthCons / scale) * 100);
+  const scale = Math.max(net, expectedByNow, 0.1) * 1.3;
+  const consPct     = Math.min(100, (net / scale) * 100);
   const expectedPct = Math.min(100, (expectedByNow / scale) * 100);
 
   const sizeLabel = householdSize >= 6 ? '6+' : String(householdSize);
   const daysLabel = daysSimulated === 1
     ? (lang === 'en' ? '1 day' : '1 dag')
     : (lang === 'en' ? `${daysSimulated} days` : `${daysSimulated} dagen`);
+  // With solar the comparison is on net grid draw; without, it's plain consumption.
+  const yoursNL = hasSolar ? `Jouw netto afname (${daysLabel})` : `Jouw verbruik (${daysLabel})`;
+  const yoursEN = hasSolar ? `Your net draw (${daysLabel})` : `Your usage (${daysLabel})`;
 
   const NL = {
     title: 'Vergelijk met anderen',
     subtitle: `${sizeLabel}-persoonshuishouden`,
-    yours:  `Jouw verbruik (${daysLabel})`,
+    yours:  yoursNL,
     avg:    `Verwacht (${sizeLabel}-pers., ${daysLabel})`,
     below:  `${kwh(diff)} kWh onder verwacht`,
     above:  `${kwh(-diff)} kWh boven verwacht`,
@@ -109,7 +132,7 @@ function MonthCompareCard({ monthCons, daysSimulated, monthlyAvg, householdSize,
   const EN = {
     title: 'Compare with others',
     subtitle: `${sizeLabel}-person household`,
-    yours:  `Your usage (${daysLabel})`,
+    yours:  yoursEN,
     avg:    `Expected (${sizeLabel}-person, ${daysLabel})`,
     below:  `${kwh(diff)} kWh below expected`,
     above:  `${kwh(-diff)} kWh above expected`,
@@ -143,7 +166,7 @@ function MonthCompareCard({ monthCons, daysSimulated, monthlyAvg, householdSize,
         <div style={{ marginBottom: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: isBelow ? PROD : '#e05c4a' }}>{L.yours}</span>
-            <span style={{ fontSize: 12, fontWeight: 800, color: isBelow ? PROD : '#e05c4a' }}>{kwh(monthCons)} kWh</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: isBelow ? PROD : '#e05c4a' }}>{kwh(net)} kWh</span>
           </div>
           <div style={{ height: 9, borderRadius: 5, background: 'rgba(26,26,46,0.07)' }}>
             <div style={{ height: '100%', borderRadius: 5, width: `${consPct}%`,
@@ -195,10 +218,11 @@ function UsageInner() {
   const { lang } = useLang();
   const state = useRR();
   const { simulateUsage, selectUsageDate, logComparison } = useTrigger();
-  const { homeBattery, householdSize } = useProfile();
+  const { homeBattery, householdSize, solarPanels } = useProfile();
 
   const monthlyAvg = monthlyAvgForSize(householdSize);
   const dailyTarget = householdDailyTarget(householdSize);
+  const simOpts = { hasHomeBattery: homeBattery, hasSolar: solarPanels, dailyTargetKwh: dailyTarget };
 
   const date = state.currentUsageDate;
   const record = state.usages[date];
@@ -207,13 +231,13 @@ function UsageInner() {
   const hs = state.harvestSeason;
   const today = `${hs.year}-${pad(hs.todayMonth + 1)}-${pad(hs.todayDate)}`;
 
-  const regenerate = () => simulateUsage({ date, hasHomeBattery: homeBattery, dailyTargetKwh: dailyTarget });
+  const regenerate = () => simulateUsage({ date, ...simOpts });
 
   const onDateChange = e => {
     const next = e.target.value;
     if (!next || next > today) return;
     if (state.usages[next]) selectUsageDate(next);
-    else simulateUsage({ date: next, hasHomeBattery: homeBattery, dailyTargetKwh: dailyTarget });
+    else simulateUsage({ date: next, ...simOpts });
   };
 
   const fmtDate = iso =>
@@ -256,11 +280,11 @@ function UsageInner() {
         {sectionLabelDay}
       </div>
 
-      {/* Daily summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 9 }}>
+      {/* Daily summary — production/net only shown with solar panels */}
+      <div style={{ display: 'grid', gridTemplateColumns: solarPanels ? '1fr 1fr 1fr' : '1fr', gap: 9 }}>
         <StatCard label={t.usage.totalConsumption} value={kwh(totalCons)} unit={t.usage.kwh} color={CONS}/>
-        <StatCard label={t.usage.totalProduction}  value={kwh(totalProd)} unit={t.usage.kwh} color={PROD}/>
-        <StatCard label={t.usage.net}              value={kwh(net)}       unit={t.usage.kwh} color="var(--green-700)"/>
+        {solarPanels && <StatCard label={t.usage.totalProduction} value={kwh(totalProd)} unit={t.usage.kwh} color={PROD}/>}
+        {solarPanels && <StatCard label={t.usage.net} value={kwh(net)} unit={t.usage.kwh} color="var(--green-700)"/>}
       </div>
 
       {/* Date picker */}
@@ -283,9 +307,9 @@ function UsageInner() {
       <div className="rr-card" style={{ padding: '16px 14px 14px', marginTop: 14 }}>
         <div style={{ display: 'flex', gap: 16, marginBottom: 14 }}>
           <Legend color={CONS} label={t.usage.consumption}/>
-          <Legend color={PROD} label={t.usage.production}/>
+          {solarPanels && <Legend color={PROD} label={t.usage.production}/>}
         </div>
-        <Bars usage={usage}/>
+        <Bars usage={usage} showProduction={solarPanels}/>
         <div style={{ display: 'flex', marginTop: 7 }}>
           {usage.map(u => (
             <div key={u.hour} style={{ flex: 1, textAlign: 'center', fontSize: 9, fontWeight: 600, color: 'var(--grey-2)' }}>
@@ -295,12 +319,14 @@ function UsageInner() {
         </div>
       </div>
 
-      {/* Peaks */}
+      {/* Peaks — peak production only shown with solar panels */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
         <PeakRow icon="bolt" color={CONS} label={t.usage.peakConsumption}
           value={`${kwh(pCons.consumption)} ${t.usage.kwh}`} when={t.usage.at(pCons.hour)}/>
-        <PeakRow icon="sun" color={PROD} label={t.usage.peakProduction}
-          value={`${kwh(pProd.production)} ${t.usage.kwh}`} when={t.usage.at(pProd.hour)}/>
+        {solarPanels && (
+          <PeakRow icon="sun" color={PROD} label={t.usage.peakProduction}
+            value={`${kwh(pProd.production)} ${t.usage.kwh}`} when={t.usage.at(pProd.hour)}/>
+        )}
       </div>
 
       {/* ───── Per maand ───── */}
@@ -309,17 +335,19 @@ function UsageInner() {
         {sectionLabelMonth} — {monthLabel}
       </div>
 
-      {/* Month summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 9 }}>
+      {/* Month summary — production/net only shown with solar panels */}
+      <div style={{ display: 'grid', gridTemplateColumns: solarPanels ? '1fr 1fr 1fr' : '1fr', gap: 9 }}>
         <StatCard label={t.usage.totalConsumption} value={kwh(monthCons)} unit={t.usage.kwh} color={CONS}/>
-        <StatCard label={t.usage.totalProduction}  value={kwh(monthProd)} unit={t.usage.kwh} color={PROD}/>
-        <StatCard label={t.usage.net}              value={kwh(monthNet)}  unit={t.usage.kwh} color="var(--green-700)"/>
+        {solarPanels && <StatCard label={t.usage.totalProduction} value={kwh(monthProd)} unit={t.usage.kwh} color={PROD}/>}
+        {solarPanels && <StatCard label={t.usage.net} value={kwh(monthNet)} unit={t.usage.kwh} color="var(--green-700)"/>}
       </div>
 
-      {/* Month comparison — key resets the claimed state once per calendar month */}
+      {/* Month comparison — compares NET consumption (grid draw) vs the benchmark.
+          key resets the claimed state once per calendar month */}
       <MonthCompareCard
         key={currentMonth}
-        monthCons={monthCons}
+        monthNet={monthNet}
+        hasSolar={solarPanels}
         daysSimulated={daysSimulated}
         monthlyAvg={monthlyAvg}
         householdSize={householdSize || 2}
