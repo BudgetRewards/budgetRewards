@@ -99,6 +99,16 @@ const T = {
       weekendEarned: w => `Oogstweekend ${w} — beide dagen verdiend`,
       tapToView: 'Tik om je historie te bekijken',
     },
+    renewal: {
+      eyebrow: 'Verlenging beschikbaar',
+      elec: 'Verleng je stroomcontract',
+      internet: 'Verleng je internetcontract',
+      desc: n => `Verleng nu en ontvang ${n} seeds.`,
+      cta: 'Verleng nu',
+      popupTitle: 'Contract verlengd! 🎉',
+      popupDesc: n => `Je hebt ${n} seeds ontvangen voor je verlenging.`,
+      close: 'Top!',
+    },
   },
   en: {
     fmt: n => n.toLocaleString('en-US'),
@@ -197,6 +207,16 @@ const T = {
       delivered: n => `${n} seeds delivered!`,
       weekendEarned: w => `Harvest weekend ${w} — both days earned`,
       tapToView: 'Tap to view your history',
+    },
+    renewal: {
+      eyebrow: 'Renewal available',
+      elec: 'Renew your electricity contract',
+      internet: 'Renew your internet contract',
+      desc: n => `Renew now and earn ${n} seeds.`,
+      cta: 'Renew now',
+      popupTitle: 'Contract renewed! 🎉',
+      popupDesc: n => `You received ${n} seeds for your renewal.`,
+      close: 'Great!',
     },
   },
 }

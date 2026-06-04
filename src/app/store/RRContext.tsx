@@ -56,6 +56,9 @@ export function useTrigger() {
     selectUsageDate:     (date: string)                      => selectUsageDate(date, dispatch),
     markHistorySeen:     ()                                  => dispatch({ type: 'MARK_HISTORY_SEEN' }),
     dismissReward:       ()                                  => dispatch({ type: 'DISMISS_REWARD' }),
+    renewProduct:        (product: string, name: string, nameEn: string, seeds: number) =>
+                                                                dispatch({ type: 'RENEW_PRODUCT', product, name, nameEn, seeds }),
+    dismissRenewal:      ()                                  => dispatch({ type: 'DISMISS_RENEWAL' }),
     claimItem:           (item: CatalogueItem, cat: string)  => {
       if (item.status !== 'available') return;
       dispatch({

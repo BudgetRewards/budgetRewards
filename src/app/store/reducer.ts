@@ -242,6 +242,26 @@ export function reducer(state: RRState, action: RRAction): RRState {
       ),
     };
   }
+  if (action.type === 'RENEW_PRODUCT') {
+    if (state.renewals.includes(action.product)) return state;
+    // Award the renewal at its fixed value (no tier multiplier).
+    const { patch, entry } = applyEarning(state, {
+      name: action.name,
+      nameEn: action.nameEn,
+      cat: 'Contract & Lifecycle',
+      base: action.seeds,
+      kind: 'pos',
+    }, 1);
+    return {
+      ...state,
+      ...patch,
+      renewals: [...state.renewals, action.product],
+      pendingRenewal: { product: action.product, name: action.name, nameEn: action.nameEn, seeds: entry.amount },
+    };
+  }
+  if (action.type === 'DISMISS_RENEWAL') {
+    return state.pendingRenewal ? { ...state, pendingRenewal: null } : state;
+  }
   if (action.type !== 'APPLY_TRIGGER') return state;
 
   const { name, nameEn, cat, base, kind, catalogueKey, harvestDate, setRemoteRead } = action.payload;
