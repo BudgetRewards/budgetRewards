@@ -141,6 +141,39 @@ function RewardToast({ onView }){
   );
 }
 
+/* Popup shown after a contract renewal on the home screen. */
+function RenewalPopup(){
+  const t = useT();
+  const { lang } = useLang();
+  const { pendingRenewal } = useRR();
+  const { dismissRenewal } = useTrigger();
+  if(!pendingRenewal) return null;
+  const r = t.renewal;
+  const name = lang === 'en' ? pendingRenewal.nameEn : pendingRenewal.name;
+  return (
+    <div className="rr-onboarding-backdrop" onClick={dismissRenewal}>
+      <div className="rr-onboarding-card rr" style={{ textAlign:'center', maxWidth:320 }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ fontSize:44, lineHeight:1, marginBottom:8 }}>🎉</div>
+        <h2 style={{ margin:'0 0 4px', fontSize:20, fontWeight:800, letterSpacing:-0.3 }}>{r.popupTitle}</h2>
+        <div className="rr-sub" style={{ fontSize:13, marginBottom:12 }}>{name}</div>
+        <div style={{ display:'inline-flex', alignItems:'center', gap:8, marginBottom:14 }}>
+          <SeedMark size={28}/>
+          <span style={{ fontSize:30, fontWeight:800, color:'var(--green)', letterSpacing:-0.5 }}>
+            +{pendingRenewal.seeds}
+          </span>
+        </div>
+        <div className="rr-sub" style={{ fontSize:12.5, marginBottom:18 }}>{r.popupDesc(pendingRenewal.seeds)}</div>
+        <button onClick={dismissRenewal} style={{ width:'100%', border:'none', borderRadius:14, padding:'14px',
+          background:'var(--green)', color:'#fff', fontFamily:'inherit', fontWeight:800, fontSize:14,
+          cursor:'pointer', boxShadow:'0 6px 16px rgba(0,166,81,0.28)' }}>
+          {r.close}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const pad2 = n => String(n).padStart(2, '0');
 
 /* Once the customer is onboarded, simulate usage for every weekend day on the
@@ -201,6 +234,7 @@ function App(){
       <AutoSimulateWeekends/>
       <FullscreenHint/>
       <RewardToast onView={()=>go('history')}/>
+      <RenewalPopup/>
       <div className="rr-scroll" ref={scrollRef}>
         <div key={tab}>{screens[tab]}</div>
       </div>

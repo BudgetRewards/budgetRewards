@@ -192,12 +192,18 @@ function Catalogue(){
   const { lang } = useLang();
   const fmt = useFmt();
 
-  // Split catalogue into regular, multi-product, and bonus sub-categories.
-  const bonusCats   = R.catalogue.filter(cat => cat.parentProduct);
-  const multiCat    = R.catalogue.find(cat => cat.cat === 'Multi-product');
-  const regularCats = R.catalogue.filter(cat => !cat.parentProduct && cat.cat !== 'Multi-product');
+  // Contract renewal is offered on the home screen, not claimed here.
+  const RENEWAL_ITEM = 'Contract verlengd (1 jaar)';
+  const catalogue = R.catalogue.map(cat => ({
+    ...cat, items: cat.items.filter(i => i.name !== RENEWAL_ITEM),
+  }));
 
-  const total = R.catalogue.reduce((s,g)=>s+g.items.filter(i=>i.status==='available').length, 0);
+  // Split catalogue into regular, multi-product, and bonus sub-categories.
+  const bonusCats   = catalogue.filter(cat => cat.parentProduct);
+  const multiCat    = catalogue.find(cat => cat.cat === 'Multi-product');
+  const regularCats = catalogue.filter(cat => !cat.parentProduct && cat.cat !== 'Multi-product');
+
+  const total = catalogue.reduce((s,g)=>s+g.items.filter(i=>i.status==='available').length, 0);
 
   return (
     <div className="rr-page">
