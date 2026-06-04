@@ -79,6 +79,17 @@ describe('weekend reward (SET_USAGE)', () => {
     expect(s.awardedWeekends).not.toContain('2026-05-02');
   });
 
+  test('a weekend reward that crosses a threshold sets pendingTierUp', () => {
+    // Weekend reward is 20 seeds; start at 2480 with electricity so the
+    // completed weekend pushes the balance to 2500 (seed → tree).
+    let s = withElectricity({ ...initialState, balance: 2480, currentTier: 'seed', multiplier: 1, pendingTierUp: null });
+    s = setUsage(s, '2026-05-02', 2, 1); // Saturday earned
+    expect(s.pendingTierUp).toBeNull();   // weekend not complete yet
+    s = setUsage(s, '2026-05-03', 2, 1); // Sunday earned — weekend complete, +20 → 2500
+    expect(s.currentTier).toBe('tree');
+    expect(s.pendingTierUp).toEqual({ from: 'seed', to: 'tree' });
+  });
+
   test('MARK_HISTORY_SEEN and DISMISS_REWARD clear their flags', () => {
     let s = withElectricity(initialState);
     s = setUsage(s, '2026-05-02', 2, 1);

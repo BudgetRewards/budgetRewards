@@ -211,6 +211,7 @@ export function reducer(state: RRState, action: RRAction): RRState {
         base: weekendRewardSeeds(state.catalogue) || 2 * state.harvest.seedsPerDay,
         kind: earned ? 'pos' : 'missed',
       }, 1);
+      const weekendTierUp = tierUpFor(next.currentTier, patch.currentTier);
       next = {
         ...next,
         ...patch,
@@ -218,6 +219,7 @@ export function reducer(state: RRState, action: RRAction): RRState {
         historyUnseen: true,
         // Only celebrate an actual earning; a missed weekend just shows in history.
         pendingReward: earned ? { amount: entry.amount, weekend: labels.nl, weekendEn: labels.en } : state.pendingReward,
+        pendingTierUp: weekendTierUp ?? next.pendingTierUp,
       };
     }
     return next;
