@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useReducer, useEffect, useRef, type ReactNode } from 'react';
 import type { RRState, Dispatch, CatalogueItem, Profile } from './types';
 import { initialState } from './initialState';
 import { reducer } from './reducer';
@@ -25,6 +25,24 @@ export function RRProvider({ children }: { children: ReactNode }) {
     );
     localStorage.setItem('rr-config', JSON.stringify({ catalogue: overrides }));
   }, [state.catalogue]);
+
+  // Broadcast every new positive ledger entry to the live dashboard
+  const prevLedgerLen = useRef(state.ledger.length);
+  useEffect(() => {
+    const prev = prevLedgerLen.current;
+    prevLedgerLen.current = state.ledger.length;
+    if (state.ledger.length <= prev) return;
+
+    const entry = state.ledger[0];
+    if (!entry || entry.kind !== 'pos') return;
+
+    const user = localStorage.getItem('rr-name') || 'Customer';
+    fetch('/api/live', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user, seeds: entry.amount, label: entry.name, labelEn: entry.nameEn }),
+    }).catch(() => { /* silent fail in dev */ });
+  }, [state.ledger]);
 
   return <RRContext.Provider value={{ state, dispatch }}>{children}</RRContext.Provider>;
 }
