@@ -231,10 +231,11 @@ function CatalogueInner(){
   const { lang } = useLang();
   const fmt = useFmt();
 
-  // Contract renewal is offered on the home screen, not claimed here.
-  const RENEWAL_ITEM = 'Contract verlengd (1 jaar)';
+  // Items not earned on the Earn screen: contract renewal (offered on home) and
+  // the automatic Tree-tier milestone (granted by reaching the tier, not claimed).
+  const HIDDEN_ITEMS = new Set(['Contract verlengd (1 jaar)', 'Boom-tier bereikt']);
   const catalogue = R.catalogue.map(cat => ({
-    ...cat, items: cat.items.filter(i => i.name !== RENEWAL_ITEM),
+    ...cat, items: cat.items.filter(i => !HIDDEN_ITEMS.has(i.name)),
   }));
 
   // Split catalogue into regular, multi-product, and bonus sub-categories.

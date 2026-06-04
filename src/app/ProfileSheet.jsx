@@ -165,10 +165,11 @@ function SubField({ label, children, hint }) {
 
 const MORE_SEEDS = 75
 
-function MoreAboutYou({ profile, setProfile }) {
+function MoreAboutYou({ profile, setProfile, onClose }) {
   const t = useT()
   const m = t.profile.more
   const { claimNotification } = useTrigger()
+  const [justEarned, setJustEarned] = React.useState(false)
 
   function update(key, value) {
     setProfile(prev => ({ ...prev, [key]: value }))
@@ -183,6 +184,9 @@ function MoreAboutYou({ profile, setProfile }) {
         'App & Data', MORE_SEEDS,
       )
     }
+    // Show the earned-points confirmation briefly, then close the sheet.
+    setJustEarned(true)
+    setTimeout(() => onClose?.(), 1300)
   }
 
   return (
@@ -249,17 +253,20 @@ function MoreAboutYou({ profile, setProfile }) {
       )}
 
       {/* Save */}
-      <button onClick={handleSave} style={{
+      <button onClick={handleSave} disabled={justEarned} style={{
         marginTop:20, border:'none', borderRadius:14, padding:'14px',
         background:'var(--green)', color:'#fff',
         fontFamily:'inherit', fontWeight:800, fontSize:14, letterSpacing:0.4,
-        cursor:'pointer', boxShadow:'0 6px 16px rgba(0,166,81,0.28)',
+        cursor: justEarned ? 'default' : 'pointer', boxShadow:'0 6px 16px rgba(0,166,81,0.28)',
+        display:'flex', alignItems:'center', justifyContent:'center', gap:8,
       }}>
-        {m.closing.save}
+        {justEarned
+          ? <>✓ +{MORE_SEEDS} {m.closing.seedsShort ?? 'seeds'}</>
+          : m.closing.save}
       </button>
 
       {/* Completion card */}
-      {profile.moreCompleted && (
+      {(profile.moreCompleted || justEarned) && (
         <div style={{ marginTop:14, background:'rgba(0,166,81,0.08)', borderRadius:14,
           padding:'14px 16px', display:'flex', alignItems:'center', gap:10 }}>
           <span style={{ fontSize:22 }}>✅</span>
@@ -509,7 +516,7 @@ export function ProfileSheet({ onClose }) {
 
           {/* ── More about you ── */}
           <SectionLabel>{p.moreSection}</SectionLabel>
-          <MoreAboutYou profile={profile} setProfile={setProfile}/>
+          <MoreAboutYou profile={profile} setProfile={setProfile} onClose={onClose}/>
 
           {/* ── Questionnaire ── */}
           <SectionLabel>{p.questionnaireSection}</SectionLabel>

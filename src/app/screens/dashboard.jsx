@@ -6,9 +6,9 @@ import { BTLogo } from '../BTLogo.jsx'
 
 /* Contract renewals offered on the home screen, per product the customer has. */
 const RENEWALS = {
-  electricity: { product: 'electricity', kind: 'elec',     seeds: 1000,
+  electricity: { product: 'electricity', kind: 'elec',     seeds: 500,
     name: 'Contract verlengd: Stroom',   nameEn: 'Contract renewed: Electricity' },
-  internet:    { product: 'internet',    kind: 'internet', seeds: 1000,
+  internet:    { product: 'internet',    kind: 'internet', seeds: 350,
     name: 'Contract verlengd: Internet', nameEn: 'Contract renewed: Internet' },
 };
 
@@ -59,10 +59,10 @@ function DashboardInner({ onNav, onProfileOpen }){
   const { products } = useProfile();
   const { renewProduct } = useTrigger();
 
-  // The internet renewal appears a short while after the home screen opens.
+  // The internet renewal appears a while after the home screen opens.
   const [showInternet, setShowInternet] = React.useState(false);
   React.useEffect(() => {
-    const id = setTimeout(() => setShowInternet(true), 10000);
+    const id = setTimeout(() => setShowInternet(true), 25000);
     return () => clearTimeout(id);
   }, []);
 
