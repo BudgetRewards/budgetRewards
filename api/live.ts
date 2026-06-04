@@ -30,23 +30,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     /* ── POST: record a seed event ───────────────────────────── */
     if (req.method === 'POST') {
       const body   = req.body ?? {}
-      const uid    = String(body.uid  || body.user || 'anon')
-      const name   = String(body.user || 'Customer')
-      const seeds  = Number(body.seeds)  || 0
-      const label  = String(body.label   || '')
-      const labelEn = String(body.labelEn || '')
+      const uid     = String(body.uid  || body.user || 'anon')
+      const name    = String(body.user || 'Customer')
+      const seeds   = Number(body.seeds)   || 0   // event delta for global total
+      const balance = Number(body.balance) || 0   // current balance for leaderboard
+      const label   = String(body.label    || '')
+      const labelEn = String(body.labelEn  || '')
 
-      if (seeds <= 0) return res.status(400).json({ error: 'invalid seeds' })
-
-      const event = { name, seeds, label, labelEn, ts: Date.now() }
-      await Promise.all([
-        client.lPush('rr:events',   JSON.stringify(event)),
-        client.lTrim('rr:events',   0, 199),
-        client.incrBy('rr:total',   seeds),
-        client.sAdd('rr:users',     uid),
-        client.zIncrBy('rr:leaderboard', seeds, uid),
-        client.hSet('rr:names',     uid, name),   // uid → display name
-      ])
+      const ops: Promise<unknown>[] = [
+        client.sAdd('rr:users', uid),
+        client.hSet('rr:names', uid, name),
+        // ZADD sets the score absolutely — no double-count when balance is re-synced
+        client.zAdd('rr:leaderboard', [{ score: balance, value: uid }]),
+      ]
+      if (seeds > 0) {
+        // Only log the event and increment global total for real seed events
+        const event = { name, seeds, label, labelEn, ts: Date.now() }
+        ops.push(client.lPush('rr:events', JSON.stringify(event)))
+        ops.push(client.lTrim('rr:events', 0, 199))
+        ops.push(client.incrBy('rr:total', seeds))
+      }
+      await Promise.all(ops)
       return res.status(200).json({ ok: true })
     }
 

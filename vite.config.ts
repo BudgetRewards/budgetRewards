@@ -44,15 +44,18 @@ export default defineConfig({
             req.on('data', (c: Buffer) => { body += c })
             req.on('end', () => {
               try {
-                const { uid, user, seeds, label, labelEn } = JSON.parse(body)
-                const id = uid || user || 'anon'
+                const { uid, user, seeds, balance, label, labelEn } = JSON.parse(body)
+                const id   = uid || user || 'anon'
                 const name = user || 'Customer'
-                store.events.unshift({ name, seeds, label, labelEn, ts: Date.now() })
-                store.events = store.events.slice(0, 200)
-                store.total += seeds
                 store.users.add(id)
-                store.uidSeeds.set(id, (store.uidSeeds.get(id) ?? 0) + seeds)
                 store.uidNames.set(id, name)
+                // ZADD: set absolute balance on leaderboard
+                if (balance > 0) store.uidSeeds.set(id, balance)
+                if (seeds > 0) {
+                  store.events.unshift({ name, seeds, label, labelEn, ts: Date.now() })
+                  store.events = store.events.slice(0, 200)
+                  store.total += seeds
+                }
               } catch { /* ignore */ }
               res.end(JSON.stringify({ ok: true }))
             })

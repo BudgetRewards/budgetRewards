@@ -32,18 +32,20 @@ export function RRProvider({ children }: { children: ReactNode }) {
     if (!uid) { uid = crypto.randomUUID(); localStorage.setItem('rr-uid', uid); }
     return uid;
   }
-  function postLive(seeds: number, label: string, labelEn?: string) {
+  function postLive(seeds: number, balance: number, label: string, labelEn?: string) {
     const uid  = getUid();
     const user = localStorage.getItem('rr-name') || 'Customer';
+    // seeds  = event delta  → added to rr:total (global counter)
+    // balance = current total → used to SET the leaderboard score (no double-count)
     fetch('/api/live', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid, user, seeds, label, labelEn }),
+      body: JSON.stringify({ uid, user, seeds, balance, label, labelEn }),
     }).catch(() => { /* silent fail in dev / when API not set up */ });
   }
 
   // ── 1. Broadcast ALL new positive ledger entries ─────────────
-  // When onboarding fires, multiple entries land at once — loop them all.
+  // When onboarding fires multiple entries land at once — loop them all.
   const prevLedgerLen = useRef(state.ledger.length);
   useEffect(() => {
     const prev = prevLedgerLen.current;
@@ -52,21 +54,20 @@ export function RRProvider({ children }: { children: ReactNode }) {
     if (newCount <= 0) return;
 
     for (let i = 0; i < newCount; i++) {
-      const entry = state.ledger[i]; // ledger is newest-first
-      if (entry?.kind === 'pos') postLive(entry.amount, entry.name, entry.nameEn);
+      const entry = state.ledger[i];
+      if (entry?.kind === 'pos') postLive(entry.amount, state.balance, entry.name, entry.nameEn);
     }
   }, [state.ledger]);
 
-  // ── 2. Initial balance sync ───────────────────────────────────
-  // Fires once when the user first gets a name (onboarding complete).
-  // Sends their full current balance so the live dashboard starts accurate.
-  const initialSyncDone = useRef(!!localStorage.getItem('rr-live-synced'));
+  // ── 2. Balance sync on every app open ────────────────────────
+  // Runs once per session when balance is known. Sends the full balance so
+  // the leaderboard is accurate even for users with pre-existing seeds.
+  const sessionSynced = useRef(false);
   useEffect(() => {
     const name = localStorage.getItem('rr-name');
-    if (!name || initialSyncDone.current || state.balance <= 0) return;
-    initialSyncDone.current = true;
-    localStorage.setItem('rr-live-synced', '1');
-    postLive(state.balance, 'App gestart', 'App started');
+    if (!name || sessionSynced.current || state.balance <= 0) return;
+    sessionSynced.current = true;
+    postLive(0, state.balance, 'Balance sync', 'Balance sync');
   }, [state.balance]);
 
   return <RRContext.Provider value={{ state, dispatch }}>{children}</RRContext.Provider>;
