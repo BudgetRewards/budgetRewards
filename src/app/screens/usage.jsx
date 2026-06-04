@@ -260,7 +260,9 @@ function UsageInner() {
   const { simulateUsage, selectUsageDate, logComparison, activateProduct, claimItem } = useTrigger();
   const { homeBattery, householdSize, solarPanels } = useProfile();
 
-  // Electricity gate: earning the comparison requires the Stroom product.
+  // Electricity gate: the consumption graph and the claimable comparison both
+  // require the Stroom product. With electricity the graph shows (like before);
+  // production is added to the graph only when the customer also has solar.
   const hasElec = hasElectricity(state.catalogue);
   const stroom = state.catalogue.find(c => c.cat === 'Multi-product')?.items.find(i => i.name === 'Stroom');
   const activateElectricity = () => {
@@ -268,11 +270,6 @@ function UsageInner() {
     if (stroom.status === 'missed') activateProduct(stroom, 'Multi-product');
     else if (stroom.status === 'available') claimItem(stroom, 'Multi-product');
   };
-
-  // Meter-reading gate: the consumption graph is only shown once readings are on.
-  const meter = state.catalogue.find(c => c.cat === 'App & Data')?.items.find(i => i.name === 'Maandelijkse meterstand');
-  const hasMeterReadings = meter?.status === 'claimed';
-  const activateMeter = () => { if (meter && meter.status === 'available') claimItem(meter, 'App & Data'); };
 
   const monthlyAvg = monthlyAvgForSize(householdSize);
   const dailyTarget = householdDailyTarget(householdSize);
@@ -365,8 +362,9 @@ function UsageInner() {
             fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, color: 'var(--navy)', background: '#fff' }}/>
       </div>
 
-      {/* Consumption graph + peaks — only shown once monthly meter readings are on */}
-      {hasMeterReadings ? (
+      {/* Consumption graph + peaks — shown when the customer has electricity
+          (production half + peak only when they also have solar). */}
+      {hasElec && (
         <>
           {/* Chart */}
           <div className="rr-card" style={{ padding: '16px 14px 14px', marginTop: 14 }}>
@@ -394,11 +392,6 @@ function UsageInner() {
             )}
           </div>
         </>
-      ) : (
-        <div style={{ marginTop: 14 }}>
-          <ActivateCard icon="calendar" title={t.usage.meterTitle} desc={t.usage.meterDesc}
-            cta={t.usage.meterActivate} onClick={activateMeter}/>
-        </div>
       )}
 
       {/* ───── Per maand ───── */}
