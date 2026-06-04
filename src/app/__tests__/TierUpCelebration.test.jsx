@@ -32,4 +32,19 @@ describe('TierUpCelebrationView', () => {
     )
     expect(container.querySelectorAll('svg').length).toBe(3)
   })
+
+  test('clicking the stage (not the backdrop or button) does not dismiss', () => {
+    const onDismiss = vi.fn()
+    const { container } = render(
+      <TierUpCelebrationView
+        to="tree"
+        title="You've grown to Tree!"
+        subtitle="Your multiplier is now 1.5×"
+        continueLabel="Continue"
+        onDismiss={onDismiss}
+      />
+    )
+    fireEvent.click(container.querySelector('.tu-stage'))
+    expect(onDismiss).not.toHaveBeenCalled()
+  })
 })
