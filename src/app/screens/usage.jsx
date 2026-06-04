@@ -286,6 +286,17 @@ function UsageInner() {
 
   const regenerate = () => simulateUsage({ date, ...simOpts });
 
+  // Stored usage is generated for a fixed solar/battery state. When the customer
+  // toggles solar (or battery), re-simulate the shown day so production appears
+  // on the graph immediately instead of waiting for a manual regenerate.
+  const solarBatteryKey = `${solarPanels}|${homeBattery}`;
+  const prevSolarBattery = React.useRef(solarBatteryKey);
+  React.useEffect(() => {
+    if (prevSolarBattery.current === solarBatteryKey) return;
+    prevSolarBattery.current = solarBatteryKey;
+    simulateUsage({ date, ...simOpts });
+  }, [solarBatteryKey]);
+
   const onDateChange = e => {
     const next = e.target.value;
     if (!next || next > today) return;
