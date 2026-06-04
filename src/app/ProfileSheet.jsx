@@ -256,21 +256,25 @@ export function ProfileSheet({ onClose }) {
   }
 
   return (
-    <div style={{
-      position:'absolute', inset:0, zIndex:60, display:'flex', flexDirection:'column',
-    }}>
-      {/* backdrop */}
-      <div onClick={onClose} style={{ flex:1, background:'rgba(0,0,0,0.35)' }}/>
+    <div style={{ position:'absolute', inset:0, zIndex:60 }}>
+      {/* backdrop — full screen */}
+      <div onClick={onClose} style={{
+        position:'absolute', inset:0, background:'rgba(0,0,0,0.35)',
+      }}/>
 
-      {/* panel */}
-      <div className="rr rr-profile-panel">
+      {/* panel — anchored to bottom */}
+      <div className="rr rr-profile-panel" style={{
+        position:'absolute', bottom:0, left:0, right:0,
+      }}>
         {/* handle */}
-        <div style={{ display:'flex', justifyContent:'center', padding:'10px 0 4px' }}>
-          <div style={{ width:36, height:4, borderRadius:99, background:'var(--grey-line)' }}/>
+        <div style={{ display:'flex', justifyContent:'center', padding:'10px 0 6px' }}>
+          <div style={{ width:36, height:4, borderRadius:99, background:'var(--grey-2)', opacity:0.4 }}/>
         </div>
 
-        {/* header */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'4px 20px 12px' }}>
+        {/* header — white card on grey background */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+          padding:'12px 20px 14px', background:'#fff',
+          borderBottom:'1px solid var(--grey-line)' }}>
           <BTLogo width={40}/>
           <span style={{ fontWeight:800, fontSize:18, letterSpacing:-0.4 }}>{p.title}</span>
           <button onClick={onClose} style={{

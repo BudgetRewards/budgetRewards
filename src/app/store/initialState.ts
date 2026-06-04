@@ -76,7 +76,7 @@ export const baseInitialState: RRState = {
     { cat: 'Energiegedrag', catEn: 'Energy behaviour', items: [
       { name: 'Slimme thermostaat gekoppeld', nameEn: 'Smart thermostat connected', seeds: 200, status: 'available' },
       { name: 'Verbruik onder gemiddelde',    nameEn: 'Consumption below average',  seeds: 120, status: 'available' },
-      { name: 'Remote uitlezing uitgezet',    nameEn: 'Remote reading disabled',    seeds: 60, status: 'available', need: 'Gemiste oogst: zet remote uitlezing aan om deze 60 zaden niet te missen', needEn: 'Missed harvest: enable remote reading so you don’t miss these 60 seeds' },
+      { name: 'Remote uitlezing aangezet',    nameEn: 'Remote reading enabled',     seeds: 60, status: 'available' },
     ]},
     { cat: 'Multi-product', catEn: 'Multi-product', items: [
       { name: 'Stroom',     nameEn: 'Electricity', seeds: 500, status: 'available' },

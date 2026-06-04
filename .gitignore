@@ -27,3 +27,6 @@ dist-ssr
 
 # Local claude
 *.claude/*
+
+# Brainstorm visual-companion scratch
+.superpowers/

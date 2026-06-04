@@ -110,7 +110,7 @@ describe('APPLY_TRIGGER', () => {
     expect(next.remoteReadEnabled).toBe(false);
     const missedItem = next.catalogue
       .find(c => c.cat === 'Energiegedrag')!
-      .items.find(i => i.name === 'Remote uitlezing uitgezet');
+      .items.find(i => i.name === 'Remote uitlezing aangezet');
     expect(missedItem?.status).toBe('missed');
   });
 });

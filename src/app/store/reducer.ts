@@ -64,7 +64,7 @@ function applyRemoteReadCatalogue(
   return catalogue.map(cat => ({
     ...cat,
     items: cat.items.map(item =>
-      item.name === 'Remote uitlezing uitgezet'
+      item.name === 'Remote uitlezing aangezet'
         ? { ...item, status: enabled ? ('available' as const) : ('missed' as const) }
         : item
     ),
