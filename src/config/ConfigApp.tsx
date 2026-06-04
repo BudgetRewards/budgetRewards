@@ -56,7 +56,7 @@ function computeBalance(items: ItemState[]): number {
 function tierFromBalance(balance: number) {
   if (balance >= 6000) return { emoji: '🌲', name: 'Bos',  mult: 2,   next: null as number | null };
   if (balance >= 2500) return { emoji: '🌳', name: 'Boom', mult: 1.5, next: 6000 as number | null };
-  return                      { emoji: '🌱', name: 'Zaad', mult: 1,   next: 2500 as number | null };
+  return                      { emoji: '🌱', name: 'Zaadjes', mult: 1,   next: 2500 as number | null };
 }
 
 function seedLabel(seeds: number): string {

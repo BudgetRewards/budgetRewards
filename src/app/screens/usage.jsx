@@ -131,9 +131,9 @@ function MonthCompareCard({ monthNet, hasSolar, locked, daysSimulated, monthlyAv
     avg:    `Verwacht (${sizeLabel}-pers., ${daysLabel})`,
     below:  `${kwh(diff)} kWh onder verwacht`,
     above:  `${kwh(-diff)} kWh boven verwacht`,
-    claimBtn: `Claim ${seeds} zaden`,
+    claimBtn: `Claim ${seeds} zaadjes`,
     claimed: 'Geclaimd ✓',
-    missedLabel: `${seeds} gemiste zaden`,
+    missedLabel: `${seeds} gemiste zaadjes`,
   };
   const EN = {
     title: 'Compare with others',

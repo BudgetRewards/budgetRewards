@@ -153,7 +153,7 @@ const T = {
       moreComing: 'Meer vragen komen binnenkort.',
       more: {
         title: 'Jouw thuis in kaart',
-        subtitle: 'Vul in wat er bij jou thuis staat. Zo kunnen we je beter helpen — en jij verdient er zaden mee.',
+        subtitle: 'Vul in wat er bij jou thuis staat. Zo kunnen we je beter helpen — en jij verdient er zaadjes mee.',
         yes: 'Ja', no: 'Nee',
         battery: {
           section: 'Stroom opslaan',
@@ -200,7 +200,7 @@ const T = {
         },
         closing: {
           title: 'Bedankt — je profiel is bijgewerkt.',
-          seedsEarned: n => `Je hebt ${n} zaden verdiend.`,
+          seedsEarned: n => `Je hebt ${n} zaadjes verdiend.`,
           save: 'Opslaan',
         },
         yearLabel: 'Jaar', selectYear: 'Kies een jaar',

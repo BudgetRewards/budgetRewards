@@ -7,7 +7,7 @@ const RR = {
   period: { startLabel: '1 jan 2026', endLabel: '31 dec 2026', daysLeft: 211 },
 
   tiers: [
-    { id:'seed', emoji:'🌱', name:'Zaad', nameEn:'Seed', en:'Seed', min:0, max:2499, mult:'1×',
+    { id:'seed', emoji:'🌱', name:'Zaadjes', nameEn:'Seed', en:'Seed', min:0, max:2499, mult:'1×',
       routes:['Standaard startpunt voor elk lid'],
       routesEn:['Standard starting point for every member'] },
     { id:'tree', emoji:'🌳', name:'Boom', nameEn:'Tree', en:'Tree', min:2500, max:5999, mult:'1,5×',

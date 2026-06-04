@@ -134,7 +134,7 @@ export default function ComingSoon() {
             </div>
             <div className="stat-text-block">
               <span className="stat-val">3 Tiers</span>
-              <span className="stat-lbl">Zaad · Boom · Bos</span>
+              <span className="stat-lbl">Zaadjes · Boom · Bos</span>
             </div>
           </div>
           <div className="stat-item">
