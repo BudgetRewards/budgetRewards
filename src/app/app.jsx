@@ -11,6 +11,7 @@ import { LanguageProvider, useT, useLang } from './i18n.jsx'
 import { OnboardingModal } from './OnboardingModal.jsx'
 import { ProfileSheet } from './ProfileSheet.jsx'
 import { NotificationQueue } from './NotificationQueue.jsx'
+import { TierUpCelebration } from './TierUpCelebration.jsx'
 import { useRR, useTrigger } from './store/RRContext.tsx'
 
 /* ───────────────── RootedRewards · App shell + tab bar ───────────────── */
@@ -51,66 +52,96 @@ const isStandalone = () =>
   window.navigator.standalone === true;
 
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
+const isMobileUA = () => /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
-function FullscreenHint() {
-  const [visible, setVisible] = React.useState(
-    () => !isStandalone() && window.matchMedia('(max-width: 767px)').matches
-  );
+function InstallBanner() {
+  const [deferredPrompt, setDeferredPrompt] = React.useState(null);
   const [dismissed, setDismissed] = React.useState(
-    () => !!localStorage.getItem('rr-fs-dismissed')
+    () => !!localStorage.getItem('rr-install-dismissed')
   );
 
+  // Capture the Android install prompt before the browser shows its own mini-bar
   React.useEffect(() => {
-    const hide = () => setVisible(false);
-    document.addEventListener('fullscreenchange', hide);
-    return () => document.removeEventListener('fullscreenchange', hide);
+    const handler = (e) => { e.preventDefault(); setDeferredPrompt(e); };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  if (!visible || dismissed) return null;
+  // Don't show if: already installed, dismissed, or on desktop
+  if (isStandalone() || dismissed || !isMobileUA()) return null;
+  // On Android, wait until the browser fires beforeinstallprompt
+  if (!isIOS() && !deferredPrompt) return null;
 
   function dismiss() {
-    localStorage.setItem('rr-fs-dismissed', '1');
+    localStorage.setItem('rr-install-dismissed', '1');
     setDismissed(true);
   }
 
-  if (isIOS()) {
-    return (
-      <div style={{
-        position:'absolute', bottom:80, left:14, right:14, zIndex:30,
-        background:'rgba(0,0,0,0.72)', borderRadius:16, padding:'12px 14px',
-        backdropFilter:'blur(10px)', display:'flex', alignItems:'center', gap:10,
-      }}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>
-          <path d="M12 2v13M7 7l5-5 5 5"/><path d="M20 16v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/>
-        </svg>
-        <span style={{flex:1, color:'#fff', fontSize:12, fontFamily:'inherit', fontWeight:600, lineHeight:1.4}}>
-          Tap <b>Share</b> → <b>Add to Home Screen</b> for fullscreen
-        </span>
-        <button onClick={dismiss} style={{
-          background:'none', border:'none', color:'rgba(255,255,255,0.6)',
-          fontSize:18, cursor:'pointer', padding:'0 2px', lineHeight:1,
-        }}>×</button>
-      </div>
-    );
-  }
-
-  function requestFs() {
-    document.documentElement.requestFullscreen?.().then(() => setVisible(false)).catch(() => {});
+  async function install() {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') dismiss();
+    }
   }
 
   return (
-    <button onClick={requestFs} style={{
-      position:'absolute', bottom:80, right:14, zIndex:30,
-      background:'rgba(0,0,0,0.55)', border:'none', borderRadius:99,
-      padding:'7px 13px', display:'flex', alignItems:'center', gap:6,
-      color:'#fff', fontFamily:'inherit', fontWeight:700, fontSize:11,
-      cursor:'pointer', backdropFilter:'blur(8px)',
+    <div style={{
+      position:'absolute', bottom:72, left:12, right:12, zIndex:30,
+      background:'#fff', borderRadius:18,
+      boxShadow:'0 8px 32px rgba(26,26,46,0.18), 0 0 0 1px rgba(26,26,46,0.06)',
+      padding:'14px 14px 14px 16px',
+      display:'flex', alignItems:'center', gap:12,
     }}>
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M16 21h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
-      </svg>
-      Fullscreen
-    </button>
+      {/* App icon */}
+      <div style={{
+        width:48, height:48, borderRadius:12, background:'#000',
+        display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+        overflow:'hidden',
+      }}>
+        <img src="/favicon.svg" width={36} height={36} alt="RootedRewards"/>
+      </div>
+
+      {/* Text */}
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ fontWeight:800, fontSize:13.5, color:'var(--navy)', lineHeight:1.2 }}>
+          RootedRewards
+        </div>
+        {isIOS() ? (
+          <div style={{ fontSize:11.5, color:'var(--navy-60)', marginTop:2, lineHeight:1.4 }}>
+            Tap <b>Share</b>{' '}
+            <svg width="12" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+              style={{ display:'inline', verticalAlign:'middle', marginBottom:1 }}>
+              <path d="M12 2v13M7 7l5-5 5 5"/><path d="M20 16v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/>
+            </svg>{' '}
+            then <b>Add to Home Screen</b>
+          </div>
+        ) : (
+          <div style={{ fontSize:11.5, color:'var(--navy-60)', marginTop:2 }}>
+            Add to home screen for the full experience
+          </div>
+        )}
+      </div>
+
+      {/* Action */}
+      {!isIOS() && (
+        <button onClick={install} style={{
+          border:'none', borderRadius:10, padding:'8px 14px',
+          background:'var(--green)', color:'#fff',
+          fontFamily:'inherit', fontWeight:800, fontSize:12.5, cursor:'pointer',
+          flexShrink:0, boxShadow:'0 4px 12px rgba(0,166,81,0.3)',
+        }}>
+          Install
+        </button>
+      )}
+
+      {/* Dismiss */}
+      <button onClick={dismiss} style={{
+        background:'none', border:'none', cursor:'pointer',
+        color:'var(--grey-2)', fontSize:18, lineHeight:1, padding:'0 2px', flexShrink:0,
+      }}>×</button>
+    </div>
   );
 }
 
@@ -234,8 +265,9 @@ function App(){
       {!userName && <OnboardingModal/>}
       <NotificationQueue profileOpen={showProfile}/>
       <AutoSimulateWeekends/>
-      <FullscreenHint/>
+      <InstallBanner/>
       <RewardToast onView={()=>go('history')}/>
+      <TierUpCelebration/>
       <RenewalPopup/>
       <div className="rr-scroll" ref={scrollRef}>
         <div key={tab}>{screens[tab]}</div>

@@ -69,9 +69,14 @@ function Tiers(){
   const { lang } = useLang();
   const order = ['seed','tree','forest'];
   const curIdx = order.indexOf(R.currentTier);
-  const pct = (R.balance / R.nextTier.threshold) * 100;
-  const toNext = R.nextTier.threshold - R.balance;
-  const nextName = lang === 'en' ? R.nextTier.nameEn : R.nextTier.name;
+  // At the top tier (Forest) there is no next tier, so nextTier is null.
+  const atTopTier = !R.nextTier;
+  const pct = R.nextTier ? (R.balance / R.nextTier.threshold) * 100 : 100;
+  const toNext = R.nextTier ? R.nextTier.threshold - R.balance : 0;
+  const nextName = R.nextTier ? (lang === 'en' ? R.nextTier.nameEn : R.nextTier.name) : null;
+  const nextEmoji = R.nextTier
+    ? R.tiers.find(tr => tr.name === R.nextTier.name || tr.nameEn === R.nextTier.nameEn)?.emoji
+    : null;
   const curTier = R.tiers.find(tr => tr.id === R.currentTier);
   const curName = lang === 'en' ? curTier.nameEn : curTier.name;
 
@@ -79,18 +84,27 @@ function Tiers(){
     <div className="rr-page">
       <ScreenHeader eyebrow={t.tiers.eyebrow} title={t.tiers.title}/>
 
-      {/* progress to next */}
+      {/* progress to next — or a top-tier banner once Forest is reached */}
       <div className="rr-card rr-fadein" style={{ padding:'16px 18px' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-          <span style={{ fontWeight:800, fontSize:13.5, whiteSpace:'nowrap' }}>{curTier.emoji} {curName} → {R.tiers.find(tr => tr.name === R.nextTier.name || tr.nameEn === R.nextTier.nameEn)?.emoji} {nextName}</span>
-          <span style={{ fontSize:12.5, fontWeight:700, color:'var(--green)', whiteSpace:'nowrap' }}>{t.tiers.nog(fmt(toNext))}</span>
-        </div>
-        <Progress pct={pct}/>
-        <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, fontWeight:600,
-          color:'var(--navy-60)', marginTop:7 }}>
-          <span>{fmt(R.balance)} seeds</span>
-          <span>{fmt(R.nextTier.threshold)} seeds</span>
-        </div>
+        {atTopTier ? (
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <span style={{ fontSize:18 }}>{curTier.emoji}</span>
+            <span style={{ fontWeight:800, fontSize:13.5 }}>{curName} — {t.tiers.topTier}</span>
+          </div>
+        ) : (
+          <>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+              <span style={{ fontWeight:800, fontSize:13.5, whiteSpace:'nowrap' }}>{curTier.emoji} {curName} → {nextEmoji} {nextName}</span>
+              <span style={{ fontSize:12.5, fontWeight:700, color:'var(--green)', whiteSpace:'nowrap' }}>{t.tiers.nog(fmt(toNext))}</span>
+            </div>
+            <Progress pct={pct}/>
+            <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, fontWeight:600,
+              color:'var(--navy-60)', marginTop:7 }}>
+              <span>{fmt(R.balance)} seeds</span>
+              <span>{fmt(R.nextTier.threshold)} seeds</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* stacked tier progression */}

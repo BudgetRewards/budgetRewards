@@ -71,12 +71,16 @@ function Dashboard({ onNav, onProfileOpen }){
 
   const tier = R.tiers.find(tr => tr.id === R.currentTier);
   const tierName = lang === 'en' ? tier.nameEn : tier.name;
-  const nextTierName = lang === 'en' ? R.nextTier.nameEn : R.nextTier.name;
-  const nextTierEmoji = R.tiers.find(tr => tr.name === R.nextTier.name || tr.nameEn === R.nextTier.nameEn)?.emoji ?? '🌲';
+  // At the top tier (Forest) there is no next tier, so nextTier is null.
+  const atTopTier = !R.nextTier;
+  const nextTierName = R.nextTier ? (lang === 'en' ? R.nextTier.nameEn : R.nextTier.name) : null;
+  const nextTierEmoji = R.nextTier
+    ? (R.tiers.find(tr => tr.name === R.nextTier.name || tr.nameEn === R.nextTier.nameEn)?.emoji ?? '🌲')
+    : null;
 
   const bal = useCountUp(R.balance);
-  const pct = (R.balance / R.nextTier.threshold) * 100;
-  const toNext = R.nextTier.threshold - R.balance;
+  const pct = R.nextTier ? (R.balance / R.nextTier.threshold) * 100 : 100;
+  const toNext = R.nextTier ? R.nextTier.threshold - R.balance : 0;
   const availableCount = R.catalogue.reduce((s,g) => s + g.items.filter(i => i.status === 'available').length, 0);
 
   return (
@@ -120,17 +124,26 @@ function Dashboard({ onNav, onProfileOpen }){
         </div>
 
         <div style={{ marginTop:18, position:'relative' }}>
-          <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, fontWeight:600,
-            marginBottom:7, opacity:0.95 }}>
-            <span>{t.dashboard.to} {nextTierEmoji} {nextTierName}</span>
-            <span><b style={{ fontWeight:800 }}>{fmt(toNext)}</b> {t.dashboard.seedsToGo}</span>
-          </div>
-          <Progress pct={pct} lime onGreen/>
-          <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, fontWeight:600,
-            marginTop:7, opacity:0.8 }}>
-            <span>{fmt(R.balance)}</span>
-            <span>{fmt(R.nextTier.threshold)}</span>
-          </div>
+          {atTopTier ? (
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+              fontSize:13, fontWeight:700, opacity:0.95, padding:'2px 0' }}>
+              <span>{t.dashboard.topTier}</span>
+            </div>
+          ) : (
+            <>
+              <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, fontWeight:600,
+                marginBottom:7, opacity:0.95 }}>
+                <span>{t.dashboard.to} {nextTierEmoji} {nextTierName}</span>
+                <span><b style={{ fontWeight:800 }}>{fmt(toNext)}</b> {t.dashboard.seedsToGo}</span>
+              </div>
+              <Progress pct={pct} lime onGreen/>
+              <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, fontWeight:600,
+                marginTop:7, opacity:0.8 }}>
+                <span>{fmt(R.balance)}</span>
+                <span>{fmt(R.nextTier.threshold)}</span>
+              </div>
+            </>
+          )}
         </div>
 
         <div style={{ marginTop:14, fontSize:11.5, fontWeight:500, opacity:0.82, position:'relative',

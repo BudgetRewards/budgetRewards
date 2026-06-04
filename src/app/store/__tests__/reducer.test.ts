@@ -178,6 +178,54 @@ describe('APPLY_ONBOARDING', () => {
   });
 });
 
+describe('pendingTierUp (tier-up celebration)', () => {
+  test('sets pendingTierUp when an earning crosses seed → tree', () => {
+    const near = { ...freshState, balance: 2400 };
+    const next = apply(near, { name: 'Test', cat: 'App & Data', base: 200, kind: 'pos' });
+    expect(next.currentTier).toBe('tree');
+    expect(next.pendingTierUp).toEqual({ from: 'seed', to: 'tree' });
+  });
+
+  test('sets pendingTierUp when an earning crosses tree → forest', () => {
+    const near = { ...freshState, balance: 5900, currentTier: 'tree' as const, multiplier: 1.5 };
+    const next = apply(near, { name: 'Test', cat: 'App & Data', base: 200, kind: 'pos' });
+    expect(next.currentTier).toBe('forest');
+    expect(next.pendingTierUp).toEqual({ from: 'tree', to: 'forest' });
+  });
+
+  test('leaves pendingTierUp null when the earning does not change tier', () => {
+    const next = apply(freshState, { name: 'Test', cat: 'App & Data', base: 100, kind: 'pos' });
+    expect(next.currentTier).toBe('seed');
+    expect(next.pendingTierUp).toBeNull();
+  });
+
+  test('does not celebrate onboarding placement into a higher tier', () => {
+    const next = reducer(freshState, {
+      type: 'APPLY_ONBOARDING',
+      profile: { solarPanels: true, homeBattery: true, householdSize: 4, customerYears: 5, products: ['electricity', 'gas', 'internet', 'tv'] },
+    });
+    expect(next.currentTier).toBe('tree');
+    expect(next.pendingTierUp).toBeNull();
+  });
+
+  test('DISMISS_TIER_UP clears pendingTierUp', () => {
+    const near = { ...freshState, balance: 2400 };
+    let s = apply(near, { name: 'Test', cat: 'App & Data', base: 200, kind: 'pos' });
+    expect(s.pendingTierUp).not.toBeNull();
+    s = reducer(s, { type: 'DISMISS_TIER_UP' });
+    expect(s.pendingTierUp).toBeNull();
+  });
+
+  test('re-onboarding clears any pending tier-up celebration', () => {
+    const withPending = { ...freshState, pendingTierUp: { from: 'seed' as const, to: 'tree' as const } };
+    const next = reducer(withPending, {
+      type: 'APPLY_ONBOARDING',
+      profile: { solarPanels: false, homeBattery: false, householdSize: 1, customerYears: 0, products: ['electricity'] },
+    });
+    expect(next.pendingTierUp).toBeNull();
+  });
+});
+
 describe('SELECT_EXCLUSIVE (mutually-exclusive groups)', () => {
   // Own the Mobile product so the 'Mobiel bonussen' sub-section is unlocked.
   const mobileOwned = reducer(freshState, {

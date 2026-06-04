@@ -151,6 +151,7 @@ export const baseInitialState: RRState = {
   awardedHarvestDays: [],
   historyUnseen: false,
   pendingReward: null,
+  pendingTierUp: null,
   renewals: [],
   pendingRenewal: null,
 };
