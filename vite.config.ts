@@ -23,10 +23,16 @@ export default defineConfig({
           res.setHeader('Content-Type', 'application/json')
 
           if (req.method === 'GET') {
-            const leaderboard = [...store.uidSeeds.entries()]
+            // Deduplicate by name — keep highest score per name
+            const byName = new Map<string, number>()
+            for (const [uid, seeds] of store.uidSeeds) {
+              const name = store.uidNames.get(uid) || uid
+              if (!byName.has(name) || byName.get(name)! < seeds) byName.set(name, seeds)
+            }
+            const leaderboard = [...byName.entries()]
               .sort((a, b) => b[1] - a[1])
               .slice(0, 5)
-              .map(([uid, seeds]) => ({ user: store.uidNames.get(uid) || uid, seeds }))
+              .map(([user, seeds]) => ({ user, seeds }))
             res.end(JSON.stringify({
               events: store.events.slice(0, 30),
               total: store.total,

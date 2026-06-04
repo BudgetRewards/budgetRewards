@@ -56,22 +56,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         client.lRange('rr:events', 0, 29),
         client.get('rr:total'),
         client.sCard('rr:users'),
-        client.zRangeWithScores('rr:leaderboard', 0, 4, { REV: true }),
+        // BYSCORE REV LIMIT gives the highest-scoring UIDs, sorted descending
+        client.zRangeWithScores('rr:leaderboard', '+inf', '-inf', {
+          BY: 'SCORE', REV: true, LIMIT: { offset: 0, count: 20 },
+        }),
       ])
 
       const events = (rawEvents ?? []).map(e => {
         try { return JSON.parse(e) } catch { return e }
       })
 
-      // Resolve UIDs → display names in a single HMGET
+      // Resolve UIDs → display names, then deduplicate by name (keep highest
+      // score per name so the same person on two devices appears only once).
       let leaderboard: { user: string; seeds: number }[] = []
       if (topEntries.length > 0) {
         const uids  = topEntries.map(e => e.value)
         const names = await client.hmGet('rr:names', uids)
-        leaderboard = topEntries.map((entry, i) => ({
-          user:  names[i] || entry.value,
-          seeds: Number(entry.score),
-        }))
+        const seen  = new Map<string, number>() // name → seeds
+        for (let i = 0; i < topEntries.length; i++) {
+          const name  = names[i] || uids[i]
+          const seeds = Number(topEntries[i].score)
+          if (!seen.has(name) || seen.get(name)! < seeds) seen.set(name, seeds)
+        }
+        leaderboard = [...seen.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([user, seeds]) => ({ user, seeds }))
       }
 
       return res.status(200).json({
