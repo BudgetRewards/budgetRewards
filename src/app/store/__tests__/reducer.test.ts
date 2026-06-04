@@ -128,8 +128,9 @@ describe('APPLY_ONBOARDING', () => {
       type: 'APPLY_ONBOARDING',
       profile: { solarPanels: false, homeBattery: false, householdSize: 1, customerYears: 0, products: ['electricity', 'internet'] },
     });
-    // Welcome 1000 + App 150 + Stroom 500 + Internet 500 + household bonus 50 = 2200
-    expect(next.balance).toBe(2200);
+    // Welcome 1000 + App 150 + Stroom 500 + Internet 500 + Internet 50 Mbps (default 15)
+    // + household bonus 50 = 2215
+    expect(next.balance).toBe(2215);
     expect(next.currentTier).toBe('seed');
     expect(multiItem(next, 'Stroom')?.status).toBe('claimed');
     expect(multiItem(next, 'Internet')?.status).toBe('claimed');
@@ -160,9 +161,9 @@ describe('APPLY_ONBOARDING', () => {
       profile: { solarPanels: true, homeBattery: true, householdSize: 4, customerYears: 5, products: ['electricity', 'gas', 'internet', 'tv'] },
     });
     // Welcome 1000 + App 150 + Stroom 500 + Gas 400 + Internet 500 + TV 300
-    // + Zonnepanelen (Stroom bonus sub-item, 30) = 2880
-    // + battery 400 + household 4×50=200 + years 5×100=500 = 3980
-    expect(next.balance).toBe(3980);
+    // + Zonnepanelen (Stroom bonus, 30) + Internet 50 Mbps (default 15) = 2895
+    // + battery 400 + household 4×50=200 + years 5×100=500 = 3995
+    expect(next.balance).toBe(3995);
     expect(next.currentTier).toBe('tree');
     expect(next.multiplier).toBe(1.5);
   });
@@ -186,11 +187,13 @@ describe('SELECT_EXCLUSIVE (mutually-exclusive groups)', () => {
   const bonus = (s: RRState, name: string) =>
     s.catalogue.find(c => c.cat === 'Mobiel bonussen')!.items.find(i => i.name === name);
 
-  test('selecting a bundle claims it and adds its seeds', () => {
+  test('5 GB bundle is claimed by default; switching to 10 GB swaps and nets the balance', () => {
+    expect(bonus(mobileOwned, 'Databundel 5 GB')?.status).toBe('claimed');
     const before = mobileOwned.balance;
     const next = reducer(mobileOwned, { type: 'SELECT_EXCLUSIVE', cat: 'Mobiel bonussen', catalogueKey: 'Databundel 10 GB' });
     expect(bonus(next, 'Databundel 10 GB')?.status).toBe('claimed');
-    expect(next.balance).toBe(before + 25);
+    expect(bonus(next, 'Databundel 5 GB')?.status).toBe('available');
+    expect(next.balance).toBe(before - 15 + 25); // swap 5 GB → 10 GB
   });
 
   test('switching bundles swaps the claim and nets the balance (no stacking)', () => {
@@ -217,5 +220,22 @@ describe('SELECT_EXCLUSIVE (mutually-exclusive groups)', () => {
   test('re-selecting the already-claimed option is a no-op', () => {
     const s = reducer(mobileOwned, { type: 'SELECT_EXCLUSIVE', cat: 'Mobiel bonussen', catalogueKey: 'Mobiel 100 Mbps (standaard)' });
     expect(s).toBe(mobileOwned);
+  });
+});
+
+describe('product activation auto-claims group defaults', () => {
+  test('activating Internet claims the default 50 Mbps speed and awards its seeds', () => {
+    // freshState: Internet is not owned, its bonus section is locked.
+    const before = freshState.balance;
+    const next = apply(freshState, {
+      name: 'Internet', cat: 'Multi-product', base: 500, kind: 'pos', catalogueKey: 'Internet',
+    });
+    const speed = next.catalogue.find(c => c.cat === 'Internet bonussen')!
+      .items.find(i => i.name === 'Internet 50 Mbps');
+    expect(speed?.status).toBe('claimed');
+    // Internet 500 (tier 1×) + default 50 Mbps 15.
+    expect(next.balance).toBe(before + 500 + 15);
+    // The default also lands in the ledger.
+    expect(next.ledger.some(e => e.name === 'Internet 50 Mbps')).toBe(true);
   });
 });

@@ -332,19 +332,32 @@ export function reducer(state: RRState, action: RRAction): RRState {
 
   // A zero-value trigger (e.g. re-enabling remote reading) only flips flags and
   // catalogue status — it must not add a ledger entry or move the balance.
-  const patch = base === 0
+  const patch: Partial<RRState> = base === 0
     ? {}
     : applyEarning(state, { name, nameEn, cat, base, kind }).patch;
 
   let newCatalogue = state.catalogue;
+  // Default bonus items auto-claimed when a product's sub-section unlocks.
+  let bonusDefaults: { name: string; nameEn?: string; cat: string; seeds: number }[] = [];
   if (catalogueKey) {
     newCatalogue = applyCatalogueKey(newCatalogue, catalogueKey);
     // Activating a Multi-product item unlocks its bonus sub-category.
     if (MULTI_PRODUCT_ITEM_NAMES.has(catalogueKey)) {
+      const beforeClaimed = new Set(
+        state.catalogue.flatMap(c => c.items).filter(i => i.status === 'claimed').map(i => i.name)
+      );
       newCatalogue = unlockProductBonuses(newCatalogue, catalogueKey);
       // Gaining electricity also restores Harvest Hours that were missed due to the harvest gate.
       if (catalogueKey === 'Stroom') {
         newCatalogue = restoreHarvestIfElectricity(newCatalogue);
+      }
+      // Items the unlock just auto-claimed (group defaults) earn their seeds too.
+      for (const c of newCatalogue) {
+        for (const it of c.items) {
+          if (it.status === 'claimed' && it.name !== catalogueKey && !beforeClaimed.has(it.name)) {
+            bonusDefaults.push({ name: it.name, nameEn: it.nameEn, cat: c.cat, seeds: it.seeds });
+          }
+        }
       }
     }
   }
@@ -354,9 +367,29 @@ export function reducer(state: RRState, action: RRAction): RRState {
     ? applyHarvestDate(state.harvest, harvestDate, TIER_MULTIPLIERS[state.currentTier])
     : state.harvest;
 
+  // Fold in the auto-claimed default bonus seeds (at face value), with ledger rows.
+  let balance = patch.balance ?? state.balance;
+  let ledger = patch.ledger ?? state.ledger;
+  if (bonusDefaults.length > 0) {
+    const extra = bonusDefaults.reduce((s, d) => s + d.seeds, 0);
+    balance = Math.min(state.cap, Math.max(0, balance + extra));
+    let nid = nextLedgerId(ledger);
+    const rows: LedgerEntry[] = bonusDefaults.map(d => ({
+      id: nid++, name: d.name, nameEn: d.nameEn, cat: d.cat,
+      date: formatDate(), base: d.seeds, mult: 1, amount: d.seeds, kind: 'pos' as const,
+    }));
+    ledger = [...rows, ...ledger];
+  }
+  const tier = evaluateTier(balance, state.currentTier);
+
   return {
     ...state,
     ...patch,
+    balance,
+    ledger,
+    currentTier: tier,
+    multiplier: TIER_MULTIPLIERS[tier],
+    nextTier: nextTierFor(tier, state.tiers),
     catalogue: newCatalogue,
     harvest: newHarvest,
     remoteReadEnabled: setRemoteRead !== undefined ? setRemoteRead : state.remoteReadEnabled,

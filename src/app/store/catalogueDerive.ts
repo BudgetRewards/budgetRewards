@@ -155,17 +155,27 @@ export function buildLedgerFromCatalogue(catalogue: CatalogueCategory[], idOffse
 }
 
 /**
- * When a Multi-product item is claimed mid-session, unlock its bonus sub-category
- * by flipping all 'locked' items there to 'available'.
+ * When a Multi-product item is claimed mid-session, unlock its bonus sub-category:
+ * flip 'locked' items to 'available'. The first locked item of each mutually-
+ * exclusive group is activated ('claimed') by default, matching onboarding.
  */
 export function unlockProductBonuses(catalogue: CatalogueCategory[], productName: string): CatalogueCategory[] {
   return catalogue.map(cat => {
     if (cat.parentProduct !== productName) return cat;
+    const groupDefaulted = new Set<string>();
     return {
       ...cat,
-      items: cat.items.map(item =>
-        item.status === 'locked' ? { ...item, status: 'available' as const } : item
-      ),
+      items: cat.items.map(item => {
+        if (item.status !== 'locked') return item;
+        if (item.group) {
+          if (!groupDefaulted.has(item.group)) {
+            groupDefaulted.add(item.group);
+            return { ...item, status: 'claimed' as const }; // first of group → active by default
+          }
+          return { ...item, status: 'available' as const };
+        }
+        return { ...item, status: 'available' as const };
+      }),
     };
   });
 }

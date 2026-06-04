@@ -98,7 +98,7 @@ export const baseInitialState: RRState = {
       { name: 'Gasverbruik onder gemiddelde', nameEn: 'Gas usage below average', seeds: 50, status: 'available' },
     ]},
     { cat: 'Internet bonussen', catEn: 'Internet benefits', parentProduct: 'Internet', items: [
-      { name: 'Internet 50 Mbps',    nameEn: 'Internet 50 Mbps',    seeds: 15, status: 'available', group: 'internet-speed' },
+      { name: 'Internet 50 Mbps',    nameEn: 'Internet 50 Mbps',    seeds: 15, status: 'claimed',   group: 'internet-speed' },
       { name: 'Internet 200 Mbps',   nameEn: 'Internet 200 Mbps',   seeds: 30, status: 'available', group: 'internet-speed' },
       { name: 'Internet 500 Mbps',   nameEn: 'Internet 500 Mbps',   seeds: 50, status: 'available', group: 'internet-speed' },
       { name: 'Gigabit internet (1 Gbps)', nameEn: 'Gigabit internet (1 Gbps)', seeds: 80, status: 'available', group: 'internet-speed' },
@@ -112,7 +112,7 @@ export const baseInitialState: RRState = {
       { name: 'Mobiel 100 Mbps (standaard)', nameEn: 'Mobile 100 Mbps (default)', seeds: 10, status: 'claimed',   group: 'mobile-speed' },
       { name: 'Upgrade naar 200 Mbps',       nameEn: 'Upgrade to 200 Mbps',       seeds: 25, status: 'available', group: 'mobile-speed' },
       // Data bundle — pick one
-      { name: 'Databundel 5 GB',   nameEn: '5 GB data bundle',   seeds: 15,  status: 'available', group: 'mobile-bundle' },
+      { name: 'Databundel 5 GB',   nameEn: '5 GB data bundle',   seeds: 15,  status: 'claimed',   group: 'mobile-bundle' },
       { name: 'Databundel 10 GB',  nameEn: '10 GB data bundle',  seeds: 25,  status: 'available', group: 'mobile-bundle' },
       { name: 'Databundel 50 GB',  nameEn: '50 GB data bundle',  seeds: 40,  status: 'available', group: 'mobile-bundle' },
       { name: 'Databundel 100 GB', nameEn: '100 GB data bundle', seeds: 60,  status: 'available', group: 'mobile-bundle' },

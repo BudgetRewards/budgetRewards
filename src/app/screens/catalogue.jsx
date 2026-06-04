@@ -1,6 +1,6 @@
 import React from 'react'
 import { useRR, useTrigger } from '../store/RRContext.tsx'
-import { Icon, SeedMark, ScreenHeader } from '../ui.jsx'
+import { Icon, SeedMark, ScreenHeader, Progress } from '../ui.jsx'
 import { useT, useFmt, useLang } from '../i18n.jsx'
 
 /* ───────────────── Screen 3 · Earn more (Catalogue) ───────────────── */
@@ -64,13 +64,6 @@ function TriggerRow({ item, catName, isLast, onClaim }){
   );
 }
 
-/* Labels for mutually-exclusive "pick one" groups. */
-const GROUP_LABELS = {
-  'internet-speed': { nl: 'Internetsnelheid', en: 'Internet speed' },
-  'mobile-speed':   { nl: 'Mobiele snelheid', en: 'Mobile speed' },
-  'mobile-bundle':  { nl: 'Databundel',       en: 'Data bundle' },
-};
-
 /* ── Product bonus sub-section (sub-items under a claimed product) ── */
 function ProductBonusSection({ items, catName, onClaim }) {
   const { lang } = useLang();
@@ -97,30 +90,11 @@ function ProductBonusSection({ items, catName, onClaim }) {
           </span>
         )}
       </div>
-      {items.map((item, i) => {
-        // Caption above the first item of a mutually-exclusive group.
-        const prevGroup = items[i - 1]?.group;
-        const showCaption = item.group && item.group !== prevGroup;
-        const gl = item.group ? GROUP_LABELS[item.group] : null;
-        return (
-          <React.Fragment key={item.name}>
-            {showCaption && (
-              <div style={{ padding:'9px 14px 1px', display:'flex', gap:6, alignItems:'baseline' }}>
-                <span style={{ fontSize:10, fontWeight:800, color:'#5a7200',
-                  textTransform:'uppercase', letterSpacing:'0.06em' }}>
-                  {gl ? (lang === 'en' ? gl.en : gl.nl) : ''}
-                </span>
-                <span style={{ fontSize:10, fontWeight:600, color:'var(--navy-60)' }}>
-                  · {lang === 'en' ? 'pick one' : 'kies één'}
-                </span>
-              </div>
-            )}
-            <TriggerRow item={item} catName={catName}
-              isLast={i === items.length - 1}
-              onClaim={() => onClaim(item, catName)} />
-          </React.Fragment>
-        );
-      })}
+      {items.map((item, i) => (
+        <TriggerRow key={item.name} item={item} catName={catName}
+          isLast={i === items.length - 1}
+          onClaim={() => onClaim(item, catName)} />
+      ))}
     </div>
   );
 }
@@ -152,11 +126,15 @@ function ProductRow({ product, bonusCat, lang, fmt, onActivate, onClaim, isLast 
             )}
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <StatusPill status={product.status}/>
-            {isMissed && (
-              <span style={{ fontSize:11, fontWeight:700, color:'var(--green-700)' }}>
-                {lang === 'en' ? 'Activate →' : 'Activeer →'}
+            {isMissed ? (
+              <span style={{ display:'inline-flex', alignItems:'center', gap:5,
+                background:'var(--green)', color:'#fff', fontSize:12, fontWeight:800,
+                borderRadius:99, padding:'6px 13px', boxShadow:'0 3px 9px rgba(0,166,81,0.32)' }}>
+                {lang === 'en' ? 'Activate' : 'Activeer'}
+                <Icon name="arrow" size={13} stroke="#fff" sw={2.8}/>
               </span>
+            ) : (
+              <StatusPill status={product.status}/>
             )}
           </div>
         </div>
@@ -211,6 +189,41 @@ function MultiProductSection({ group, bonusCats, lang, fmt, trigger }) {
   );
 }
 
+/* ── Progress-to-next-tier dialog, sticky at the top of the Earn screen ── */
+function EarnProgressBar(){
+  const R = useRR();
+  const t = useT();
+  const fmt = useFmt();
+  const { lang } = useLang();
+  const curTier = R.tiers.find(tr => tr.id === R.currentTier);
+  const curName = lang === 'en' ? curTier.nameEn : curTier.name;
+  const hasNext = !!R.nextTier;
+  const nextName  = hasNext ? (lang === 'en' ? R.nextTier.nameEn : R.nextTier.name) : null;
+  const nextEmoji = hasNext ? (R.tiers.find(tr => tr.name === R.nextTier.name || tr.nameEn === R.nextTier.nameEn)?.emoji ?? '🌲') : null;
+  const pct    = hasNext ? (R.balance / R.nextTier.threshold) * 100 : 100;
+  const toNext = hasNext ? R.nextTier.threshold - R.balance : 0;
+  return (
+    <div style={{ position:'sticky', top:0, zIndex:5, background:'var(--grey)', paddingTop:4, paddingBottom:9 }}>
+      <div className="rr-card" style={{ padding:'13px 16px' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:9 }}>
+          <span style={{ fontWeight:800, fontSize:13, whiteSpace:'nowrap' }}>
+            {curTier.emoji} {curName}{hasNext ? ` → ${nextEmoji} ${nextName}` : ''}
+          </span>
+          <span style={{ fontSize:12, fontWeight:700, color:'var(--green)', whiteSpace:'nowrap' }}>
+            {hasNext ? t.tiers.nog(fmt(toNext)) : (lang === 'en' ? 'Max tier' : 'Hoogste tier')}
+          </span>
+        </div>
+        <Progress pct={pct}/>
+        <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, fontWeight:600,
+          color:'var(--navy-60)', marginTop:6 }}>
+          <span>{fmt(R.balance)} seeds</span>
+          {hasNext && <span>{fmt(R.nextTier.threshold)} seeds</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Catalogue(){
   const R = useRR();
   const trigger = useTrigger();
@@ -234,6 +247,8 @@ function Catalogue(){
   return (
     <div className="rr-page">
       <ScreenHeader eyebrow={t.catalogue.eyebrow} title={t.catalogue.title}/>
+
+      <EarnProgressBar/>
 
       <div className="rr-card rr-fadein" style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:12,
         background:'linear-gradient(120deg,#1A1A2E 0%,#2a2a45 100%)', color:'#fff' }}>
