@@ -44,11 +44,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         client.zAdd('rr:leaderboard', [{ score: balance, value: uid }]),
       ]
       if (seeds > 0) {
-        // Only log the event and increment global total for real seed events
         const event = { name, seeds, label, labelEn, ts: Date.now() }
         ops.push(client.lPush('rr:events', JSON.stringify(event)))
         ops.push(client.lTrim('rr:events', 0, 199))
-        ops.push(client.incrBy('rr:total', seeds))
       }
       await Promise.all(ops)
       return res.status(200).json({ ok: true })
@@ -56,9 +54,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     /* ── GET: fetch aggregated state ─────────────────────────── */
     if (req.method === 'GET') {
-      const [rawEvents, total, userCount, allEntries] = await Promise.all([
+      const [rawEvents, userCount, allEntries] = await Promise.all([
         client.lRange('rr:events', 0, 29),
-        client.get('rr:total'),
         client.sCard('rr:users'),
         client.zRangeWithScores('rr:leaderboard', '+inf', '-inf', {
           BY: 'SCORE', REV: true, LIMIT: { offset: 0, count: 500 },
@@ -85,9 +82,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .map(([user, seeds]) => ({ user, seeds }))
       }
 
+      // Total = sum of all customer balances (consistent with leaderboard)
+      const total = all.reduce((sum, e) => sum + e.seeds, 0)
+
       return res.status(200).json({
         events,
-        total:       Number(total) || 0,
+        total,
         userCount:   Number(userCount) || 0,
         leaderboard: all.slice(0, 5),
         all,
@@ -98,7 +98,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'DELETE') {
       await Promise.all([
         client.del('rr:events'),
-        client.del('rr:total'),
         client.del('rr:users'),
         client.del('rr:leaderboard'),
         client.del('rr:names'),

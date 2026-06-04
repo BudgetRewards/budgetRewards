@@ -32,9 +32,10 @@ export default defineConfig({
             const all = [...byName.entries()]
               .sort((a, b) => b[1] - a[1])
               .map(([user, seeds]) => ({ user, seeds }))
+            const total = all.reduce((sum: number, e: {seeds: number}) => sum + e.seeds, 0)
             res.end(JSON.stringify({
               events: store.events.slice(0, 30),
-              total: store.total,
+              total,
               userCount: store.users.size,
               leaderboard: all.slice(0, 5),
               all,
@@ -54,7 +55,6 @@ export default defineConfig({
                 if (seeds > 0) {
                   store.events.unshift({ name, seeds, label, labelEn, ts: Date.now() })
                   store.events = store.events.slice(0, 200)
-                  store.total += seeds
                 }
               } catch { /* ignore */ }
               res.end(JSON.stringify({ ok: true }))
