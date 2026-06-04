@@ -1,18 +1,15 @@
 import React from 'react'
 import { useRR } from '../store/RRContext.tsx'
-import { Icon, ScreenHeader, Progress } from '../ui.jsx'
-import { useT, useFmt, useLang, tRoutes } from '../i18n.jsx'
+import { ScreenHeader, Progress } from '../ui.jsx'
+import { useT, useFmt, useLang } from '../i18n.jsx'
 
 /* ───────────────── Screen 4 · Tier overview ───────────────── */
 function TierCard({ tier, current, achieved, isNext }){
   const t = useT();
-  const fmt = useFmt();
   const { lang } = useLang();
   const name = lang === 'en' ? tier.nameEn : tier.name;
-  const routes = tRoutes(tier, lang);
-  const range = tier.max==null
-    ? `${fmt(tier.min)}+ seeds`
-    : `${fmt(tier.min)} – ${fmt(tier.max)} seeds`;
+  const tagline = lang === 'en' ? tier.taglineEn : tier.tagline;
+  const benefits = lang === 'en' ? tier.benefitsEn : tier.benefits;
   return (
     <div style={{ borderRadius:20, padding:'16px 17px', position:'relative',
       background: current ? '#fff' : achieved ? '#fff' : 'rgba(255,255,255,0.6)',
@@ -36,7 +33,7 @@ function TierCard({ tier, current, achieved, isNext }){
             <span className="rr-h2" style={{ fontSize:16 }}>{name}</span>
             <span className="rr-sub" style={{ fontSize:12, fontWeight:600 }}>{tier.en}</span>
           </div>
-          <div className="rr-sub" style={{ fontSize:12, marginTop:2 }}>{range}</div>
+          <div className="rr-sub" style={{ fontSize:12, marginTop:2 }}>{tagline}</div>
         </div>
         <div style={{ textAlign:'right' }}>
           <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5, color: current?'var(--green)':'var(--navy)' }}>{tier.mult}</div>
@@ -45,15 +42,13 @@ function TierCard({ tier, current, achieved, isNext }){
       </div>
 
       <div style={{ marginTop:13, paddingTop:13, borderTop:'1px solid var(--grey-line)' }}>
-        <div className="rr-eyebrow muted" style={{ marginBottom:8, fontSize:10 }}>{t.tiers.qualify}</div>
+        <div className="rr-eyebrow muted" style={{ marginBottom:8, fontSize:10 }}>{t.tiers.benefits}</div>
         <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
-          {routes.map((r,i)=>(
-            <div key={i} style={{ display:'flex', gap:8, alignItems:'flex-start' }}>
-              <span style={{ marginTop:1, flexShrink:0 }}>
-                <Icon name={achieved||current?'check':'arrow'} size={14}
-                  stroke={achieved||current?'var(--green)':'var(--grey-2)'} sw={2.4}/>
-              </span>
-              <span className="rr-sub" style={{ fontSize:12.5, color:'var(--navy)' }}>{r}</span>
+          {benefits.map((b,i)=>(
+            <div key={i} style={{ display:'flex', gap:9, alignItems:'flex-start' }}>
+              <span style={{ width:5, height:5, borderRadius:'50%', marginTop:6, flexShrink:0,
+                background: achieved||current ? 'var(--green)' : 'var(--grey-2)' }}/>
+              <span className="rr-sub" style={{ fontSize:12.5, color:'var(--navy)' }}>{b}</span>
             </div>
           ))}
         </div>

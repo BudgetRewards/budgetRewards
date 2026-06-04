@@ -68,6 +68,10 @@ export type Tier = {
   mult: string;
   routes: string[];
   routesEn: string[];
+  tagline: string;
+  taglineEn: string;
+  benefits: string[];
+  benefitsEn: string[];
 };
 
 export type RRState = {
