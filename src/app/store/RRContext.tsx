@@ -102,5 +102,11 @@ export function useTrigger() {
         },
       });
     },
+    /** Award seeds directly from a gamified notification event. */
+    claimNotification: (name: string, nameEn: string, cat: string, seeds: number) =>
+      dispatch({
+        type: 'APPLY_TRIGGER',
+        payload: { name, nameEn, cat, base: seeds, kind: 'pos' },
+      }),
   };
 }
