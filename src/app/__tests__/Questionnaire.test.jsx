@@ -1,6 +1,9 @@
 import { describe, test, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { CheckboxGroup, RadioGroup } from '../ProfileSheet.jsx'
+import { CheckboxGroup, RadioGroup, Questionnaire } from '../ProfileSheet.jsx'
+import React from 'react'
+import { RRProvider } from '../store/RRContext.tsx'
+import { LanguageProvider, useLang } from '../i18n.jsx'
 
 const OPTS = [
   { value: 'a', label: 'A' }, { value: 'b', label: 'B' },
@@ -36,5 +39,25 @@ describe('RadioGroup', () => {
     render(<RadioGroup options={OPTS} value="a" onChange={onChange} />)
     fireEvent.click(screen.getByText('C'))
     expect(onChange).toHaveBeenCalledWith('c')
+  })
+})
+
+describe('Questionnaire save flow', () => {
+  function Host() {
+    const { profile, setProfile } = useLang()
+    return <Questionnaire profile={profile} setProfile={setProfile} />
+  }
+
+  test('clicking Save shows the completion card', () => {
+    render(
+      <RRProvider>
+        <LanguageProvider>
+          <Host />
+        </LanguageProvider>
+      </RRProvider>
+    )
+    expect(screen.queryByText(/Vragenlijst ingevuld|Questionnaire completed/)).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /Opslaan|Save/ }))
+    expect(screen.getByText(/Vragenlijst ingevuld|Questionnaire completed/)).toBeInTheDocument()
   })
 })

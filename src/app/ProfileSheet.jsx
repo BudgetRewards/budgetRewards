@@ -275,6 +275,80 @@ function MoreAboutYou({ profile, setProfile }) {
   )
 }
 
+const QUESTIONNAIRE_SEEDS = 10
+
+export function Questionnaire({ profile, setProfile }) {
+  const t = useT()
+  const q = t.profile.questionnaire
+  const { claimNotification } = useTrigger()
+
+  function update(key, value) {
+    setProfile(prev => ({ ...prev, [key]: value }))
+  }
+
+  function handleSave() {
+    const wasCompleted = profile.questionnaireCompleted
+    setProfile(prev => ({ ...prev, questionnaireCompleted: true }))
+    if (!wasCompleted) {
+      claimNotification('Vragenlijst ingevuld', 'Questionnaire completed', 'App & Data', QUESTIONNAIRE_SEEDS)
+    }
+  }
+
+  const multiSection = (section, key) => (
+    <>
+      <SectionLabel>{section.title}</SectionLabel>
+      <p style={{ fontSize:13, color:'var(--navy)', fontWeight:600, margin:'0 0 4px' }}>{section.q}</p>
+      <p style={{ fontSize:11, color:'var(--navy-60)', fontWeight:600, margin:'0 0 10px' }}>
+        {q.maxHint((profile[key] || []).length)}
+      </p>
+      <CheckboxGroup options={section.options} value={profile[key] || []} max={3}
+        onChange={v => update(key, v)}/>
+    </>
+  )
+
+  const singleSection = (section, key) => (
+    <>
+      <SectionLabel>{section.title}</SectionLabel>
+      <p style={{ fontSize:13, color:'var(--navy)', fontWeight:600, margin:'0 0 10px' }}>{section.q}</p>
+      <RadioGroup options={section.options} value={profile[key]} onChange={v => update(key, v)}/>
+    </>
+  )
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
+      <p style={{ fontSize:13, color:'var(--navy-60)', lineHeight:1.5, margin:'0 0 6px' }}>{q.subtitle}</p>
+
+      {multiSection(q.hobbies, 'hobbies')}
+      {singleSection(q.sustainability, 'sustainability')}
+      {multiSection(q.rewards, 'rewardPrefs')}
+      {multiSection(q.internet, 'internetUse')}
+      {singleSection(q.enthusiasm, 'enthusiasm')}
+
+      <button onClick={handleSave} style={{
+        marginTop:20, border:'none', borderRadius:14, padding:'14px',
+        background:'var(--green)', color:'#fff',
+        fontFamily:'inherit', fontWeight:800, fontSize:14, letterSpacing:0.4,
+        cursor:'pointer', boxShadow:'0 6px 16px rgba(0,166,81,0.28)',
+      }}>
+        {q.save}
+      </button>
+
+      {profile.questionnaireCompleted && (
+        <div style={{ marginTop:14, background:'rgba(0,166,81,0.08)', borderRadius:14,
+          padding:'14px 16px', display:'flex', alignItems:'center', gap:10 }}>
+          <span style={{ fontSize:22 }}>✅</span>
+          <div>
+            <div style={{ fontWeight:800, fontSize:13.5, color:'var(--navy)' }}>{q.doneTitle}</div>
+            <div style={{ fontSize:12.5, color:'var(--green)', fontWeight:700, marginTop:2 }}>
+              {q.seedsEarned(QUESTIONNAIRE_SEEDS)}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ─── main sheet ─────────────────────────────────────────── */
 export function ProfileSheet({ onClose }) {
   const t = useT()
@@ -436,6 +510,10 @@ export function ProfileSheet({ onClose }) {
           {/* ── More about you ── */}
           <SectionLabel>{p.moreSection}</SectionLabel>
           <MoreAboutYou profile={profile} setProfile={setProfile}/>
+
+          {/* ── Questionnaire ── */}
+          <SectionLabel>{p.questionnaireSection}</SectionLabel>
+          <Questionnaire profile={profile} setProfile={setProfile}/>
 
         </div>
       </div>
