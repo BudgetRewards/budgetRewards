@@ -126,6 +126,8 @@ export type RRAction =
   | { type: 'SET_USAGE'; payload: UsageRecord }
   | { type: 'SELECT_USAGE_DATE'; payload: { date: string } }
   | { type: 'MARK_HISTORY_SEEN' }
-  | { type: 'DISMISS_REWARD' };
+  | { type: 'DISMISS_REWARD' }
+  /** Replace an existing ledger entry in-place and adjust the balance by the delta. */
+  | { type: 'UPDATE_LEDGER_ENTRY'; id: number; base: number; amount: number };
 
 export type Dispatch = (action: RRAction) => void;

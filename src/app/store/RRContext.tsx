@@ -70,18 +70,23 @@ export function useTrigger() {
         },
       });
     },
-    /** Record a daily usage-vs-average comparison result in the ledger. */
-    logComparison: (seeds: number, kind: 'pos' | 'missed', dateLabel: string) =>
-      dispatch({
-        type: 'APPLY_TRIGGER',
-        payload: {
-          name:   `Verbruik vs. 2-pers. gemiddelde (${dateLabel})`,
-          nameEn: `Usage vs. 2-person average (${dateLabel})`,
-          cat:    'Energiegedrag',
-          base:   seeds,
-          kind,
-        },
-      }),
+    /** Record a monthly usage-vs-average result. Updates the existing entry for
+     *  the same month rather than adding a duplicate to the ledger. */
+    logComparison: (seeds: number, kind: 'pos' | 'missed', monthLabel: string) => {
+      const name   = `Verbruik vs. gemiddelde (${monthLabel})`;
+      const nameEn = `Usage vs. average (${monthLabel})`;
+      const existing = state.ledger.find(e => e.name === name);
+      if (existing) {
+        // Re-claim for same month: patch the entry and adjust balance by delta.
+        const amount = Math.round(seeds * state.multiplier);
+        dispatch({ type: 'UPDATE_LEDGER_ENTRY', id: existing.id, base: seeds, amount });
+      } else {
+        dispatch({
+          type: 'APPLY_TRIGGER',
+          payload: { name, nameEn, cat: 'Energiegedrag', base: seeds, kind },
+        });
+      }
+    },
     /** Activate a missed Multi-product item (add a product the customer doesn't currently own). */
     activateProduct:     (item: CatalogueItem, cat: string)  => {
       if (item.status !== 'missed') return;

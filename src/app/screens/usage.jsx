@@ -67,6 +67,8 @@ function Bars({ usage }) {
 function MonthCompareCard({ monthCons, daysSimulated, monthlyAvg, householdSize, monthLabel, onClaim }) {
   const { lang } = useLang();
   const [claimed, setClaimed] = React.useState(false);
+  // Reset when monthCons changes (regenerate or new day) so the button is available again.
+  React.useEffect(() => { setClaimed(false); }, [monthCons]);
 
   const expectedByNow = (monthlyAvg / 30) * daysSimulated;
   const diff = expectedByNow - monthCons; // positive = below expected (good)

@@ -225,6 +225,23 @@ export function reducer(state: RRState, action: RRAction): RRState {
   if (action.type === 'DISMISS_REWARD') {
     return state.pendingReward ? { ...state, pendingReward: null } : state;
   }
+  if (action.type === 'UPDATE_LEDGER_ENTRY') {
+    const existing = state.ledger.find(e => e.id === action.id);
+    if (!existing) return state;
+    const delta      = action.amount - existing.amount;
+    const newBalance = Math.min(state.cap, Math.max(0, state.balance + delta));
+    const newTier    = evaluateTier(newBalance, state.currentTier);
+    return {
+      ...state,
+      balance:     newBalance,
+      currentTier: newTier,
+      multiplier:  TIER_MULTIPLIERS[newTier],
+      nextTier:    nextTierFor(newTier, state.tiers),
+      ledger:      state.ledger.map(e =>
+        e.id === action.id ? { ...e, base: action.base, amount: action.amount } : e
+      ),
+    };
+  }
   if (action.type !== 'APPLY_TRIGGER') return state;
 
   const { name, nameEn, cat, base, kind, catalogueKey, harvestDate, setRemoteRead } = action.payload;
