@@ -42,7 +42,7 @@ const harvestMonthsData = buildHarvestMonthsData();
 export const baseInitialState: RRState = {
   user: { name: 'Jan', fullName: 'Jan de Vries' },
   balance: 0,
-  cap: 10000,
+  cap: 999999,
   multiplier: 1,
   period: { startLabel: '1 jan 2026', endLabel: '31 dec 2026', daysLeft: 211 },
 
