@@ -11,19 +11,22 @@ export default defineConfig({
       name: 'api-live-mock',
       configureServer(server) {
         // In-memory store — mimics Vercel KV for local dev
-        const store: { events: object[]; total: number; users: Set<string>; userSeeds: Map<string, number> } = {
-          events: [], total: 0, users: new Set(), userSeeds: new Map(),
-        }
+        const store: {
+          events: object[]; total: number;
+          users: Set<string>;
+          uidSeeds: Map<string, number>;
+          uidNames: Map<string, string>;
+        } = { events: [], total: 0, users: new Set(), uidSeeds: new Map(), uidNames: new Map() }
 
         server.middlewares.use('/api/live', (req, res) => {
           res.setHeader('Access-Control-Allow-Origin', '*')
           res.setHeader('Content-Type', 'application/json')
 
           if (req.method === 'GET') {
-            const leaderboard = [...store.userSeeds.entries()]
+            const leaderboard = [...store.uidSeeds.entries()]
               .sort((a, b) => b[1] - a[1])
               .slice(0, 5)
-              .map(([user, seeds]) => ({ user, seeds }))
+              .map(([uid, seeds]) => ({ user: store.uidNames.get(uid) || uid, seeds }))
             res.end(JSON.stringify({
               events: store.events.slice(0, 30),
               total: store.total,
@@ -35,17 +38,21 @@ export default defineConfig({
             req.on('data', (c: Buffer) => { body += c })
             req.on('end', () => {
               try {
-                const { user, seeds, label, labelEn } = JSON.parse(body)
-                store.events.unshift({ user, seeds, label, labelEn, ts: Date.now() })
+                const { uid, user, seeds, label, labelEn } = JSON.parse(body)
+                const id = uid || user || 'anon'
+                const name = user || 'Customer'
+                store.events.unshift({ name, seeds, label, labelEn, ts: Date.now() })
                 store.events = store.events.slice(0, 200)
                 store.total += seeds
-                store.users.add(user)
-                store.userSeeds.set(user, (store.userSeeds.get(user) ?? 0) + seeds)
+                store.users.add(id)
+                store.uidSeeds.set(id, (store.uidSeeds.get(id) ?? 0) + seeds)
+                store.uidNames.set(id, name)
               } catch { /* ignore */ }
               res.end(JSON.stringify({ ok: true }))
             })
           } else if (req.method === 'DELETE') {
-            store.events = []; store.total = 0; store.users.clear(); store.userSeeds.clear()
+            store.events = []; store.total = 0
+            store.users.clear(); store.uidSeeds.clear(); store.uidNames.clear()
             res.end(JSON.stringify({ ok: true }))
           } else {
             res.end('{}')
