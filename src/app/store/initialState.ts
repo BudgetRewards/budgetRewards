@@ -64,7 +64,7 @@ export const baseInitialState: RRState = {
       { name: '5 jaar trouw lid',           nameEn: '5 years loyal member',      seeds: 1500, status: 'locked', need: 'Word lid voor 5 jaar — nog 4 jaar te gaan', needEn: 'Become a member for 5 years — 4 years to go' },
     ]},
     { cat: 'App & Data', catEn: 'App & Data', items: [
-      { name: 'App geactiveerd',         nameEn: 'App activated',              seeds: 150, status: 'available' },
+      { name: 'App geactiveerd',         nameEn: 'App activated',              seeds: 150, status: 'claimed' },
       { name: 'Maandelijkse meterstand', nameEn: 'Monthly meter reading',      seeds: 20,  status: 'available' },
       { name: 'Pushmeldingen aangezet',  nameEn: 'Push notifications enabled', seeds: 50,  status: 'available' },
     ]},
