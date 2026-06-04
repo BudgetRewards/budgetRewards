@@ -99,6 +99,8 @@ export type RRState = {
   historyUnseen: boolean;
   /** The most recent weekend reward, shown as a toast until dismissed. */
   pendingReward: { amount: number; weekend: string; weekendEn: string } | null;
+  /** The most recent upward tier crossing, shown as a full-screen celebration until dismissed. */
+  pendingTierUp: { from: TierKey; to: TierKey } | null;
 };
 
 export type TriggerPayload = {
@@ -126,6 +128,7 @@ export type RRAction =
   | { type: 'SET_USAGE'; payload: UsageRecord }
   | { type: 'SELECT_USAGE_DATE'; payload: { date: string } }
   | { type: 'MARK_HISTORY_SEEN' }
-  | { type: 'DISMISS_REWARD' };
+  | { type: 'DISMISS_REWARD' }
+  | { type: 'DISMISS_TIER_UP' };
 
 export type Dispatch = (action: RRAction) => void;

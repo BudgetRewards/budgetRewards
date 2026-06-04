@@ -138,6 +138,7 @@ export const baseInitialState: RRState = {
   awardedWeekends: [],
   historyUnseen: false,
   pendingReward: null,
+  pendingTierUp: null,
 };
 
 function readProfile(): Profile | null {
