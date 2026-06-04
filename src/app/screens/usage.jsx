@@ -54,10 +54,12 @@ function Bars({ usage, showProduction = true }) {
   const max = Math.max(...usage.flatMap(u => showProduction ? [u.consumption, u.production] : [u.consumption]), 0.001);
 
   // Consumption-only: single upward bar chart, no production half or centre axis.
+  // alignItems:'stretch' so each column is full height — the bar's % height needs
+  // a sized parent, otherwise it collapses to 0 (empty graph).
   if (!showProduction) {
     const H = 140;
     return (
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: H }}>
+      <div style={{ display: 'flex', alignItems: 'stretch', gap: 2, height: H }}>
         {usage.map(u => (
           <div key={u.hour}
             title={`${String(u.hour).padStart(2, '0')}:00 — ${kwh(u.consumption)} kWh`}
