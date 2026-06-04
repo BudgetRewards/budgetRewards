@@ -256,7 +256,7 @@ export function ProfileSheet({ onClose }) {
   }
 
   return (
-    <div style={{ position:'absolute', inset:0, zIndex:60 }}>
+    <div style={{ position:'fixed', inset:0, zIndex:60, overflow:'hidden' }}>
       {/* backdrop — full screen */}
       <div onClick={onClose} style={{
         position:'absolute', inset:0, background:'rgba(0,0,0,0.35)',
