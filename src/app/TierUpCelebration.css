@@ -1,0 +1,53 @@
+/* All rules scoped under .tu-root; keyframes prefixed tu- to avoid global collisions. */
+.tu-root{
+  position:absolute; inset:0; z-index:100;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:rgba(4,65,42,0.55); backdrop-filter:blur(4px);
+  animation:tu-fade 0.3s ease-out both;
+}
+@keyframes tu-fade{ from{ opacity:0; } to{ opacity:1; } }
+
+.tu-stage{
+  width:240px; height:240px; position:relative;
+  display:flex; align-items:flex-end; justify-content:center;
+}
+.tu-ground{ position:absolute; bottom:0; left:0; right:0; height:30px;
+  background:linear-gradient(180deg,#bfe9cf,#a9dcc0); border-radius:0 0 16px 16px; }
+.tu-shadow{ position:absolute; bottom:20px; left:50%; width:140px; height:18px;
+  transform:translateX(-50%); background:rgba(4,65,42,.22); border-radius:50%; filter:blur(3px); }
+
+.tu-grow{ transform-origin:bottom center;
+  animation:tu-grow 2.2s cubic-bezier(.34,1.3,.5,1) both; }
+@keyframes tu-grow{
+  0%{ transform:scaleY(.04) scaleX(.5); opacity:.3; }
+  70%{ transform:none; opacity:1; }
+  100%{ transform:none; opacity:1; }
+}
+.tu-pop{ transform-origin:center bottom; opacity:0;
+  animation:tu-pop 2.2s cubic-bezier(.34,1.4,.5,1) both; }
+@keyframes tu-pop{
+  0%,30%{ transform:scale(0); opacity:0; }
+  48%{ transform:scale(1.06); opacity:1; }
+  56%,100%{ transform:scale(1); opacity:1; }
+}
+.tu-d1{ animation-delay:.06s; } .tu-d2{ animation-delay:.12s; } .tu-d3{ animation-delay:.18s; }
+.tu-d4{ animation-delay:.24s; } .tu-d5{ animation-delay:.30s; } .tu-d6{ animation-delay:.36s; }
+.tu-d7{ animation-delay:.42s; } .tu-d8{ animation-delay:.48s; } .tu-d9{ animation-delay:.54s; }
+
+.tu-copy{ text-align:center; margin-top:18px; padding:0 28px;
+  animation:tu-rise 0.5s ease-out 1.6s both; }
+@keyframes tu-rise{ from{ opacity:0; transform:translateY(12px); } to{ opacity:1; transform:none; } }
+.tu-title{ color:#fff; font-weight:800; font-size:22px; letter-spacing:-0.3px; margin:0; }
+.tu-sub{ color:rgba(255,255,255,0.88); font-weight:600; font-size:14px; margin:8px 0 0; }
+
+.tu-continue{
+  margin-top:22px; border:none; cursor:pointer;
+  background:#fff; color:#04412a; font-family:inherit; font-weight:800; font-size:15px;
+  padding:13px 34px; border-radius:99px; box-shadow:0 8px 24px rgba(0,0,0,0.22);
+  animation:tu-rise 0.5s ease-out 1.7s both;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .tu-root, .tu-grow, .tu-pop, .tu-copy, .tu-continue{ animation:none !important; opacity:1 !important; }
+  .tu-grow, .tu-pop{ transform:none !important; }
+}
