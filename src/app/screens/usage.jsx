@@ -21,6 +21,13 @@ function monthlyAvgForSize(size) {
   return MONTHLY_AVG_KWH[Math.min(6, Math.max(1, size || 2))] ?? 213;
 }
 
+/* Daily consumption the simulator aims for: ~15% below the household average, so
+ * an efficient home reliably lands under the benchmark and can claim — at any size.
+ * Single source of truth, also used by the auto-simulation on first login. */
+export function householdDailyTarget(size) {
+  return (monthlyAvgForSize(size) / 30) * 0.85;
+}
+
 function kwh(n) { return n.toFixed(1); }
 
 function peakHour(usage, key) {
@@ -191,9 +198,7 @@ function UsageInner() {
   const { homeBattery, householdSize } = useProfile();
 
   const monthlyAvg = monthlyAvgForSize(householdSize);
-  // Simulate ~10% below the household average so an efficient home can realistically
-  // come in under the benchmark and earn — regardless of household size.
-  const dailyTarget = (monthlyAvg / 30) * 0.9;
+  const dailyTarget = householdDailyTarget(householdSize);
 
   const date = state.currentUsageDate;
   const record = state.usages[date];
