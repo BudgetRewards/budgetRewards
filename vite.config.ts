@@ -29,15 +29,15 @@ export default defineConfig({
               const name = store.uidNames.get(uid) || uid
               if (!byName.has(name) || byName.get(name)! < seeds) byName.set(name, seeds)
             }
-            const leaderboard = [...byName.entries()]
+            const all = [...byName.entries()]
               .sort((a, b) => b[1] - a[1])
-              .slice(0, 5)
               .map(([user, seeds]) => ({ user, seeds }))
             res.end(JSON.stringify({
               events: store.events.slice(0, 30),
               total: store.total,
               userCount: store.users.size,
-              leaderboard,
+              leaderboard: all.slice(0, 5),
+              all,
             }))
           } else if (req.method === 'POST') {
             let body = ''
