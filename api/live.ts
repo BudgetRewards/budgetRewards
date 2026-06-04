@@ -54,9 +54,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     /* ── GET: fetch aggregated state ─────────────────────────── */
     if (req.method === 'GET') {
-      const [rawEvents, userCount, allEntries] = await Promise.all([
+      const [rawEvents, allEntries] = await Promise.all([
         client.lRange('rr:events', 0, 29),
-        client.sCard('rr:users'),
         client.zRangeWithScores('rr:leaderboard', '+inf', '-inf', {
           BY: 'SCORE', REV: true, LIMIT: { offset: 0, count: 500 },
         }),
@@ -82,13 +81,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .map(([user, seeds]) => ({ user, seeds }))
       }
 
-      // Total = sum of all customer balances (consistent with leaderboard)
-      const total = all.reduce((sum, e) => sum + e.seeds, 0)
+      const total     = all.reduce((sum, e) => sum + e.seeds, 0)
+      const userCount = all.length  // deduplicated by name, consistent with leaderboard
 
       return res.status(200).json({
         events,
         total,
-        userCount:   Number(userCount) || 0,
+        userCount,
         leaderboard: all.slice(0, 5),
         all,
       })

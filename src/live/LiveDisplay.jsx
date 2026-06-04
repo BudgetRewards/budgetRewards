@@ -54,7 +54,7 @@ function EventRow({ event, index }) {
       </div>
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontWeight:800, fontSize:18, color:'#fff', letterSpacing:-0.3 }}>
-          {event.user}
+          {event.name || event.user}
         </div>
         <div style={{ fontSize:14, color:'rgba(255,255,255,0.55)', marginTop:2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
           {event.labelEn || event.label}

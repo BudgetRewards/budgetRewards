@@ -36,7 +36,7 @@ export default defineConfig({
             res.end(JSON.stringify({
               events: store.events.slice(0, 30),
               total,
-              userCount: store.users.size,
+              userCount: all.length,
               leaderboard: all.slice(0, 5),
               all,
             }))
