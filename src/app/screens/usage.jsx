@@ -273,9 +273,15 @@ function UsageInner() {
     else if (stroom.status === 'available') claimItem(stroom, 'Multi-product');
   };
 
+  // Solar can come from onboarding (profile) OR from claiming the panels reward on
+  // the Earn screen ('Zonnepanelen geregistreerd'), so check both sources.
+  const solarClaimed = state.catalogue.some(c =>
+    c.items.some(i => i.name === 'Zonnepanelen geregistreerd' && i.status === 'claimed'));
+  const hasSolar = solarPanels || solarClaimed;
+
   const monthlyAvg = monthlyAvgForSize(householdSize);
   const dailyTarget = householdDailyTarget(householdSize);
-  const simOpts = { hasHomeBattery: homeBattery, hasSolar: solarPanels, dailyTargetKwh: dailyTarget };
+  const simOpts = { hasHomeBattery: homeBattery, hasSolar, dailyTargetKwh: dailyTarget };
 
   const date = state.currentUsageDate;
   const record = state.usages[date];
@@ -286,16 +292,17 @@ function UsageInner() {
 
   const regenerate = () => simulateUsage({ date, ...simOpts });
 
-  // Stored usage is generated for a fixed solar/battery state. When the customer
-  // toggles solar (or battery), re-simulate the shown day so production appears
-  // on the graph immediately instead of waiting for a manual regenerate.
-  const solarBatteryKey = `${solarPanels}|${homeBattery}`;
-  const prevSolarBattery = React.useRef(solarBatteryKey);
+  // Stored usage is generated for a fixed solar/battery state. When that state no
+  // longer matches the shown day's data (e.g. solar just activated on the Earn
+  // screen, or the battery toggled), re-simulate so the graph reflects it without
+  // waiting for a manual regenerate.
   React.useEffect(() => {
-    if (prevSolarBattery.current === solarBatteryKey) return;
-    prevSolarBattery.current = solarBatteryKey;
-    simulateUsage({ date, ...simOpts });
-  }, [solarBatteryKey]);
+    const totalProd = usage.reduce((s, u) => s + u.production, 0);
+    const solarMismatch = hasSolar ? totalProd === 0 : totalProd > 0;
+    const batteryMismatch = record.hasHomeBattery !== homeBattery;
+    if (solarMismatch || batteryMismatch) simulateUsage({ date, ...simOpts });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date, hasSolar, homeBattery, usage]);
 
   const onDateChange = e => {
     const next = e.target.value;
@@ -353,10 +360,10 @@ function UsageInner() {
       </div>
 
       {/* Daily summary — production/net only shown with solar panels */}
-      <div style={{ display: 'grid', gridTemplateColumns: solarPanels ? '1fr 1fr 1fr' : '1fr', gap: 9 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: hasSolar ? '1fr 1fr 1fr' : '1fr', gap: 9 }}>
         <StatCard label={t.usage.totalConsumption} value={kwh(totalCons)} unit={t.usage.kwh} color={CONS}/>
-        {solarPanels && <StatCard label={t.usage.totalProduction} value={kwh(totalProd)} unit={t.usage.kwh} color={PROD}/>}
-        {solarPanels && <StatCard label={t.usage.net} value={kwh(net)} unit={t.usage.kwh} color="var(--green-700)"/>}
+        {hasSolar && <StatCard label={t.usage.totalProduction} value={kwh(totalProd)} unit={t.usage.kwh} color={PROD}/>}
+        {hasSolar && <StatCard label={t.usage.net} value={kwh(net)} unit={t.usage.kwh} color="var(--green-700)"/>}
       </div>
 
       {/* Date picker */}
@@ -383,9 +390,9 @@ function UsageInner() {
           <div className="rr-card" style={{ padding: '16px 14px 14px', marginTop: 14 }}>
             <div style={{ display: 'flex', gap: 16, marginBottom: 14 }}>
               <Legend color={CONS} label={t.usage.consumption}/>
-              {solarPanels && <Legend color={PROD} label={t.usage.production}/>}
+              {hasSolar && <Legend color={PROD} label={t.usage.production}/>}
             </div>
-            <Bars usage={usage} showProduction={solarPanels}/>
+            <Bars usage={usage} showProduction={hasSolar}/>
             <div style={{ display: 'flex', marginTop: 7 }}>
               {usage.map(u => (
                 <div key={u.hour} style={{ flex: 1, textAlign: 'center', fontSize: 9, fontWeight: 600, color: 'var(--grey-2)' }}>
@@ -399,7 +406,7 @@ function UsageInner() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
             <PeakRow icon="bolt" color={CONS} label={t.usage.peakConsumption}
               value={`${kwh(pCons.consumption)} ${t.usage.kwh}`} when={t.usage.at(pCons.hour)}/>
-            {solarPanels && (
+            {hasSolar && (
               <PeakRow icon="sun" color={PROD} label={t.usage.peakProduction}
                 value={`${kwh(pProd.production)} ${t.usage.kwh}`} when={t.usage.at(pProd.hour)}/>
             )}
@@ -414,10 +421,10 @@ function UsageInner() {
       </div>
 
       {/* Month summary — production/net only shown with solar panels */}
-      <div style={{ display: 'grid', gridTemplateColumns: solarPanels ? '1fr 1fr 1fr' : '1fr', gap: 9 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: hasSolar ? '1fr 1fr 1fr' : '1fr', gap: 9 }}>
         <StatCard label={t.usage.totalConsumption} value={kwh(monthCons)} unit={t.usage.kwh} color={CONS}/>
-        {solarPanels && <StatCard label={t.usage.totalProduction} value={kwh(monthProd)} unit={t.usage.kwh} color={PROD}/>}
-        {solarPanels && <StatCard label={t.usage.net} value={kwh(monthNet)} unit={t.usage.kwh} color="var(--green-700)"/>}
+        {hasSolar && <StatCard label={t.usage.totalProduction} value={kwh(monthProd)} unit={t.usage.kwh} color={PROD}/>}
+        {hasSolar && <StatCard label={t.usage.net} value={kwh(monthNet)} unit={t.usage.kwh} color="var(--green-700)"/>}
       </div>
 
       {/* Month comparison — compares NET consumption (grid draw) vs the benchmark.
@@ -425,7 +432,7 @@ function UsageInner() {
       <MonthCompareCard
         key={currentMonth}
         monthNet={monthNet}
-        hasSolar={solarPanels}
+        hasSolar={hasSolar}
         locked={!hasElec}
         daysSimulated={daysSimulated}
         monthlyAvg={monthlyAvg}
