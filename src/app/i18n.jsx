@@ -22,6 +22,13 @@ const T = {
       actionsAvailable: n => `${n} acties beschikbaar om te claimen`,
       recentActivity: 'Recente activiteit',
       seeAll: 'Alles →',
+      live: {
+        title: 'Live community',
+        total: 'Totaal verdiend (iedereen)',
+        users: 'Deelnemers',
+        recent: 'Recent verdiend',
+        empty: 'Nog geen activiteit',
+      },
     },
     ledger: {
       eyebrow: 'Seeds-grootboek',
@@ -281,6 +288,13 @@ const T = {
       actionsAvailable: n => `${n} actions available to claim`,
       recentActivity: 'Recent activity',
       seeAll: 'All →',
+      live: {
+        title: 'Live community',
+        total: 'Total earned (everyone)',
+        users: 'Participants',
+        recent: 'Recently earned',
+        empty: 'No activity yet',
+      },
     },
     ledger: {
       eyebrow: 'Seeds ledger',
