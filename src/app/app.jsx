@@ -233,7 +233,7 @@ function App(){
   return (
     <div className="rr rr-app">
       {!userName && <OnboardingModal/>}
-      <NotificationQueue/>
+      <NotificationQueue profileOpen={showProfile}/>
       <AutoSimulateWeekends/>
       <FullscreenHint/>
       <RewardToast onView={()=>go('history')}/>

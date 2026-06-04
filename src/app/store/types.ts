@@ -32,6 +32,9 @@ export type CatalogueItem = {
   status: CatalogueItemStatus;
   need?: string;
   needEn?: string;
+  /** Items sharing a group (within one category) are mutually exclusive — only one
+   *  can be 'claimed' at a time (e.g. internet speed, mobile data bundle). */
+  group?: string;
 };
 
 export type CatalogueCategory = {
@@ -136,6 +139,9 @@ export type RRAction =
   | { type: 'DISMISS_TIER_UP' }
   /** Replace an existing ledger entry in-place and adjust the balance by the delta. */
   | { type: 'UPDATE_LEDGER_ENTRY'; id: number; base: number; amount: number }
+  /** Select one item from a mutually-exclusive group: claim it, un-claim the
+   *  current sibling, and adjust the balance by the net seed difference. */
+  | { type: 'SELECT_EXCLUSIVE'; cat: string; catalogueKey: string }
   | { type: 'RENEW_PRODUCT'; product: string; name: string; nameEn: string; seeds: number }
   | { type: 'DISMISS_RENEWAL' };
 

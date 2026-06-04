@@ -269,6 +269,57 @@ export function reducer(state: RRState, action: RRAction): RRState {
       ),
     };
   }
+  if (action.type === 'SELECT_EXCLUSIVE') {
+    const category = state.catalogue.find(c => c.cat === action.cat);
+    const target = category?.items.find(i => i.name === action.catalogueKey);
+    if (!category || !target || !target.group || target.status === 'claimed') return state;
+
+    // The currently-claimed sibling (if any) is swapped out; balance moves by the
+    // net difference so only one option in the group ever counts.
+    const claimedSiblings = category.items.filter(
+      i => i.group === target.group && i.status === 'claimed' && i.name !== target.name
+    );
+    const removed = claimedSiblings.reduce((s, i) => s + i.seeds, 0);
+    const newBalance = Math.min(state.cap, Math.max(0, state.balance + target.seeds - removed));
+    const newTier = evaluateTier(newBalance, state.currentTier);
+
+    const catalogue = state.catalogue.map(c =>
+      c.cat !== action.cat ? c : {
+        ...c,
+        items: c.items.map(i => {
+          if (i.name === target.name) return { ...i, status: 'claimed' as const };
+          if (i.group === target.group && i.status === 'claimed') return { ...i, status: 'available' as const };
+          return i;
+        }),
+      }
+    );
+
+    // Drop the swapped-out sibling's ledger row and record the newly-selected one.
+    const siblingNames = new Set(claimedSiblings.map(s => s.name));
+    const prunedLedger = state.ledger.filter(e => !siblingNames.has(e.name));
+    const entry: LedgerEntry = {
+      id: nextLedgerId(prunedLedger),
+      name: target.name,
+      nameEn: target.nameEn,
+      cat: action.cat,
+      date: formatDate(),
+      base: target.seeds,
+      mult: 1,
+      amount: target.seeds,
+      kind: 'pos',
+    };
+
+    return {
+      ...state,
+      balance: newBalance,
+      currentTier: newTier,
+      multiplier: TIER_MULTIPLIERS[newTier],
+      nextTier: nextTierFor(newTier, state.tiers),
+      catalogue,
+      ledger: [entry, ...prunedLedger],
+      historyUnseen: true,
+    };
+  }
   if (action.type === 'RENEW_PRODUCT') {
     if (state.renewals.includes(action.product)) return state;
     // Award the renewal at its fixed value (no tier multiplier).
