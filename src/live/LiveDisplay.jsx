@@ -114,6 +114,7 @@ export function LiveDisplay() {
   const [total, setTotal] = React.useState(0)
   const [userCount, setUserCount] = React.useState(0)
   const [events, setEvents] = React.useState([])
+  const [leaderboard, setLeaderboard] = React.useState([])
   const [error, setError] = React.useState(false)
   const [lastUpdate, setLastUpdate] = React.useState(null)
 
@@ -131,6 +132,7 @@ export function LiveDisplay() {
         setTotal(data.total ?? 0)
         setUserCount(data.userCount ?? 0)
         setEvents(data.events ?? [])
+        setLeaderboard(data.leaderboard ?? [])
         setLastUpdate(new Date())
         setError(false)
       } catch {
@@ -234,6 +236,43 @@ export function LiveDisplay() {
           </div>
         )}
       </div>
+
+      {/* Top 5 leaderboard */}
+      {leaderboard.length > 0 && (
+        <div style={{ maxWidth:680, width:'100%', margin:'0 auto 32px', padding:'0 20px' }}>
+          <div style={{
+            fontSize:12, fontWeight:700, color:'rgba(255,255,255,0.3)',
+            letterSpacing:1.5, textTransform:'uppercase', marginBottom:12, paddingLeft:4,
+          }}>
+            Top 5 harvest
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            {leaderboard.map((entry, i) => {
+              const medals = ['🥇','🥈','🥉','4️⃣','5️⃣']
+              const isTop3 = i < 3
+              return (
+                <div key={entry.user} style={{
+                  display:'flex', alignItems:'center', gap:14,
+                  background: isTop3 ? 'rgba(0,166,81,0.12)' : 'rgba(255,255,255,0.04)',
+                  border: isTop3 ? '1px solid rgba(0,166,81,0.25)' : '1px solid rgba(255,255,255,0.07)',
+                  borderRadius:14, padding:'12px 18px',
+                }}>
+                  <span style={{ fontSize:22, flexShrink:0, width:28 }}>{medals[i]}</span>
+                  <span style={{ flex:1, fontWeight:800, fontSize:17, color:'#fff', letterSpacing:-0.2 }}>
+                    {entry.user}
+                  </span>
+                  <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                    <SeedLeaf size={18}/>
+                    <span style={{ fontWeight:900, fontSize:20, color:'#00A651', letterSpacing:-0.5 }}>
+                      {fmt(entry.seeds)}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Live feed */}
       {events.length > 0 && (
