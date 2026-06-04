@@ -214,4 +214,13 @@ describe('pendingTierUp (tier-up celebration)', () => {
     s = reducer(s, { type: 'DISMISS_TIER_UP' });
     expect(s.pendingTierUp).toBeNull();
   });
+
+  test('re-onboarding clears any pending tier-up celebration', () => {
+    const withPending = { ...freshState, pendingTierUp: { from: 'seed' as const, to: 'tree' as const } };
+    const next = reducer(withPending, {
+      type: 'APPLY_ONBOARDING',
+      profile: { solarPanels: false, homeBattery: false, householdSize: 1, customerYears: 0, products: ['electricity'] },
+    });
+    expect(next.pendingTierUp).toBeNull();
+  });
 });

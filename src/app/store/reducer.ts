@@ -188,6 +188,7 @@ export function reducer(state: RRState, action: RRAction): RRState {
       currentTier: tier,
       multiplier: TIER_MULTIPLIERS[tier],
       nextTier: nextTierFor(tier, state.tiers),
+      pendingTierUp: null,
     };
   }
   if (action.type === 'SET_USAGE') {
