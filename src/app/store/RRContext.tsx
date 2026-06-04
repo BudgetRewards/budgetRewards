@@ -36,11 +36,16 @@ export function RRProvider({ children }: { children: ReactNode }) {
     const entry = state.ledger[0];
     if (!entry || entry.kind !== 'pos') return;
 
+    // Generate a stable device UUID on first use so two people with the same
+    // name don't collide on the leaderboard.
+    let uid = localStorage.getItem('rr-uid');
+    if (!uid) { uid = crypto.randomUUID(); localStorage.setItem('rr-uid', uid); }
+
     const user = localStorage.getItem('rr-name') || 'Customer';
     fetch('/api/live', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user, seeds: entry.amount, label: entry.name, labelEn: entry.nameEn }),
+      body: JSON.stringify({ uid, user, seeds: entry.amount, label: entry.name, labelEn: entry.nameEn }),
     }).catch(() => { /* silent fail in dev */ });
   }, [state.ledger]);
 

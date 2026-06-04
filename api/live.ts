@@ -1,17 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from 'redis'
 
-/* The connected database is a Vercel Marketplace "Redis" store, which exposes a
-   TCP connection string in REDIS_URL (redis:// or rediss://) — not the Upstash
-   REST API. So this uses node-redis, which speaks the Redis wire protocol.
-   node-redis uses camelCase command names (lPush, not lpush). */
-
-/** Presence (never values) of the env vars a Redis client might use. */
 function envPresence() {
-  const keys = [
-    'REDIS_URL', 'KV_URL', 'KV_REST_API_URL', 'KV_REST_API_TOKEN',
-    'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN',
-  ]
+  const keys = ['REDIS_URL','KV_URL','KV_REST_API_URL','KV_REST_API_TOKEN']
   return Object.fromEntries(keys.map(k => [k, !!process.env[k]]))
 }
 
@@ -25,72 +16,86 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const url = process.env.REDIS_URL
   if (!url) {
     return res.status(500).json({
-      error: 'REDIS_URL missing — no Redis database is connected to this project/environment.',
+      error: 'REDIS_URL missing — connect a Redis database in Vercel dashboard → Storage.',
       env: envPresence(),
     })
   }
 
   const client = createClient({ url })
-  client.on('error', err => console.error('[api/live] redis client error', err))
+  client.on('error', err => console.error('[api/live] redis error', err))
 
   try {
     await client.connect()
 
-    /* ── POST: record a seed event ─────────────────────────────── */
+    /* ── POST: record a seed event ───────────────────────────── */
     if (req.method === 'POST') {
-      const body = req.body ?? {}
-      const user: string = body.user || 'Customer'
-      const seeds: number = Number(body.seeds) || 0
-      const label: string = body.label || ''
-      const labelEn: string = body.labelEn || ''
+      const body   = req.body ?? {}
+      const uid    = String(body.uid  || body.user || 'anon')
+      const name   = String(body.user || 'Customer')
+      const seeds  = Number(body.seeds)  || 0
+      const label  = String(body.label   || '')
+      const labelEn = String(body.labelEn || '')
+
       if (seeds <= 0) return res.status(400).json({ error: 'invalid seeds' })
 
-      const event = { user, seeds, label, labelEn, ts: Date.now() }
+      const event = { name, seeds, label, labelEn, ts: Date.now() }
       await Promise.all([
-        client.lPush('rr:events', JSON.stringify(event)),
-        client.lTrim('rr:events', 0, 199),
-        client.incrBy('rr:total', seeds),
-        client.sAdd('rr:users', user),
-        client.zIncrBy('rr:leaderboard', seeds, user),
+        client.lPush('rr:events',   JSON.stringify(event)),
+        client.lTrim('rr:events',   0, 199),
+        client.incrBy('rr:total',   seeds),
+        client.sAdd('rr:users',     uid),
+        client.zIncrBy('rr:leaderboard', seeds, uid),
+        client.hSet('rr:names',     uid, name),   // uid → display name
       ])
       return res.status(200).json({ ok: true })
     }
 
-    /* ── GET: fetch aggregated state ───────────────────────────── */
+    /* ── GET: fetch aggregated state ─────────────────────────── */
     if (req.method === 'GET') {
-      const [rawEvents, total, userCount, topRaw] = await Promise.all([
+      const [rawEvents, total, userCount, topEntries] = await Promise.all([
         client.lRange('rr:events', 0, 29),
         client.get('rr:total'),
         client.sCard('rr:users'),
         client.zRangeWithScores('rr:leaderboard', 0, 4, { REV: true }),
       ])
+
       const events = (rawEvents ?? []).map(e => {
         try { return JSON.parse(e) } catch { return e }
       })
-      const leaderboard = (topRaw ?? []).map(entry => ({
-        user: entry.value,
-        seeds: Number(entry.score),
-      }))
+
+      // Resolve UIDs → display names in a single HMGET
+      let leaderboard: { user: string; seeds: number }[] = []
+      if (topEntries.length > 0) {
+        const uids  = topEntries.map(e => e.value)
+        const names = await client.hmGet('rr:names', uids)
+        leaderboard = topEntries.map((entry, i) => ({
+          user:  names[i] || entry.value,
+          seeds: Number(entry.score),
+        }))
+      }
+
       return res.status(200).json({
         events,
-        total: Number(total) || 0,
-        userCount: Number(userCount) || 0,
+        total:      Number(total) || 0,
+        userCount:  Number(userCount) || 0,
         leaderboard,
       })
     }
 
-    /* ── DELETE: reset for a fresh session ─────────────────────── */
+    /* ── DELETE: reset for a fresh session ───────────────────── */
     if (req.method === 'DELETE') {
       await Promise.all([
         client.del('rr:events'),
         client.del('rr:total'),
         client.del('rr:users'),
         client.del('rr:leaderboard'),
+        client.del('rr:names'),
       ])
       return res.status(200).json({ ok: true })
     }
 
     return res.status(405).json({ error: 'Method not allowed' })
+
   } catch (err) {
     console.error('[api/live]', err)
     return res.status(500).json({
@@ -98,7 +103,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       env: envPresence(),
     })
   } finally {
-    // Close the connection so the serverless invocation can exit cleanly.
     try { await client.quit() } catch { /* already closed */ }
   }
 }
