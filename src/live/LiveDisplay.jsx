@@ -125,16 +125,16 @@ export function LiveDisplay() {
     async function poll() {
       try {
         const res = await fetch('/api/live')
-        if (!res.ok) throw new Error()
         const data = await res.json()
         if (cancelled) return
+        if (!res.ok) { setError(data.error ?? 'API error'); return }
         setTotal(data.total ?? 0)
         setUserCount(data.userCount ?? 0)
         setEvents(data.events ?? [])
         setLastUpdate(new Date())
         setError(false)
       } catch {
-        if (!cancelled) setError(true)
+        if (!cancelled) setError('Could not reach API')
       }
     }
 
@@ -179,15 +179,22 @@ export function LiveDisplay() {
           </div>
         </div>
 
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <span style={{
-            width:10, height:10, borderRadius:'50%', flexShrink:0,
-            background: error ? '#e55' : '#00A651',
-            animation: error ? 'none' : 'pulse 2s ease-in-out infinite',
-          }}/>
-          <span style={{ fontSize:13, color:'rgba(255,255,255,0.45)', fontWeight:600 }}>
-            {error ? 'Offline' : `${userCount} customer${userCount !== 1 ? 's' : ''}`}
-          </span>
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:6 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <span style={{
+              width:10, height:10, borderRadius:'50%', flexShrink:0,
+              background: error ? '#e55' : '#00A651',
+              animation: error ? 'none' : 'pulse 2s ease-in-out infinite',
+            }}/>
+            <span style={{ fontSize:13, color:'rgba(255,255,255,0.45)', fontWeight:600 }}>
+              {error ? 'Offline' : `${userCount} customer${userCount !== 1 ? 's' : ''}`}
+            </span>
+          </div>
+          {error && (
+            <div style={{ fontSize:11, color:'#f99', maxWidth:340, textAlign:'right', lineHeight:1.4 }}>
+              {error}
+            </div>
+          )}
         </div>
       </div>
 

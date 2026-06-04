@@ -16,23 +16,24 @@ export type SimulateUsageOptions = {
    * (213 kWh/month ÷ 30 days).
    */
   dailyTargetKwh?: number;
-  /** Lowest possible production for an hour, in kWh. Default 0. */
-  minProduction?: number;
   /**
-   * Peak solar production per hour, in kWh. Default 1.25 — tuned so the
-   * midday solar bell can exceed or fall below a single hour's consumption,
-   * keeping the harvest-hours dynamic interesting.
+   * Whether the customer has solar panels. Default false. Without solar there
+   * is no production at all (every hour's production is 0).
    */
-  maxProduction?: number;
+  hasSolar?: boolean;
   /**
-   * Whether the customer has a home battery. Default false.
-   * - `true`:  production can occur at any hour (stored solar discharges
-   *            around the clock) — a flat random value per hour.
-   * - `false`: production follows a solar bell curve — zero overnight,
-   *            peaking around midday.
+   * Whether the customer has a home battery. Default false. Only relevant when
+   * `hasSolar` is true:
+   * - `true`:  stored solar discharges around the clock — production is spread
+   *            flatly across all 24 hours.
+   * - `false`: production follows a solar bell curve — zero overnight, peaking
+   *            around midday.
    */
   hasHomeBattery?: boolean;
 };
+
+/** Solar production as a fraction of daily consumption (so net stays realistic). */
+const SOLAR_OFFSET = 0.5;
 
 const HOURS_IN_DAY = 24;
 const SUNRISE = 6;
@@ -65,53 +66,54 @@ const HOURLY_WEIGHTS = [
 ];
 const WEIGHT_SUM = HOURLY_WEIGHTS.reduce((a, b) => a + b, 0); // ≈ 12.75
 
-/** Random kWh value within [min, max], rounded to 3 decimals. */
-function randomKwh(min: number, max: number): number {
-  return Number((min + Math.random() * (max - min)).toFixed(3));
-}
-
 /**
- * Solar production for a given hour: zero outside daylight, bell-shaped and
- * peaking around solar noon. Intensity is jittered (clouds) but the shape and
- * the overnight zeros are preserved.
+ * Relative production weight per hour. With a battery, production is spread
+ * flatly across the day; otherwise it follows a daylight solar bell (zero
+ * overnight, peaking around solar noon).
  */
-function solarProduction(hour: number, maxProduction: number): number {
+function productionWeight(hour: number, hasHomeBattery: boolean): number {
+  if (hasHomeBattery) return 1; // flat across all 24 hours
   if (hour < SUNRISE || hour >= SUNSET) return 0;
   const daylightFraction = (hour - SUNRISE) / (SUNSET - SUNRISE);
-  const shape = Math.sin(Math.PI * daylightFraction);
-  const cloudJitter = 1 - Math.random() * 0.25;
-  return Number((maxProduction * shape * cloudJitter).toFixed(3));
+  return Math.sin(Math.PI * daylightFraction);
 }
 
 /**
  * Simulate 24 hours of electricity usage.
  *
- * Consumption follows a realistic shaped daily profile (low overnight,
- * morning and evening peaks) scaled to `dailyTargetKwh`, with ±15 % random
- * jitter per hour. The daily total therefore varies roughly ±5 % around the
- * target — close enough to represent natural day-to-day variation.
+ * Consumption follows a realistic shaped daily profile (low overnight, morning
+ * and evening peaks) scaled to `dailyTargetKwh`, with ±15 % random jitter per
+ * hour.
  *
- * Production depends on `hasHomeBattery` (see {@link SimulateUsageOptions}).
+ * Production is zero unless `hasSolar` is true. With solar, the day's total
+ * production is ~50 % of consumption, distributed either flatly (battery) or as
+ * a daylight solar bell (no battery), with per-hour jitter.
  *
  * Pure function: returns the readings, does not touch the store.
  */
 export function simulateDailyUsage(options: SimulateUsageOptions = {}): HourlyUsage[] {
   const {
     dailyTargetKwh = 7.1,
-    minProduction  = 0,
-    maxProduction  = 1.25,
+    hasSolar       = false,
     hasHomeBattery = false,
   } = options;
 
+  // Production target for the day and its hourly distribution weights.
+  const prodTarget = hasSolar ? dailyTargetKwh * SOLAR_OFFSET : 0;
+  const prodWeights = Array.from({ length: HOURS_IN_DAY }, (_, h) => productionWeight(h, hasHomeBattery));
+  const prodWeightSum = prodWeights.reduce((a, b) => a + b, 0) || 1;
+
   return Array.from({ length: HOURS_IN_DAY }, (_, hour) => {
-    const base    = (HOURLY_WEIGHTS[hour] / WEIGHT_SUM) * dailyTargetKwh;
-    const jitter  = 0.85 + Math.random() * 0.30; // ±15 % per hour
+    const consJitter = 0.85 + Math.random() * 0.30; // ±15 % per hour
+    const consumption = (HOURLY_WEIGHTS[hour] / WEIGHT_SUM) * dailyTargetKwh * consJitter;
+
+    const prodBase = prodTarget * (prodWeights[hour] / prodWeightSum);
+    const production = prodBase > 0 ? prodBase * (0.85 + Math.random() * 0.30) : 0;
+
     return {
       hour,
-      consumption: Number((base * jitter).toFixed(3)),
-      production: hasHomeBattery
-        ? randomKwh(minProduction, maxProduction)
-        : solarProduction(hour, maxProduction),
+      consumption: Number(consumption.toFixed(3)),
+      production: Number(production.toFixed(3)),
     };
   });
 }

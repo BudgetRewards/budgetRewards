@@ -6,7 +6,7 @@ import { Ledger } from './screens/ledger.jsx'
 import { Catalogue } from './screens/catalogue.jsx'
 import { Tiers } from './screens/tiers.jsx'
 import { Harvest } from './screens/harvest.jsx'
-import { Usage } from './screens/usage.jsx'
+import { Usage, householdDailyTarget } from './screens/usage.jsx'
 import { LanguageProvider, useT, useLang } from './i18n.jsx'
 import { OnboardingModal } from './OnboardingModal.jsx'
 import { ProfileSheet } from './ProfileSheet.jsx'
@@ -228,10 +228,17 @@ function AutoSimulateWeekends(){
         if(!c || !c.weekend) return;
         const iso = `${hs.year}-${pad2(mo.m + 1)}-${pad2(c.d)}`;
         if(iso <= today && !state.usages[iso]){
-          simulateUsage({ date: iso, hasHomeBattery: profile.homeBattery });
+          // Use the household-scaled target so accumulated days stay below the
+          // benchmark (otherwise non-2-person homes can never go positive).
+          simulateUsage({ date: iso, hasHomeBattery: profile.homeBattery, hasSolar: profile.solarPanels,
+            dailyTargetKwh: householdDailyTarget(profile.householdSize) });
         }
       });
     });
+    // Refresh today's seed day to the household level so the month-to-date
+    // comparison starts below the benchmark (claimable) for every household size.
+    simulateUsage({ date: today, hasHomeBattery: profile.homeBattery, hasSolar: profile.solarPanels,
+      dailyTargetKwh: householdDailyTarget(profile.householdSize) });
   }, [userName]);
 
   return null;

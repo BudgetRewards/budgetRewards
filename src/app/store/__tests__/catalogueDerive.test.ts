@@ -37,6 +37,13 @@ describe('applyProfileToCatalogue', () => {
     // Without electricity the bonus sub-category is fully locked.
     expect(find(noElec, 'Stroom bonussen', 'Zonnepanelen geregistreerd')?.status).toBe('locked');
   });
+
+  test('5-year loyalty milestone is claimed only with 5+ customer years', () => {
+    const newCustomer = applyProfileToCatalogue(baseInitialState.catalogue, { ...EMPTY_PROFILE, customerYears: 3 });
+    const loyal       = applyProfileToCatalogue(baseInitialState.catalogue, { ...EMPTY_PROFILE, customerYears: 5 });
+    expect(find(newCustomer, 'Contract & Lifecycle', '5 jaar trouw lid')?.status).toBe('locked');
+    expect(find(loyal, 'Contract & Lifecycle', '5 jaar trouw lid')?.status).toBe('claimed');
+  });
 });
 
 describe('applyHarvestGate', () => {

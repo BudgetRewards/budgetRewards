@@ -80,6 +80,10 @@ export function applyProfileToCatalogue(
       ...cat,
       items: cat.items.map(item => {
         if (item.name === 'Welkomstbonus') return { ...item, status: 'claimed' as const };
+        // Loyalty milestone: unlocked/claimed once the customer has 5+ years with us.
+        if (item.name === '5 jaar trouw lid') {
+          return { ...item, status: profile.customerYears >= 5 ? ('claimed' as const) : ('locked' as const) };
+        }
         const productId = ITEM_TO_PRODUCT[item.name];
         if (productId) return { ...item, status: owned.has(productId) ? ('claimed' as const) : ('missed' as const) };
         return item;

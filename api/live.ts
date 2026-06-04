@@ -39,10 +39,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     /* ── POST: record a seed event ─────────────────────────────── */
     if (req.method === 'POST') {
-      const { user, seeds, label, labelEn } = req.body as {
-        user: string; seeds: number; label: string; labelEn?: string
-      }
-      if (!user || !seeds || seeds <= 0) return res.status(400).json({ error: 'invalid' })
+      const body = req.body ?? {}
+      const user: string = body.user || 'Customer'
+      const seeds: number = Number(body.seeds) || 0
+      const label: string = body.label || ''
+      const labelEn: string = body.labelEn || ''
+      if (seeds <= 0) return res.status(400).json({ error: 'invalid seeds' })
 
       const event = { user, seeds, label, labelEn, ts: Date.now() }
       await Promise.all([
@@ -76,6 +78,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' })
   } catch (err) {
     // Turn an opaque 500 into something actionable (message + which env vars exist).
+    console.error('[api/live]', err)
     return res.status(500).json({
       error: err instanceof Error ? err.message : String(err),
       env: envPresence(),
