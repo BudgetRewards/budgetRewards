@@ -14,7 +14,7 @@ import {
   MULTI_PRODUCT_ITEM_NAMES,
 } from './catalogueDerive';
 
-const TIER_MULTIPLIERS: Record<TierKey, number> = {
+export const TIER_MULTIPLIERS: Record<TierKey, number> = {
   seed: 1,
   tree: 1.5,
   forest: 2,
@@ -35,6 +35,13 @@ function evaluateTier(balance: number, current: TierKey): TierKey {
     }
   }
   return current;
+}
+
+/** Returns the crossing when newTier is a higher tier than oldTier, else null. */
+function tierUpFor(oldTier: TierKey, newTier: TierKey): { from: TierKey; to: TierKey } | null {
+  return TIER_ORDER.indexOf(newTier) > TIER_ORDER.indexOf(oldTier)
+    ? { from: oldTier, to: newTier }
+    : null;
 }
 
 function nextTierFor(tier: TierKey, tiers: RRState['tiers']): RRState['nextTier'] {
@@ -225,6 +232,9 @@ export function reducer(state: RRState, action: RRAction): RRState {
   if (action.type === 'DISMISS_REWARD') {
     return state.pendingReward ? { ...state, pendingReward: null } : state;
   }
+  if (action.type === 'DISMISS_TIER_UP') {
+    return state.pendingTierUp ? { ...state, pendingTierUp: null } : state;
+  }
   if (action.type !== 'APPLY_TRIGGER') return state;
 
   const { name, nameEn, cat, base, kind, catalogueKey, harvestDate, setRemoteRead } = action.payload;
@@ -253,11 +263,17 @@ export function reducer(state: RRState, action: RRAction): RRState {
     ? applyHarvestDate(state.harvest, harvestDate, TIER_MULTIPLIERS[state.currentTier])
     : state.harvest;
 
+  const newTierAfterTrigger = 'currentTier' in patch ? patch.currentTier : undefined;
+  const triggerTierUp = newTierAfterTrigger
+    ? tierUpFor(state.currentTier, newTierAfterTrigger)
+    : null;
+
   return {
     ...state,
     ...patch,
     catalogue: newCatalogue,
     harvest: newHarvest,
     remoteReadEnabled: setRemoteRead !== undefined ? setRemoteRead : state.remoteReadEnabled,
+    pendingTierUp: triggerTierUp ?? state.pendingTierUp,
   };
 }
