@@ -107,7 +107,7 @@ const EVENTS = [
 const LIFETIME_MS = 9_000
 let uid = 0
 
-export function NotificationQueue() {
+export function NotificationQueue({ profileOpen = false }) {
   const { lang, userName } = useLang()
   const { claimNotification } = useTrigger()
   const [queue, setQueue] = React.useState([])
@@ -140,7 +140,7 @@ export function NotificationQueue() {
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(next) }
   }, [userName, add])
 
-  if (!queue.length) return null
+  if (!queue.length || profileOpen) return null
 
   return (
     <div style={{
