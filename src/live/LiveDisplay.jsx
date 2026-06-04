@@ -54,7 +54,7 @@ function EventRow({ event, index }) {
       </div>
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontWeight:800, fontSize:18, color:'#fff', letterSpacing:-0.3 }}>
-          {event.user}
+          {event.name || event.user}
         </div>
         <div style={{ fontSize:14, color:'rgba(255,255,255,0.55)', marginTop:2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
           {event.labelEn || event.label}
@@ -115,6 +115,8 @@ export function LiveDisplay() {
   const [userCount, setUserCount] = React.useState(0)
   const [events, setEvents] = React.useState([])
   const [leaderboard, setLeaderboard] = React.useState([])
+  const [all, setAll] = React.useState([])
+  const [showAll, setShowAll] = React.useState(false)
   const [error, setError] = React.useState(false)
   const [lastUpdate, setLastUpdate] = React.useState(null)
 
@@ -133,6 +135,7 @@ export function LiveDisplay() {
         setUserCount(data.userCount ?? 0)
         setEvents(data.events ?? [])
         setLeaderboard(data.leaderboard ?? [])
+        setAll(data.all ?? [])
         setLastUpdate(new Date())
         setError(false)
       } catch {
@@ -271,6 +274,43 @@ export function LiveDisplay() {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* All customers */}
+      {all.length > 0 && (
+        <div style={{ maxWidth:680, width:'100%', margin:'0 auto 32px', padding:'0 20px' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:'rgba(255,255,255,0.3)', letterSpacing:1.5, textTransform:'uppercase' }}>
+              All customers ({all.length})
+            </div>
+            <button onClick={() => setShowAll(v => !v)} style={{
+              background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)',
+              borderRadius:8, padding:'5px 14px', color:'rgba(255,255,255,0.6)',
+              fontSize:12, fontWeight:700, cursor:'pointer',
+            }}>
+              {showAll ? 'Hide' : 'Show all'}
+            </button>
+          </div>
+          {showAll && (
+            <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:16, overflow:'hidden', border:'1px solid rgba(255,255,255,0.07)' }}>
+              {all.map((entry, i) => (
+                <div key={entry.user} style={{
+                  display:'flex', alignItems:'center', gap:12, padding:'10px 18px',
+                  borderBottom: i < all.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                }}>
+                  <span style={{ width:28, fontSize:13, fontWeight:700, color:'rgba(255,255,255,0.3)', textAlign:'right', flexShrink:0 }}>
+                    {i + 1}
+                  </span>
+                  <span style={{ flex:1, fontWeight:700, fontSize:15, color:'#fff' }}>{entry.user}</span>
+                  <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+                    <SeedLeaf size={14}/>
+                    <span style={{ fontWeight:800, fontSize:15, color:'#00A651' }}>{fmt(entry.seeds)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

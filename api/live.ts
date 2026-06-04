@@ -44,11 +44,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         client.zAdd('rr:leaderboard', [{ score: balance, value: uid }]),
       ]
       if (seeds > 0) {
-        // Only log the event and increment global total for real seed events
         const event = { name, seeds, label, labelEn, ts: Date.now() }
         ops.push(client.lPush('rr:events', JSON.stringify(event)))
         ops.push(client.lTrim('rr:events', 0, 199))
-        ops.push(client.incrBy('rr:total', seeds))
       }
       await Promise.all(ops)
       return res.status(200).json({ ok: true })
@@ -56,13 +54,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     /* ── GET: fetch aggregated state ─────────────────────────── */
     if (req.method === 'GET') {
-      const [rawEvents, total, userCount, topEntries] = await Promise.all([
+      const [rawEvents, allEntries] = await Promise.all([
         client.lRange('rr:events', 0, 29),
-        client.get('rr:total'),
-        client.sCard('rr:users'),
-        // BYSCORE REV LIMIT gives the highest-scoring UIDs, sorted descending
         client.zRangeWithScores('rr:leaderboard', '+inf', '-inf', {
-          BY: 'SCORE', REV: true, LIMIT: { offset: 0, count: 20 },
+          BY: 'SCORE', REV: true, LIMIT: { offset: 0, count: 500 },
         }),
       ])
 
@@ -70,29 +65,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         try { return JSON.parse(e) } catch { return e }
       })
 
-      // Resolve UIDs → display names, then deduplicate by name (keep highest
-      // score per name so the same person on two devices appears only once).
-      let leaderboard: { user: string; seeds: number }[] = []
-      if (topEntries.length > 0) {
-        const uids  = topEntries.map(e => e.value)
+      // Resolve UIDs → names, deduplicate by name (keep highest score per name)
+      let all: { user: string; seeds: number }[] = []
+      if (allEntries.length > 0) {
+        const uids  = allEntries.map(e => e.value)
         const names = await client.hmGet('rr:names', uids)
-        const seen  = new Map<string, number>() // name → seeds
-        for (let i = 0; i < topEntries.length; i++) {
+        const seen  = new Map<string, number>()
+        for (let i = 0; i < allEntries.length; i++) {
           const name  = names[i] || uids[i]
-          const seeds = Number(topEntries[i].score)
+          const seeds = Number(allEntries[i].score)
           if (!seen.has(name) || seen.get(name)! < seeds) seen.set(name, seeds)
         }
-        leaderboard = [...seen.entries()]
+        all = [...seen.entries()]
           .sort((a, b) => b[1] - a[1])
-          .slice(0, 5)
           .map(([user, seeds]) => ({ user, seeds }))
       }
 
+      const total     = all.reduce((sum, e) => sum + e.seeds, 0)
+      const userCount = all.length  // deduplicated by name, consistent with leaderboard
+
       return res.status(200).json({
         events,
-        total:      Number(total) || 0,
-        userCount:  Number(userCount) || 0,
-        leaderboard,
+        total,
+        userCount,
+        leaderboard: all.slice(0, 5),
+        all,
       })
     }
 
@@ -100,7 +97,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'DELETE') {
       await Promise.all([
         client.del('rr:events'),
-        client.del('rr:total'),
         client.del('rr:users'),
         client.del('rr:leaderboard'),
         client.del('rr:names'),
