@@ -1,8 +1,7 @@
 import React from 'react'
 import { Icon, SeedMark, ScreenHeader } from '../ui.jsx'
-import { useT, useFmt, useProfile } from '../i18n.jsx'
+import { useT, useFmt } from '../i18n.jsx'
 import { useRR, useTrigger } from '../store/RRContext.tsx'
-import { weekendRewardSeeds } from '../store/services/harvestWeekend'
 import { hasElectricity } from '../store/catalogueDerive'
 
 const pad = n => String(n).padStart(2, '0');
@@ -51,8 +50,10 @@ function Harvest(){
   const t = useT();
   const fmt = useFmt();
   const { usages, harvestSeason } = R;
-  const { solarPanels } = useProfile();
   const { simulateUsage } = useTrigger();
+  // Owning the Stroom (electricity) product is what makes a simulated weekend
+  // day earn seeds; without it the day is logged as a missed harvest.
+  const electricity = hasElectricity(R.catalogue);
   const today = `${harvestSeason.year}-${pad(harvestSeason.todayMonth + 1)}-${pad(harvestSeason.todayDate)}`;
   const [sel, setSel] = React.useState(2); // default to June (index 2 in [Apr,May,Jun,Jul,Aug,Sep])
   const month = H.monthsData[sel];
@@ -82,9 +83,13 @@ function Harvest(){
             {t.harvest.heroDesc}
           </div>
           <div style={{ display:'flex', gap:8, marginTop:14 }}>
-            {H.optedIn && (
+            {electricity ? (
               <span className="rr-pill" style={{ background:'rgba(200,230,0,0.22)', color:'#C8E600' }}>
                 <Icon name="check" size={12} stroke="#C8E600" sw={2.6}/>{t.harvest.enrolled}
+              </span>
+            ) : (
+              <span className="rr-pill" style={{ background:'rgba(255,255,255,0.16)', color:'#fff' }}>
+                <Icon name="bolt" size={12} stroke="#fff" sw={2.4}/>{t.harvest.needElectricity}
               </span>
             )}
           </div>
@@ -107,6 +112,18 @@ function Harvest(){
           </div>
           <div className="rr-sub" style={{ fontSize:11.5, fontWeight:600, marginTop:2 }}>{t.harvest.seasonSeeds}</div>
         </div>
+      </div>
+
+      {/* Status note — tells the customer exactly how to earn or why it's missed */}
+      <div className="rr-card" style={{ marginTop:14, padding:'12px 14px', display:'flex', gap:11, alignItems:'flex-start',
+        background: electricity ? 'rgba(0,166,81,0.07)' : 'rgba(224,92,74,0.07)',
+        border: `1px solid ${electricity ? 'rgba(0,166,81,0.22)' : 'rgba(224,92,74,0.2)'}` }}>
+        <Icon name={electricity ? 'sun' : 'bolt'} size={18}
+          stroke={electricity ? 'var(--green)' : '#e05c4a'} sw={2}/>
+        <span style={{ fontSize:12.5, fontWeight:600, lineHeight:1.45,
+          color: electricity ? 'var(--green-700)' : '#b23b2e' }}>
+          {electricity ? t.harvest.participatingNote : t.harvest.missedNote}
+        </span>
       </div>
 
       {/* Calendar */}
@@ -175,11 +192,13 @@ function Harvest(){
         </div>
       </div>
 
-      {/* Reward types */}
+      {/* How it works */}
       <div className="rr-section-label" style={{ marginTop:22 }}>{t.harvest.waysTitle}</div>
       <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+        {/* Earn a harvest day — highlighted when electricity is owned */}
         <div className="rr-card" style={{ padding:'14px 16px', display:'flex', gap:13, alignItems:'center',
-          border:'1.5px solid rgba(0,166,81,0.25)' }}>
+          border: electricity ? '1.5px solid rgba(0,166,81,0.35)' : '1px solid var(--grey-line)',
+          opacity: electricity ? 1 : 0.7 }}>
           <span style={{ width:42, height:42, borderRadius:13, background:'rgba(0,166,81,0.12)', flexShrink:0,
             display:'inline-flex', alignItems:'center', justifyContent:'center' }}>
             <Icon name="bolt" size={22} stroke="var(--green)"/>
@@ -188,26 +207,26 @@ function Harvest(){
             <div style={{ fontWeight:800, fontSize:13.5 }}>{t.harvest.enrolledTitle}</div>
             <div className="rr-sub" style={{ fontSize:12 }}>{t.harvest.enrolledDesc}</div>
           </div>
-          <div style={{ display:'flex', alignItems:'center', gap:4, color:'var(--green)', fontWeight:800, fontSize:15 }}>
-            +10<SeedMark size={16}/>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:2 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:4, color:'var(--green)', fontWeight:800, fontSize:15 }}>
+              +{H.seedsPerDay}<SeedMark size={16}/>
+            </div>
+            <span style={{ fontSize:9.5, fontWeight:700, color:'var(--navy-60)', letterSpacing:0.2 }}>
+              {t.harvest.perDay}
+            </span>
           </div>
         </div>
-        <div className="rr-card" style={{ padding:'14px 16px', display:'flex', gap:13, alignItems:'center' }}>
-          <span style={{ width:42, height:42, borderRadius:13, background:'rgba(200,230,0,0.22)', flexShrink:0,
+        {/* Missed harvest — highlighted when electricity is NOT owned */}
+        <div className="rr-card" style={{ padding:'14px 16px', display:'flex', gap:13, alignItems:'center',
+          border: !electricity ? '1.5px solid rgba(224,92,74,0.3)' : '1px solid var(--grey-line)',
+          opacity: !electricity ? 1 : 0.7 }}>
+          <span style={{ width:42, height:42, borderRadius:13, background:'rgba(224,92,74,0.1)', flexShrink:0,
             display:'inline-flex', alignItems:'center', justifyContent:'center' }}>
-            <Icon name="arrow" size={22} stroke="#6a7a00"/>
+            <Icon name="bolt" size={22} stroke="#e05c4a"/>
           </span>
           <div style={{ flex:1 }}>
             <div style={{ fontWeight:800, fontSize:13.5 }}>{t.harvest.notEnrolledTitle}</div>
             <div className="rr-sub" style={{ fontSize:12 }}>{t.harvest.notEnrolledDesc}</div>
-          </div>
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:2 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:4, color:'#5f6d00', fontWeight:800, fontSize:15 }}>
-              +{weekendRewardSeeds(R.catalogue)}<SeedMark size={16} tone="lime"/>
-            </div>
-            <span style={{ fontSize:9.5, fontWeight:700, color:'var(--navy-60)', letterSpacing:0.2 }}>
-              {t.harvest.perWeekend}
-            </span>
           </div>
         </div>
       </div>
@@ -216,18 +235,20 @@ function Harvest(){
       <div style={{ marginTop:16, background:'rgba(26,26,46,0.04)', borderRadius:16, padding:'14px 16px' }}>
         <div className="rr-eyebrow muted" style={{ marginBottom:10 }}>{t.harvest.requirements}</div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-          <div style={{ display:'flex', gap:10, alignItems:'center', opacity: solarPanels ? 1 : 0.55 }}>
-            <Icon name="panel" size={19} stroke={solarPanels ? 'var(--green)' : 'var(--grey-2)'} sw={1.9}/>
+          <div style={{ display:'flex', gap:10, alignItems:'center', opacity: electricity ? 1 : 0.55 }}>
+            <Icon name="bolt" size={19} stroke={electricity ? 'var(--green)' : 'var(--grey-2)'} sw={1.9}/>
             <span className="rr-sub" style={{ fontSize:12.5, flex:1, color:'var(--navy)' }}>{t.harvest.req1}</span>
-            {solarPanels
+            {electricity
               ? <Icon name="check" size={16} stroke="var(--green)" sw={2.6}/>
               : <span style={{ fontSize:15, fontWeight:800, color:'var(--grey-2)' }}>—</span>}
           </div>
           <div className="rr-divider"/>
-          <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-            <Icon name="bolt" size={19} stroke="var(--green)"/>
+          <div style={{ display:'flex', gap:10, alignItems:'center', opacity: H.daysEarned > 0 ? 1 : 0.55 }}>
+            <Icon name="sun" size={19} stroke={H.daysEarned > 0 ? 'var(--green)' : 'var(--grey-2)'} sw={1.9}/>
             <span className="rr-sub" style={{ fontSize:12.5, flex:1, color:'var(--navy)' }}>{t.harvest.req2}</span>
-            <Icon name="check" size={16} stroke="var(--green)" sw={2.6}/>
+            {H.daysEarned > 0
+              ? <Icon name="check" size={16} stroke="var(--green)" sw={2.6}/>
+              : <span style={{ fontSize:15, fontWeight:800, color:'var(--grey-2)' }}>—</span>}
           </div>
         </div>
       </div>
