@@ -70,6 +70,46 @@ function EventRow({ event, index }) {
   )
 }
 
+function ResetButton() {
+  const [confirm, setConfirm] = React.useState(false)
+  const [done, setDone] = React.useState(false)
+
+  async function handleReset() {
+    await fetch('/api/live', { method: 'DELETE' })
+    setDone(true)
+    setConfirm(false)
+    setTimeout(() => setDone(false), 3000)
+  }
+
+  if (done) return (
+    <span style={{ fontSize:12, color:'#00A651', fontWeight:700 }}>✓ Reset done</span>
+  )
+
+  if (confirm) return (
+    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+      <span style={{ fontSize:12, color:'rgba(255,255,255,0.5)' }}>Sure?</span>
+      <button onClick={handleReset} style={{
+        background:'#e55', border:'none', borderRadius:8, padding:'5px 12px',
+        color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer',
+      }}>Yes, reset</button>
+      <button onClick={() => setConfirm(false)} style={{
+        background:'rgba(255,255,255,0.1)', border:'none', borderRadius:8, padding:'5px 12px',
+        color:'rgba(255,255,255,0.6)', fontSize:12, fontWeight:700, cursor:'pointer',
+      }}>Cancel</button>
+    </div>
+  )
+
+  return (
+    <button onClick={() => setConfirm(true)} style={{
+      background:'none', border:'1px solid rgba(255,255,255,0.12)', borderRadius:8,
+      padding:'5px 12px', color:'rgba(255,255,255,0.3)', fontSize:12,
+      fontWeight:600, cursor:'pointer',
+    }}>
+      Reset data
+    </button>
+  )
+}
+
 export function LiveDisplay() {
   const [total, setTotal] = React.useState(0)
   const [userCount, setUserCount] = React.useState(0)
@@ -207,11 +247,14 @@ export function LiveDisplay() {
 
       {/* Footer */}
       <div style={{
-        textAlign:'center', padding:'16px', fontSize:12,
-        color:'rgba(255,255,255,0.2)', borderTop:'1px solid rgba(255,255,255,0.06)',
+        display:'flex', alignItems:'center', justifyContent:'space-between',
+        padding:'12px 24px', borderTop:'1px solid rgba(255,255,255,0.06)',
       }}>
-        Scan the QR code to join · updates every {POLL_MS / 1000}s
-        {lastUpdate && ` · last updated ${lastUpdate.toLocaleTimeString()}`}
+        <span style={{ fontSize:12, color:'rgba(255,255,255,0.2)' }}>
+          Scan the QR code to join · updates every {POLL_MS / 1000}s
+          {lastUpdate && ` · last updated ${lastUpdate.toLocaleTimeString()}`}
+        </span>
+        <ResetButton/>
       </div>
     </div>
   )
