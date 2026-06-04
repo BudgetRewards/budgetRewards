@@ -2,7 +2,24 @@ import React from 'react';
 import { baseInitialState } from '../app/store/initialState';
 import type { CatalogueItemStatus } from '../app/store/types';
 
-const CONFIG_KEY = 'rr-config';
+const CONFIG_KEY    = 'rr-config';
+const PROFILE_KEY   = 'rr-profile';
+
+function readHouseholdSize(): number {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (raw) return Number(JSON.parse(raw).householdSize) || 2;
+  } catch { /* ignore */ }
+  return 2;
+}
+
+function writeHouseholdSize(n: number) {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    const profile = raw ? JSON.parse(raw) : {};
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({ ...profile, householdSize: n }));
+  } catch { /* ignore */ }
+}
 
 type ItemState = {
   name: string;
@@ -52,6 +69,13 @@ function persist(items: ItemState[]) {
 
 export function ConfigApp() {
   const saved = loadSaved();
+
+  const [householdSize, setHouseholdSize] = React.useState<number>(readHouseholdSize);
+
+  function updateHouseholdSize(n: number) {
+    setHouseholdSize(n);
+    writeHouseholdSize(n);
+  }
 
   const [items, setItems] = React.useState<ItemState[]>(() =>
     baseInitialState.catalogue.flatMap(cat =>
@@ -131,6 +155,30 @@ export function ConfigApp() {
       </div>
 
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '24px' }}>
+        {/* Profile section */}
+        <div style={{ marginBottom: 28 }}>
+          <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', color: '#888', margin: '0 0 8px' }}>
+            Profiel
+          </h3>
+          <div style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e5e5' }}>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '13px 16px', gap: 12 }}>
+              <span style={{ fontSize: 18 }}>👥</span>
+              <span style={{ flex: 1, fontSize: 14, fontWeight: 500 }}>Aantal personen in huishouden</span>
+              <select
+                value={householdSize}
+                onChange={e => updateHouseholdSize(Number(e.target.value))}
+                style={{ border: '1px solid #ddd', borderRadius: 8, padding: '6px 10px 6px 10px',
+                  fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                  background: '#f9f9f9', color: '#1A1A2E', minWidth: 70 }}
+              >
+                {[1, 2, 3, 4, 5, 6].map(n => (
+                  <option key={n} value={n}>{n === 6 ? '6+' : `${n} ${n === 1 ? 'persoon' : 'personen'}`}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
         {categories.map(cat => (
           <div key={cat.name} style={{ marginBottom: 28 }}>
             <h3 style={{

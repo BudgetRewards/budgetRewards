@@ -12,8 +12,11 @@ const pad = n => String(n).padStart(2, '0');
 const CONS = '#1A1A2E'; // navy — energy drawn
 const PROD = '#00A651'; // green — energy produced
 
-// 2-person household average: 213 kWh/month ÷ 30 days ≈ 7.1 kWh/day
-const AVG_2P_DAILY_KWH = 7.1;
+// Monthly electricity averages per household size (kWh) — CBS Netherlands data
+const MONTHLY_AVG_KWH = { 1: 138, 2: 213, 3: 252, 4: 292, 5: 313, 6: 330 };
+function dailyAvgForSize(size) {
+  return (MONTHLY_AVG_KWH[Math.min(6, Math.max(1, size || 2))] ?? 213) / 30;
+}
 
 function kwh(n) {
   return n.toFixed(1);
@@ -70,24 +73,24 @@ function Bars({ usage }) {
 }
 
 /* ── Daily comparison card ── */
-function CompareCard({ net, date, onClaim }) {
+function CompareCard({ net, date, avgKwh, householdSize, onClaim }) {
   const { lang } = useLang();
   const [claimed, setClaimed] = React.useState(false);
 
-  const diff = AVG_2P_DAILY_KWH - Math.max(0, net); // how much BETTER than average (negative = worse)
+  const diff = avgKwh - Math.max(0, net); // positive = below average (good)
   const isBelow = diff > 0;
   const seeds = Math.max(1, Math.round(Math.abs(diff) * 8));
 
-  // Bar widths: scale both against 1.5× the average as the 100% mark.
-  const scale = AVG_2P_DAILY_KWH * 1.5;
-  const netPct  = Math.min(100, (Math.max(0, net) / scale) * 100);
-  const avgPct  = Math.min(100, (AVG_2P_DAILY_KWH / scale) * 100);
+  const scale = avgKwh * 1.5;
+  const netPct = Math.min(100, (Math.max(0, net) / scale) * 100);
+  const avgPct = Math.min(100, (avgKwh / scale) * 100);
 
+  const sizeLabel = householdSize >= 6 ? '6+' : String(householdSize);
   const NL = {
     title: 'Vergelijk met anderen',
-    subtitle: '2-persoonshuishouden',
+    subtitle: `${sizeLabel}-persoonshuishouden`,
     yours: 'Jouw netto verbruik',
-    avg: '2-pers. gemiddelde',
+    avg: `${sizeLabel}-pers. gemiddelde`,
     below: `${kwh(diff)} kWh onder gemiddelde`,
     above: `${kwh(-diff)} kWh boven gemiddelde`,
     claimBtn: `Claim ${seeds} zaden`,
@@ -96,9 +99,9 @@ function CompareCard({ net, date, onClaim }) {
   };
   const EN = {
     title: 'Compare with others',
-    subtitle: '2-person household',
+    subtitle: `${sizeLabel}-person household`,
     yours: 'Your net consumption',
-    avg: '2-person average',
+    avg: `${sizeLabel}-person average`,
     below: `${kwh(diff)} kWh below average`,
     above: `${kwh(-diff)} kWh above average`,
     claimBtn: `Claim ${seeds} seeds`,
@@ -147,7 +150,7 @@ function CompareCard({ net, date, onClaim }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--navy-60)' }}>{L.avg}</span>
             <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--navy-60)' }}>
-              {kwh(AVG_2P_DAILY_KWH)} kWh
+              {kwh(avgKwh)} kWh
             </span>
           </div>
           <div style={{ height: 9, borderRadius: 5, background: 'rgba(26,26,46,0.07)' }}>
@@ -192,7 +195,8 @@ function Usage() {
   const state = useRR();
   const { simulateUsage, selectUsageDate, logComparison } = useTrigger();
   // Whether the customer has a home battery comes from their onboarding profile.
-  const { homeBattery } = useProfile();
+  const { homeBattery, householdSize } = useProfile();
+  const dailyAvg = dailyAvgForSize(householdSize);
   const date = state.currentUsageDate;
   const record = state.usages[date];
   const usage = record.hours;
@@ -279,8 +283,9 @@ function Usage() {
           value={`${kwh(pProd.production)} ${t.usage.kwh}`} when={t.usage.at(pProd.hour)}/>
       </div>
 
-      {/* Comparison vs 2-person household average — key resets claimed state on date change */}
+      {/* Comparison vs household average — key resets claimed state on date change */}
       <CompareCard key={date} net={net} date={date}
+        avgKwh={dailyAvg} householdSize={householdSize || 2}
         onClaim={(seeds, kind) => logComparison(seeds, kind, date)}/>
 
       <div className="rr-sub" style={{ fontSize: 11.5, marginTop: 16, textAlign: 'center' }}>
