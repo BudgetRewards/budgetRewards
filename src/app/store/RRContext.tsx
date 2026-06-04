@@ -56,6 +56,7 @@ export function useTrigger() {
     selectUsageDate:     (date: string)                      => selectUsageDate(date, dispatch),
     markHistorySeen:     ()                                  => dispatch({ type: 'MARK_HISTORY_SEEN' }),
     dismissReward:       ()                                  => dispatch({ type: 'DISMISS_REWARD' }),
+    dismissTierUp:       ()                                  => dispatch({ type: 'DISMISS_TIER_UP' }),
     claimItem:           (item: CatalogueItem, cat: string)  => {
       if (item.status !== 'available') return;
       dispatch({
