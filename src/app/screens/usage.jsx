@@ -12,6 +12,9 @@ const pad = n => String(n).padStart(2, '0');
 const CONS = '#1A1A2E'; // navy — energy drawn
 const PROD = '#00A651'; // green — energy produced
 
+// 2-person household average: 213 kWh/month ÷ 30 days ≈ 7.1 kWh/day
+const AVG_2P_DAILY_KWH = 7.1;
+
 function kwh(n) {
   return n.toFixed(1);
 }
@@ -66,13 +69,128 @@ function Bars({ usage }) {
   );
 }
 
+/* ── Daily comparison card ── */
+function CompareCard({ net, date, onClaim }) {
+  const { lang } = useLang();
+  const [claimed, setClaimed] = React.useState(false);
+
+  const diff = AVG_2P_DAILY_KWH - Math.max(0, net); // how much BETTER than average (negative = worse)
+  const isBelow = diff > 0;
+  const seeds = Math.max(1, Math.round(Math.abs(diff) * 8));
+
+  // Bar widths: scale both against 1.5× the average as the 100% mark.
+  const scale = AVG_2P_DAILY_KWH * 1.5;
+  const netPct  = Math.min(100, (Math.max(0, net) / scale) * 100);
+  const avgPct  = Math.min(100, (AVG_2P_DAILY_KWH / scale) * 100);
+
+  const NL = {
+    title: 'Vergelijk met anderen',
+    subtitle: '2-persoonshuishouden',
+    yours: 'Jouw netto verbruik',
+    avg: '2-pers. gemiddelde',
+    below: `${kwh(diff)} kWh onder gemiddelde`,
+    above: `${kwh(-diff)} kWh boven gemiddelde`,
+    claimBtn: `Claim ${seeds} zaden`,
+    claimed: 'Geclaimd ✓',
+    missedLabel: `${seeds} gemiste zaden`,
+  };
+  const EN = {
+    title: 'Compare with others',
+    subtitle: '2-person household',
+    yours: 'Your net consumption',
+    avg: '2-person average',
+    below: `${kwh(diff)} kWh below average`,
+    above: `${kwh(-diff)} kWh above average`,
+    claimBtn: `Claim ${seeds} seeds`,
+    claimed: 'Claimed ✓',
+    missedLabel: `${seeds} missed seeds`,
+  };
+  const L = lang === 'en' ? EN : NL;
+
+  const handleClaim = () => {
+    if (claimed) return;
+    setClaimed(true);
+    onClaim(seeds, 'pos');
+  };
+
+  return (
+    <div className="rr-card" style={{ marginTop: 14, overflow: 'hidden' }}>
+      {/* Header */}
+      <div style={{ padding: '13px 16px 2px', display: 'flex', alignItems: 'center', gap: 10,
+        borderBottom: '1px solid rgba(26,26,46,0.07)' }}>
+        <span style={{ fontSize: 20 }}>👥</span>
+        <div>
+          <div style={{ fontWeight: 800, fontSize: 13.5 }}>{L.title}</div>
+          <div style={{ fontSize: 11, color: 'var(--navy-60)', fontWeight: 600, marginBottom: 11 }}>
+            {L.subtitle}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding: '14px 16px' }}>
+        {/* Yours */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+            <span style={{ fontSize: 12, fontWeight: 700,
+              color: isBelow ? PROD : '#e05c4a' }}>{L.yours}</span>
+            <span style={{ fontSize: 12, fontWeight: 800,
+              color: isBelow ? PROD : '#e05c4a' }}>{kwh(Math.max(0, net))} kWh</span>
+          </div>
+          <div style={{ height: 9, borderRadius: 5, background: 'rgba(26,26,46,0.07)' }}>
+            <div style={{ height: '100%', borderRadius: 5, width: `${netPct}%`,
+              background: isBelow ? PROD : '#e05c4a', transition: 'width 0.5s ease' }}/>
+          </div>
+        </div>
+
+        {/* Average */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--navy-60)' }}>{L.avg}</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--navy-60)' }}>
+              {kwh(AVG_2P_DAILY_KWH)} kWh
+            </span>
+          </div>
+          <div style={{ height: 9, borderRadius: 5, background: 'rgba(26,26,46,0.07)' }}>
+            <div style={{ height: '100%', borderRadius: 5, width: `${avgPct}%`,
+              background: 'rgba(26,26,46,0.28)' }}/>
+          </div>
+        </div>
+
+        {/* Result row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: isBelow ? 'rgba(0,166,81,0.08)' : 'rgba(224,92,74,0.07)',
+          borderRadius: 10, padding: '10px 13px' }}>
+          <span style={{ fontSize: 12.5, fontWeight: 700,
+            color: isBelow ? PROD : '#e05c4a' }}>
+            {isBelow ? `✓ ${L.below}` : `↑ ${L.above}`}
+          </span>
+          {isBelow ? (
+            <button onClick={handleClaim} disabled={claimed}
+              style={{ border: 'none', cursor: claimed ? 'default' : 'pointer', fontFamily: 'inherit',
+                background: claimed ? 'rgba(0,166,81,0.15)' : PROD,
+                color: claimed ? PROD : '#fff',
+                fontWeight: 700, fontSize: 12, borderRadius: 99, padding: '6px 13px' }}>
+              {claimed ? L.claimed : L.claimBtn}
+            </button>
+          ) : (
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#e05c4a',
+              background: 'rgba(224,92,74,0.12)', borderRadius: 8, padding: '4px 10px' }}>
+              {L.missedLabel}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Usage() {
   const t = useT();
   const { lang } = useLang();
   // Read the simulation from app state — switching screens reuses the stored
   // simulations rather than generating new ones.
   const state = useRR();
-  const { simulateUsage, selectUsageDate } = useTrigger();
+  const { simulateUsage, selectUsageDate, logComparison } = useTrigger();
   // Whether the customer has a home battery comes from their onboarding profile.
   const { homeBattery } = useProfile();
   const date = state.currentUsageDate;
@@ -160,6 +278,10 @@ function Usage() {
         <PeakRow icon="sun" color={PROD} label={t.usage.peakProduction}
           value={`${kwh(pProd.production)} ${t.usage.kwh}`} when={t.usage.at(pProd.hour)}/>
       </div>
+
+      {/* Comparison vs 2-person household average — key resets claimed state on date change */}
+      <CompareCard key={date} net={net} date={date}
+        onClaim={(seeds, kind) => logComparison(seeds, kind, date)}/>
 
       <div className="rr-sub" style={{ fontSize: 11.5, marginTop: 16, textAlign: 'center' }}>
         {t.usage.hint}
