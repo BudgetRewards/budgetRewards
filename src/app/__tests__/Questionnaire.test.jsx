@@ -2,7 +2,7 @@ import { describe, test, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { CheckboxGroup, RadioGroup, Questionnaire } from '../ProfileSheet.jsx'
 import React from 'react'
-import { RRProvider } from '../store/RRContext.tsx'
+import { RRProvider, useRR } from '../store/RRContext.tsx'
 import { LanguageProvider, useLang } from '../i18n.jsx'
 
 const OPTS = [
@@ -43,6 +43,8 @@ describe('RadioGroup', () => {
 })
 
 describe('Questionnaire save flow', () => {
+  beforeEach(() => localStorage.clear())
+
   function Host() {
     const { profile, setProfile } = useLang()
     return <Questionnaire profile={profile} setProfile={setProfile} />
@@ -59,5 +61,35 @@ describe('Questionnaire save flow', () => {
     expect(screen.queryByText(/Vragenlijst ingevuld|Questionnaire completed/)).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: /Opslaan|Save/ }))
     expect(screen.getByText(/Vragenlijst ingevuld|Questionnaire completed/)).toBeInTheDocument()
+  })
+
+  test('awards the reward only once across repeated saves', () => {
+    function HostWithBalance() {
+      const { profile, setProfile } = useLang()
+      const { balance } = useRR()
+      return (
+        <>
+          <div data-testid="bal">{balance}</div>
+          <Questionnaire profile={profile} setProfile={setProfile} />
+        </>
+      )
+    }
+    render(
+      <RRProvider>
+        <LanguageProvider>
+          <HostWithBalance />
+        </LanguageProvider>
+      </RRProvider>
+    )
+    const bal = () => Number(screen.getByTestId('bal').textContent)
+    const before = bal()
+    const saveBtn = () => screen.getByRole('button', { name: /Opslaan|Save/ })
+
+    fireEvent.click(saveBtn())
+    const afterFirst = bal()
+    expect(afterFirst).toBeGreaterThan(before)   // first save awarded seeds
+
+    fireEvent.click(saveBtn())
+    expect(bal()).toBe(afterFirst)               // second save does NOT re-award
   })
 })
