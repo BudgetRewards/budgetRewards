@@ -44,7 +44,12 @@
       "Bash(grep -rln \"createServer\\\\|express\\\\|@vercel/kv\\\\|@upstash\" src)",
       "Bash(ls api/live.ts)",
       "Bash(node -e \"console.log\\(require\\('./package.json'\\).dependencies['@vercel/kv']||'MISSING'\\)\")",
-      "Bash(sed -n '150,200p' src/app/screens/dashboard.jsx)"
+      "Bash(sed -n '150,200p' src/app/screens/dashboard.jsx)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('@vercel/kv:', p.dependencies['@vercel/kv']\\); console.log\\('@upstash/redis:', p.dependencies['@upstash/redis']||'absent'\\); console.log\\('redis:', p.dependencies['redis']||'absent'\\); console.log\\('ioredis:', p.dependencies['ioredis']||'absent'\\)\")",
+      "Bash(node -e \"const kv=require\\('@vercel/kv'\\); console.log\\('exports:', Object.keys\\(kv\\)\\); console.log\\('has createClient:', typeof kv.createClient\\)\")",
+      "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{try{const p=JSON.parse\\(s\\);console.log\\('version',p.version\\);console.log\\('exports',JSON.stringify\\(p.exports\\)\\)}catch\\(e\\){console.log\\('no pkg'\\)}}\\)\")",
+      "Bash(npm install *)",
+      "Bash(node -e \"const kv=require\\('@vercel/kv'\\); console.log\\('exports:', Object.keys\\(kv\\)\\); console.log\\('createClient:', typeof kv.createClient, '| kv singleton:', typeof kv.kv\\)\")"
     ]
   }
 }
