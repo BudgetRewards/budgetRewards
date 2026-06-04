@@ -36,7 +36,8 @@
       "Bash(grep -n *)",
       "Bash(echo \"===========\")",
       "Bash(:)",
-      "Bash(awk '/^ *)"
+      "Bash(awk '/^ *)",
+      "Bash(Select-String -Pattern \"test\")"
     ]
   }
 }
