@@ -5,6 +5,9 @@ import type { CatalogueItemStatus } from '../app/store/types';
 const CONFIG_KEY    = 'rr-config';
 const PROFILE_KEY   = 'rr-profile';
 
+// Remote reading can't be turned off once enabled.
+const LOCKED_WHEN_ENABLED = 'Remote uitlezing aangezet';
+
 function readHouseholdSize(): number {
   try {
     const raw = localStorage.getItem(PROFILE_KEY);
@@ -95,6 +98,8 @@ export function ConfigApp() {
     setItems(prev => {
       const next = prev.map(item => {
         if (item.name !== name) return item;
+        // Once remote reading is enabled it can't be turned off again.
+        if (item.name === LOCKED_WHEN_ENABLED && item.status === 'claimed') return item;
         const newStatus: CatalogueItemStatus =
           item.status === 'claimed' ? 'available' : 'claimed';
         return { ...item, status: newStatus };
@@ -190,6 +195,7 @@ export function ConfigApp() {
             <div style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e5e5' }}>
               {cat.items.map((item, idx) => {
                 const isOn = item.status === 'claimed';
+                const locked = item.name === LOCKED_WHEN_ENABLED && isOn;
                 const seedColor = item.seeds < 0 ? '#e2463f' : '#00a651';
                 return (
                   <div key={item.name} style={{
@@ -203,10 +209,13 @@ export function ConfigApp() {
                     <button
                       aria-label={isOn ? 'Aan' : 'Uit'}
                       onClick={() => toggle(item.name)}
+                      disabled={locked}
+                      title={locked ? 'Remote reading can’t be turned off once enabled' : undefined}
                       style={{
                         width: 44, height: 24, borderRadius: 12, border: 'none',
-                        cursor: 'pointer', background: isOn ? '#00a651' : '#ddd',
+                        cursor: locked ? 'not-allowed' : 'pointer', background: isOn ? '#00a651' : '#ddd',
                         position: 'relative', transition: 'background 0.15s', flexShrink: 0,
+                        opacity: locked ? 0.55 : 1,
                       }}
                     >
                       <span style={{
