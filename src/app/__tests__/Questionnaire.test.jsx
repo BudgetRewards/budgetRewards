@@ -1,9 +1,8 @@
-import { describe, test, expect, vi } from 'vitest'
+import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { CheckboxGroup, RadioGroup, Questionnaire } from '../ProfileSheet.jsx'
-import React from 'react'
-import { RRProvider, useRR } from '../store/RRContext.tsx'
-import { LanguageProvider, useLang } from '../i18n.jsx'
+import { CheckboxGroup, RadioGroup, ProfileSheet } from '../ProfileSheet.jsx'
+import { RRProvider } from '../store/RRContext.tsx'
+import { LanguageProvider } from '../i18n.jsx'
 
 const OPTS = [
   { value: 'a', label: 'A' }, { value: 'b', label: 'B' },
@@ -42,54 +41,26 @@ describe('RadioGroup', () => {
   })
 })
 
-describe('Questionnaire save flow', () => {
+describe('Profile consolidated save', () => {
   beforeEach(() => localStorage.clear())
 
-  function Host() {
-    const { profile, setProfile } = useLang()
-    return <Questionnaire profile={profile} setProfile={setProfile} />
-  }
-
-  test('clicking Save shows the completion card', () => {
+  test('has exactly one Save button; saving shows completion and disables it', () => {
     render(
       <RRProvider>
         <LanguageProvider>
-          <Host />
+          <ProfileSheet onClose={() => {}} />
         </LanguageProvider>
       </RRProvider>
     )
-    expect(screen.queryByText(/Vragenlijst ingevuld|Questionnaire completed/)).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: /Opslaan|Save/ }))
-    expect(screen.getByText(/Vragenlijst ingevuld|Questionnaire completed/)).toBeInTheDocument()
-  })
+    // Consolidation: a single Save button for the whole profile (was two).
+    const saveButtons = screen.getAllByRole('button', { name: /^(Opslaan|Save)$/ })
+    expect(saveButtons).toHaveLength(1)
 
-  test('awards the reward only once across repeated saves', () => {
-    function HostWithBalance() {
-      const { profile, setProfile } = useLang()
-      const { balance } = useRR()
-      return (
-        <>
-          <div data-testid="bal">{balance}</div>
-          <Questionnaire profile={profile} setProfile={setProfile} />
-        </>
-      )
-    }
-    render(
-      <RRProvider>
-        <LanguageProvider>
-          <HostWithBalance />
-        </LanguageProvider>
-      </RRProvider>
-    )
-    const bal = () => Number(screen.getByTestId('bal').textContent)
-    const before = bal()
-    const saveBtn = () => screen.getByRole('button', { name: /Opslaan|Save/ })
-
-    fireEvent.click(saveBtn())
-    const afterFirst = bal()
-    expect(afterFirst).toBeGreaterThan(before)   // first save awarded seeds
-
-    fireEvent.click(saveBtn())
-    expect(bal()).toBe(afterFirst)               // second save does NOT re-award
+    const btn = saveButtons[0]
+    fireEvent.click(btn)
+    // Completion card with the earned-seeds line appears.
+    expect(screen.getByText(/verdiend|You earned/i)).toBeInTheDocument()
+    // The single button is now disabled, so the reward can't fire twice.
+    expect(btn).toBeDisabled()
   })
 })

@@ -165,28 +165,12 @@ function SubField({ label, children, hint }) {
 
 const MORE_SEEDS = 75
 
-function MoreAboutYou({ profile, setProfile, onClose }) {
+function MoreAboutYou({ profile, setProfile }) {
   const t = useT()
   const m = t.profile.more
-  const { claimNotification } = useTrigger()
-  const [justEarned, setJustEarned] = React.useState(false)
 
   function update(key, value) {
     setProfile(prev => ({ ...prev, [key]: value }))
-  }
-
-  function handleSave() {
-    const wasCompleted = profile.moreCompleted
-    setProfile(prev => ({ ...prev, moreCompleted: true }))
-    if (!wasCompleted) {
-      claimNotification(
-        'Profiel aangevuld', 'Profile completed',
-        'App & Data', MORE_SEEDS,
-      )
-    }
-    // Show the earned-points confirmation briefly, then close the sheet.
-    setJustEarned(true)
-    setTimeout(() => onClose?.(), 1300)
   }
 
   return (
@@ -252,32 +236,6 @@ function MoreAboutYou({ profile, setProfile, onClose }) {
         </div>
       )}
 
-      {/* Save */}
-      <button onClick={handleSave} disabled={justEarned} style={{
-        marginTop:20, border:'none', borderRadius:14, padding:'14px',
-        background:'var(--green)', color:'#fff',
-        fontFamily:'inherit', fontWeight:800, fontSize:14, letterSpacing:0.4,
-        cursor: justEarned ? 'default' : 'pointer', boxShadow:'0 6px 16px rgba(0,166,81,0.28)',
-        display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-      }}>
-        {justEarned
-          ? <>✓ +{MORE_SEEDS} {m.closing.seedsShort ?? 'seeds'}</>
-          : m.closing.save}
-      </button>
-
-      {/* Completion card */}
-      {(profile.moreCompleted || justEarned) && (
-        <div style={{ marginTop:14, background:'rgba(0,166,81,0.08)', borderRadius:14,
-          padding:'14px 16px', display:'flex', alignItems:'center', gap:10 }}>
-          <span style={{ fontSize:22 }}>✅</span>
-          <div>
-            <div style={{ fontWeight:800, fontSize:13.5, color:'var(--navy)' }}>{m.closing.title}</div>
-            <div style={{ fontSize:12.5, color:'var(--green)', fontWeight:700, marginTop:2 }}>
-              {m.closing.seedsEarned(MORE_SEEDS)}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -287,18 +245,9 @@ const QUESTIONNAIRE_SEEDS = 10
 export function Questionnaire({ profile, setProfile }) {
   const t = useT()
   const q = t.profile.questionnaire
-  const { claimNotification } = useTrigger()
 
   function update(key, value) {
     setProfile(prev => ({ ...prev, [key]: value }))
-  }
-
-  function handleSave() {
-    const wasCompleted = profile.questionnaireCompleted
-    setProfile(prev => ({ ...prev, questionnaireCompleted: true }))
-    if (!wasCompleted) {
-      claimNotification('Vragenlijst ingevuld', 'Questionnaire completed', 'App & Data', QUESTIONNAIRE_SEEDS)
-    }
   }
 
   const multiSection = (section, key) => (
@@ -330,28 +279,6 @@ export function Questionnaire({ profile, setProfile }) {
       {multiSection(q.rewards, 'rewardPrefs')}
       {multiSection(q.internet, 'internetUse')}
       {singleSection(q.enthusiasm, 'enthusiasm')}
-
-      <button onClick={handleSave} style={{
-        marginTop:20, border:'none', borderRadius:14, padding:'14px',
-        background:'var(--green)', color:'#fff',
-        fontFamily:'inherit', fontWeight:800, fontSize:14, letterSpacing:0.4,
-        cursor:'pointer', boxShadow:'0 6px 16px rgba(0,166,81,0.28)',
-      }}>
-        {q.save}
-      </button>
-
-      {profile.questionnaireCompleted && (
-        <div style={{ marginTop:14, background:'rgba(0,166,81,0.08)', borderRadius:14,
-          padding:'14px 16px', display:'flex', alignItems:'center', gap:10 }}>
-          <span style={{ fontSize:22 }}>✅</span>
-          <div>
-            <div style={{ fontWeight:800, fontSize:13.5, color:'var(--navy)' }}>{q.doneTitle}</div>
-            <div style={{ fontSize:12.5, color:'var(--green)', fontWeight:700, marginTop:2 }}>
-              {q.seedsEarned(QUESTIONNAIRE_SEEDS)}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -360,12 +287,27 @@ export function Questionnaire({ profile, setProfile }) {
 export function ProfileSheet({ onClose }) {
   const t = useT()
   const { lang, set, userName, setUserName, profile, setProfile } = useLang()
+  const { claimNotification } = useTrigger()
   const p = t.profile
 
   const [name, setName] = React.useState(userName)
+  // null until the profile is saved; then holds the seeds earned this save (0 if already completed).
+  const [savedSeeds, setSavedSeeds] = React.useState(null)
 
   function updateProfile(key, value) {
     setProfile({ ...profile, [key]: value })
+  }
+
+  // Single save for the whole profile: completes both sections and awards each
+  // section's one-time reward (only the first time it's completed).
+  function handleSaveAll() {
+    const wasMore = profile.moreCompleted
+    const wasQ = profile.questionnaireCompleted
+    setProfile({ ...profile, moreCompleted: true, questionnaireCompleted: true })
+    if (!wasMore) claimNotification('Profiel aangevuld', 'Profile completed', 'App & Data', MORE_SEEDS)
+    if (!wasQ) claimNotification('Vragenlijst ingevuld', 'Questionnaire completed', 'App & Data', QUESTIONNAIRE_SEEDS)
+    setSavedSeeds((wasMore ? 0 : MORE_SEEDS) + (wasQ ? 0 : QUESTIONNAIRE_SEEDS))
+    setTimeout(() => onClose?.(), 1300)
   }
 
   function toggleProduct(id) {
@@ -516,11 +458,36 @@ export function ProfileSheet({ onClose }) {
 
           {/* ── More about you ── */}
           <SectionLabel>{p.moreSection}</SectionLabel>
-          <MoreAboutYou profile={profile} setProfile={setProfile} onClose={onClose}/>
+          <MoreAboutYou profile={profile} setProfile={setProfile}/>
 
           {/* ── Questionnaire ── */}
           <SectionLabel>{p.questionnaireSection}</SectionLabel>
           <Questionnaire profile={profile} setProfile={setProfile}/>
+
+          {/* ── Single save for the whole profile ── */}
+          <button onClick={handleSaveAll} disabled={savedSeeds !== null} style={{
+            marginTop:24, width:'100%', border:'none', borderRadius:14, padding:'14px',
+            background:'var(--green)', color:'#fff',
+            fontFamily:'inherit', fontWeight:800, fontSize:14, letterSpacing:0.4,
+            cursor: savedSeeds !== null ? 'default' : 'pointer', boxShadow:'0 6px 16px rgba(0,166,81,0.28)',
+          }}>
+            {savedSeeds !== null && savedSeeds > 0 ? `✓ +${savedSeeds} seeds` : p.more.closing.save}
+          </button>
+
+          {(savedSeeds !== null || (profile.moreCompleted && profile.questionnaireCompleted)) && (
+            <div style={{ marginTop:14, background:'rgba(0,166,81,0.08)', borderRadius:14,
+              padding:'14px 16px', display:'flex', alignItems:'center', gap:10 }}>
+              <span style={{ fontSize:22 }}>✅</span>
+              <div>
+                <div style={{ fontWeight:800, fontSize:13.5, color:'var(--navy)' }}>{p.more.closing.title}</div>
+                {savedSeeds > 0 && (
+                  <div style={{ fontSize:12.5, color:'var(--green)', fontWeight:700, marginTop:2 }}>
+                    {p.more.closing.seedsEarned(savedSeeds)}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
         </div>
       </div>
