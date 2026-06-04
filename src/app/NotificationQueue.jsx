@@ -1,6 +1,6 @@
 import React from 'react'
 import { useLang } from './i18n.jsx'
-import { Icon, SeedMark } from './ui.jsx'
+import { Icon } from './ui.jsx'
 import { useTrigger } from './store/RRContext.tsx'
 
 /* ─── event catalogue ────────────────────────────────────────
@@ -96,6 +96,12 @@ const EVENTS = [
     en:{ title:'Enable notifications 🔔', desc:'Receive real-time harvest alerts' },
     name:'Pushmeldingen ingeschakeld', nameEn:'Push notifications enabled',
     cat:'App & Data', seeds:50, icon:'earn', accent:'var(--green)' },
+
+  { id:'tv_movie',
+    nl:{ title:'Film gehuurd via Budget TV 🎬', desc:'Je hebt een film gehuurd — seeds bijgeschreven' },
+    en:{ title:'Movie rented via Budget TV 🎬', desc:'You rented a movie — seeds added to your balance' },
+    name:'Film gehuurd via Budget TV', nameEn:'Movie rented via Budget TV',
+    cat:'Multi-product', seeds:30, icon:'panel', accent:'var(--navy)' },
 ]
 
 const LIFETIME_MS = 9_000
@@ -116,20 +122,21 @@ export function NotificationQueue() {
     const event = pool[Math.floor(Math.random() * pool.length)]
     usedRef.current.add(event.id)
     const id = ++uid
-    setQueue(q => [...q.slice(-2), { id, event }])
+    claimNotification(event.name, event.nameEn, event.cat, event.seeds)
+    setQueue([{ id, event }])
     setTimeout(() => dismiss(id), LIFETIME_MS)
-  }, [dismiss])
+  }, [dismiss, claimNotification])
 
   // Only run after onboarding is complete
   React.useEffect(() => {
     if (!userName) return
-    const t1 = setTimeout(add, 5_000)
+    const t1 = setTimeout(add, 12_000)
     let next
     function schedule() {
-      const delay = 18_000 + Math.random() * 30_000
+      const delay = 50_000 + Math.random() * 40_000
       next = setTimeout(() => { add(); schedule() }, delay)
     }
-    const t2 = setTimeout(schedule, 5_000)
+    const t2 = setTimeout(schedule, 12_000)
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(next) }
   }, [userName, add])
 
@@ -143,17 +150,13 @@ export function NotificationQueue() {
       {queue.map(n => (
         <NotifCard key={n.id} notif={n} lang={lang}
           onDismiss={() => dismiss(n.id)}
-          onClaim={() => {
-            claimNotification(n.event.name, n.event.nameEn, n.event.cat, n.event.seeds)
-            dismiss(n.id)
-          }}
         />
       ))}
     </div>
   )
 }
 
-function NotifCard({ notif, lang, onClaim, onDismiss }) {
+function NotifCard({ notif, lang, onDismiss }) {
   const { event } = notif
   const c = lang === 'en' ? event.en : event.nl
   const [progress, setProgress] = React.useState(1)
@@ -167,10 +170,6 @@ function NotifCard({ notif, lang, onClaim, onDismiss }) {
     return () => clearInterval(raf)
   }, [])
 
-  function handleClaim() {
-    setOut(true)
-    setTimeout(onClaim, 300)
-  }
   function handleDismiss() {
     setOut(true)
     setTimeout(onDismiss, 300)
@@ -186,8 +185,8 @@ function NotifCard({ notif, lang, onClaim, onDismiss }) {
       <div style={{ height:5, background: isGreen ? 'var(--green)' : event.accent }}/>
 
       {/* main content */}
-      <div style={{ padding:'14px 14px 0' }}>
-        <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
+      <div style={{ padding:'14px 14px 14px' }}>
+        <div style={{ display:'flex', gap:12, alignItems:'center' }}>
           {/* icon */}
           <span style={{
             width:46, height:46, borderRadius:14, flexShrink:0,
@@ -201,16 +200,13 @@ function NotifCard({ notif, lang, onClaim, onDismiss }) {
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ fontWeight:800, fontSize:14.5, color:'var(--navy)', lineHeight:1.2 }}>{c.title}</div>
             <div style={{ fontSize:12.5, color:'var(--navy-60)', marginTop:3, lineHeight:1.4 }}>{c.desc}</div>
-          </div>
-
-          {/* seed badge */}
-          <div style={{
-            background: isGreen ? 'var(--green)' : event.accent,
-            borderRadius:12, padding:'6px 10px', flexShrink:0,
-            display:'flex', alignItems:'center', gap:5,
-          }}>
-            <SeedMark size={16} tone="onGreen"/>
-            <span style={{ fontWeight:900, fontSize:15, color:'#fff', letterSpacing:-0.5 }}>+{event.seeds}</span>
+            <div style={{ marginTop:6, display:'inline-flex', alignItems:'center', gap:5,
+              background: isGreen ? 'rgba(0,166,81,0.12)' : 'rgba(26,26,46,0.07)',
+              borderRadius:99, padding:'3px 9px' }}>
+              <span style={{ fontWeight:800, fontSize:12.5, color: isGreen ? 'var(--green)' : event.accent }}>
+                +{event.seeds} seeds
+              </span>
+            </div>
           </div>
 
           {/* dismiss */}
@@ -218,14 +214,6 @@ function NotifCard({ notif, lang, onClaim, onDismiss }) {
             background:'none', border:'none', cursor:'pointer',
             color:'var(--grey-2)', fontSize:20, lineHeight:1, padding:'0 2px', flexShrink:0,
           }}>×</button>
-        </div>
-
-        {/* claim button */}
-        <div style={{ padding:'12px 0 14px' }}>
-          <button onClick={handleClaim} className="rr-notif-claim">
-            <SeedMark size={17} tone="onGreen"/>
-            {lang === 'en' ? `Claim +${event.seeds} seeds` : `Claimen +${event.seeds} seeds`}
-          </button>
         </div>
       </div>
 
