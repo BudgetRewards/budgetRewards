@@ -555,7 +555,11 @@ export function LanguageProvider({ children }) {
   const [profile, setProfileState] = React.useState(readProfile)
   const set = l => { setLang(l); localStorage.setItem('rr-lang', l) }
   const setUserName = n => { setUserNameState(n); localStorage.setItem('rr-name', n) }
-  const setProfile = p => { setProfileState(p); localStorage.setItem('rr-profile', JSON.stringify(p)) }
+  const setProfile = updater => setProfileState(prev => {
+    const next = typeof updater === 'function' ? updater(prev) : updater
+    try { localStorage.setItem('rr-profile', JSON.stringify(next)) } catch { /* ignore quota/serialisation errors */ }
+    return next
+  })
   return (
     <LangContext.Provider value={{ lang, set, userName, setUserName, profile, setProfile }}>
       {children}
