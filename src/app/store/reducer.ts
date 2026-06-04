@@ -243,7 +243,7 @@ export function reducer(state: RRState, action: RRAction): RRState {
 
   // A zero-value trigger (e.g. re-enabling remote reading) only flips flags and
   // catalogue status — it must not add a ledger entry or move the balance.
-  const patch = base === 0
+  const patch: Partial<ReturnType<typeof applyEarning>['patch']> = base === 0
     ? {}
     : applyEarning(state, { name, nameEn, cat, base, kind }).patch;
 
@@ -265,9 +265,8 @@ export function reducer(state: RRState, action: RRAction): RRState {
     ? applyHarvestDate(state.harvest, harvestDate, TIER_MULTIPLIERS[state.currentTier])
     : state.harvest;
 
-  const newTierAfterTrigger = 'currentTier' in patch ? patch.currentTier : undefined;
-  const triggerTierUp = newTierAfterTrigger
-    ? tierUpFor(state.currentTier, newTierAfterTrigger)
+  const triggerTierUp = patch.currentTier
+    ? tierUpFor(state.currentTier, patch.currentTier)
     : null;
 
   return {
