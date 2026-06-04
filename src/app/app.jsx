@@ -9,6 +9,7 @@ import { Harvest } from './screens/harvest.jsx'
 import { Usage } from './screens/usage.jsx'
 import { LanguageProvider, useT, useLang } from './i18n.jsx'
 import { OnboardingModal } from './OnboardingModal.jsx'
+import { ProfileSheet } from './ProfileSheet.jsx'
 import { NotificationQueue } from './NotificationQueue.jsx'
 import { useRR, useTrigger } from './store/RRContext.tsx'
 
@@ -206,6 +207,7 @@ function AutoSimulateWeekends(){
 
 function App(){
   const [tab, setTab] = React.useState(()=> localStorage.getItem('rr-tab') || 'home');
+  const [showProfile, setShowProfile] = React.useState(false);
   const scrollRef = React.useRef(null);
   const { userName } = useLang();
   const { markHistorySeen } = useTrigger();
@@ -219,7 +221,7 @@ function App(){
   React.useEffect(()=>{ if(tab==='history') markHistorySeen(); }, [tab]);
 
   const screens = {
-    home:    <Dashboard onNav={go}/>,
+    home:    <Dashboard onNav={go} onProfileOpen={() => setShowProfile(true)}/>,
     history: <Ledger/>,
     earn:    <Catalogue/>,
     tiers:   <Tiers/>,
@@ -239,6 +241,7 @@ function App(){
         <div key={tab}>{screens[tab]}</div>
       </div>
       <TabBar active={tab} onChange={go}/>
+      {showProfile && <ProfileSheet onClose={() => setShowProfile(false)}/>}
     </div>
   );
 }

@@ -49,7 +49,7 @@ function Logo({ light=false }){
   );
 }
 
-function Dashboard({ onNav }){
+function Dashboard({ onNav, onProfileOpen }){
   const R = useRR();
   const t = useT();
   const fmt = useFmt();
@@ -83,10 +83,13 @@ function Dashboard({ onNav }){
     <div className="rr-page rr-stagger">
       <div className="rr-header" style={{ padding:'4px 0 14px' }}>
         <Logo/>
-        <div style={{ textAlign:'right' }}>
+        <button onClick={onProfileOpen} style={{
+          textAlign:'right', background:'none', border:'none', cursor:'pointer',
+          fontFamily:'inherit', padding:0,
+        }}>
           <div className="rr-sub" style={{ fontWeight:600 }}>{t.dashboard.greeting(new Date().getHours())}</div>
-          <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.4 }}>{userName || R.user.name} 👋</div>
-        </div>
+          <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.4, color:'var(--navy)' }}>{userName || R.user.name} 👋</div>
+        </button>
       </div>
 
       {/* Hero balance card */}

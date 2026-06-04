@@ -15,7 +15,7 @@ function setUsage(state: RRState, date: string, consumption: number, production:
   });
 }
 
-/** Weekend seeds are only earned with electricity, so claim the 'Stroom' item. */
+/** Claim the 'Stroom' catalogue item so hasElectricity() returns true. */
 function withElectricity(state: RRState): RRState {
   return {
     ...state,
@@ -29,60 +29,71 @@ function withElectricity(state: RRState): RRState {
 }
 
 // 2026-05-02 is a Saturday, 2026-05-03 the adjacent Sunday.
-describe('weekend reward (SET_USAGE)', () => {
-  test('awards once both weekend days earn green hours', () => {
+describe('harvest day reward (SET_USAGE)', () => {
+  test('awards 10 seeds immediately for a Saturday when electricity is owned', () => {
     let s = withElectricity(initialState);
     const before = s.ledger.length;
-
-    s = setUsage(s, '2026-05-02', 2, 1); // Saturday earned — Sunday still missing
-    expect(s.ledger.length).toBe(before);
-    expect(s.pendingReward).toBeNull();
-
-    s = setUsage(s, '2026-05-03', 2, 1); // Sunday earned — weekend complete
+    s = setUsage(s, '2026-05-02', 2, 1);
     expect(s.ledger.length).toBe(before + 1);
     expect(s.ledger[0].cat).toBe('Harvest Hours');
-    expect(s.ledger[0].name).toContain('Oogstweekend');
-    expect(s.ledger[0].nameEn).toContain('Harvest weekend');
-    // Awarded at the configured value, no tier multiplier (base === amount).
-    expect(s.ledger[0].mult).toBe(1);
-    expect(s.ledger[0].amount).toBe(s.ledger[0].base);
-    expect(s.ledger[0].amount).toBe(20); // 'Oogstdag — verschuiving' seeds in config
+    expect(s.ledger[0].kind).toBe('pos');
+    expect(s.ledger[0].amount).toBe(10);
     expect(s.historyUnseen).toBe(true);
     expect(s.pendingReward).not.toBeNull();
-    expect(s.awardedWeekends).toContain('2026-05-02');
+    expect(s.awardedHarvestDays).toContain('2026-05-02');
   });
 
-  test('does not double-award the same weekend', () => {
+  test('awards 10 seeds immediately for a Sunday when electricity is owned', () => {
+    let s = withElectricity(initialState);
+    const before = s.ledger.length;
+    s = setUsage(s, '2026-05-03', 2, 1);
+    expect(s.ledger.length).toBe(before + 1);
+    expect(s.ledger[0].cat).toBe('Harvest Hours');
+    expect(s.ledger[0].kind).toBe('pos');
+    expect(s.ledger[0].amount).toBe(10);
+    expect(s.awardedHarvestDays).toContain('2026-05-03');
+  });
+
+  test('Saturday and Sunday each award independently', () => {
+    let s = withElectricity(initialState);
+    const before = s.ledger.length;
+    s = setUsage(s, '2026-05-02', 2, 1); // Saturday
+    s = setUsage(s, '2026-05-03', 2, 1); // Sunday
+    expect(s.ledger.length).toBe(before + 2);
+    expect(s.balance).toBe(initialState.balance + 20); // 10 + 10
+  });
+
+  test('does not double-award the same day', () => {
     let s = withElectricity(initialState);
     s = setUsage(s, '2026-05-02', 2, 1);
-    s = setUsage(s, '2026-05-03', 2, 1);
     const after = s.ledger.length;
-    s = setUsage(s, '2026-05-02', 2, 1); // re-simulate Saturday
+    s = setUsage(s, '2026-05-02', 2, 1); // same day again
     expect(s.ledger.length).toBe(after);
   });
 
-  test('without electricity, a completed weekend is recorded as a missed harvest', () => {
-    let s = initialState; // no electricity by default
+  test('without electricity, weekend day is recorded as missed harvest (no balance change)', () => {
+    let s = initialState; // no electricity
+    const balanceBefore = s.balance;
+    const before = s.ledger.length;
     s = setUsage(s, '2026-05-02', 2, 1);
-    s = setUsage(s, '2026-05-03', 2, 1);
-    expect(s.ledger[0].name).toContain('Oogstweekend');
+    expect(s.ledger.length).toBe(before + 1);
     expect(s.ledger[0].kind).toBe('missed');
-    expect(s.pendingReward).toBeNull(); // no celebratory toast for a missed harvest
-    expect(s.balance).toBe(initialState.balance); // balance unchanged
+    expect(s.balance).toBe(balanceBefore); // no balance change for missed
+    expect(s.pendingReward).toBeNull(); // no toast for missed harvest
+    expect(s.awardedHarvestDays).toContain('2026-05-02');
   });
 
-  test('no award when one day misses', () => {
-    let s = initialState;
-    s = setUsage(s, '2026-05-02', 2, 1); // earned
-    s = setUsage(s, '2026-05-03', 1, 2); // missed (production > consumption)
-    expect(s.pendingReward).toBeNull();
-    expect(s.awardedWeekends).not.toContain('2026-05-02');
+  test('weekday simulation does not produce a harvest entry', () => {
+    let s = withElectricity(initialState);
+    const before = s.ledger.length;
+    s = setUsage(s, '2026-05-04', 2, 1); // Monday
+    expect(s.ledger.length).toBe(before);
+    expect(s.awardedHarvestDays).not.toContain('2026-05-04');
   });
 
   test('MARK_HISTORY_SEEN and DISMISS_REWARD clear their flags', () => {
     let s = withElectricity(initialState);
     s = setUsage(s, '2026-05-02', 2, 1);
-    s = setUsage(s, '2026-05-03', 2, 1);
     expect(s.historyUnseen).toBe(true);
     expect(s.pendingReward).not.toBeNull();
 

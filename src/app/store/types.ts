@@ -93,8 +93,8 @@ export type RRState = {
   usages: Record<string, UsageRecord>;
   /** The day currently shown on the Usage screen. */
   currentUsageDate: string;
-  /** Weekend ids (the Saturday's yyyy-mm-dd) already rewarded, to avoid double-awarding. */
-  awardedWeekends: string[];
+  /** Individual harvest weekend days (yyyy-mm-dd) already awarded, to avoid double-awarding. */
+  awardedHarvestDays: string[];
   /** Whether the history has new entries the customer hasn't viewed (drives the tab dot). */
   historyUnseen: boolean;
   /** The most recent weekend reward, shown as a toast until dismissed. */

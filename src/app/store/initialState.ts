@@ -13,7 +13,7 @@ import {
 function buildHarvestMonthsData(): MonthData[] {
   const year = 2026;
   const months = [3, 4, 5, 6, 7, 8];
-  const today = new Date(2026, 5, 3);
+  const today = new Date(2026, 5, 9); // June 9 — puts June 7–8 weekend in the past
 
   return months.map(m => {
     const first = new Date(year, m, 1);
@@ -64,7 +64,7 @@ export const baseInitialState: RRState = {
       { name: '5 jaar trouw lid',           nameEn: '5 years loyal member',      seeds: 1500, status: 'locked', need: 'Word lid voor 5 jaar — nog 4 jaar te gaan', needEn: 'Become a member for 5 years — 4 years to go' },
     ]},
     { cat: 'App & Data', catEn: 'App & Data', items: [
-      { name: 'App geactiveerd',         nameEn: 'App activated',              seeds: 150, status: 'available' },
+      { name: 'App geactiveerd',         nameEn: 'App activated',              seeds: 150, status: 'claimed' },
       { name: 'Maandelijkse meterstand', nameEn: 'Monthly meter reading',      seeds: 20,  status: 'available' },
       { name: 'Pushmeldingen aangezet',  nameEn: 'Push notifications enabled', seeds: 50,  status: 'available' },
     ]},
@@ -112,7 +112,7 @@ export const baseInitialState: RRState = {
     ]},
   ],
 
-  harvestSeason: { year: 2026, months: [3, 4, 5, 6, 7, 8], todayMonth: 5, todayDate: 3 },
+  harvestSeason: { year: 2026, months: [3, 4, 5, 6, 7, 8], todayMonth: 5, todayDate: 9 },
 
   harvest: {
     optedIn: true,
@@ -127,15 +127,15 @@ export const baseInitialState: RRState = {
   remoteReadEnabled: true,
 
   usages: {
-    '2026-06-03': { // app "today" — matches harvestSeason
-      date: '2026-06-03',
+    '2026-06-09': { // app "today" — June 9 (Monday after the June 7–8 weekend)
+      date: '2026-06-09',
       generatedAt: new Date().toISOString(),
       hasHomeBattery: false,
       hours: simulateDailyUsage({ hasHomeBattery: false }),
     },
   },
-  currentUsageDate: '2026-06-03',
-  awardedWeekends: [],
+  currentUsageDate: '2026-06-09',
+  awardedHarvestDays: [],
   historyUnseen: false,
   pendingReward: null,
   renewals: [],

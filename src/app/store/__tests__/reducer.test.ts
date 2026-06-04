@@ -128,8 +128,8 @@ describe('APPLY_ONBOARDING', () => {
       type: 'APPLY_ONBOARDING',
       profile: { solarPanels: false, homeBattery: false, householdSize: 1, customerYears: 0, products: ['electricity', 'internet'] },
     });
-    // Welcome 1000 + Stroom 500 + Internet 500 + household bonus 50 = 2050
-    expect(next.balance).toBe(2050);
+    // Welcome 1000 + App 150 + Stroom 500 + Internet 500 + household bonus 50 = 2200
+    expect(next.balance).toBe(2200);
     expect(next.currentTier).toBe('seed');
     expect(multiItem(next, 'Stroom')?.status).toBe('claimed');
     expect(multiItem(next, 'Internet')?.status).toBe('claimed');
@@ -150,8 +150,8 @@ describe('APPLY_ONBOARDING', () => {
       profile: { solarPanels: false, homeBattery: false, householdSize: 1, customerYears: 0, products: ['gas'] },
     });
     expect(harvestItem(next, 'Oogstdag — gratis stroom')?.status).toBe('missed');
-    // Gas 400 + Welcome 1000 + household 50 = 1450 (harvest missed → not counted)
-    expect(next.balance).toBe(1450);
+    // Gas 400 + Welcome 1000 + App 150 + household 50 = 1600 (harvest missed → not counted)
+    expect(next.balance).toBe(1600);
   });
 
   test('recomputes tier when the total crosses 2500', () => {
@@ -159,10 +159,10 @@ describe('APPLY_ONBOARDING', () => {
       type: 'APPLY_ONBOARDING',
       profile: { solarPanels: true, homeBattery: true, householdSize: 4, customerYears: 5, products: ['electricity', 'gas', 'internet', 'tv'] },
     });
-    // Welcome 1000 + Stroom 500 + Gas 400 + Internet 500 + TV 300
-    // + Zonnepanelen (Stroom bonus sub-item, 30) = 2730
-    // + battery 400 + household 4×50=200 + years 5×100=500 = 3830
-    expect(next.balance).toBe(3830);
+    // Welcome 1000 + App 150 + Stroom 500 + Gas 400 + Internet 500 + TV 300
+    // + Zonnepanelen (Stroom bonus sub-item, 30) = 2880
+    // + battery 400 + household 4×50=200 + years 5×100=500 = 3980
+    expect(next.balance).toBe(3980);
     expect(next.currentTier).toBe('tree');
     expect(next.multiplier).toBe(1.5);
   });
