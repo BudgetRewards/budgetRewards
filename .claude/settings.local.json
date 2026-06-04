@@ -27,7 +27,16 @@
       "Bash(git stash *)",
       "Bash(git *)",
       "Bash(npx eslint *)",
-      "Bash(echo \"EXIT: $?\")"
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(sed -n '100,128p' src/app/i18n.jsx)",
+      "Bash(sed -n '290,320p' src/app/i18n.jsx)",
+      "Bash(sed -n '186,193p' src/app/i18n.jsx)",
+      "Bash(sed -n '376,383p' src/app/i18n.jsx)",
+      "Bash(cd \"C:\\\\Users\\\\k.herring\\\\development\\\\budgetrewards\")",
+      "Bash(grep -n *)",
+      "Bash(echo \"===========\")",
+      "Bash(:)",
+      "Bash(awk '/^ *)"
     ]
   }
 }
