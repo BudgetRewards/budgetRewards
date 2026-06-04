@@ -180,7 +180,7 @@ function MonthCompareCard({ monthCons, daysSimulated, monthlyAvg, householdSize,
   );
 }
 
-function Usage() {
+function UsageInner() {
   const t = useT();
   const { lang } = useLang();
   const state = useRR();
@@ -366,4 +366,5 @@ function ScreenHeaderWithAction({ eyebrow, title, onAction, actionLabel }) {
   );
 }
 
+const Usage = React.memo(UsageInner);
 export { Usage };

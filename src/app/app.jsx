@@ -251,14 +251,19 @@ function App(){
   // Opening the history clears its "unseen" dot.
   React.useEffect(()=>{ if(tab==='history') markHistorySeen(); }, [tab]);
 
-  const screens = {
-    home:    <Dashboard onNav={go} onProfileOpen={() => setShowProfile(true)}/>,
-    history: <Ledger/>,
-    earn:    <Catalogue/>,
-    tiers:   <Tiers/>,
-    harvest: <Harvest/>,
-    usage:   <Usage/>,
-  };
+  const openProfile = React.useCallback(() => setShowProfile(true), []);
+
+  function activeScreen() {
+    switch (tab) {
+      case 'home':    return <Dashboard onNav={go} onProfileOpen={openProfile}/>
+      case 'history': return <Ledger/>
+      case 'earn':    return <Catalogue/>
+      case 'tiers':   return <Tiers/>
+      case 'harvest': return <Harvest/>
+      case 'usage':   return <Usage/>
+      default:        return null
+    }
+  }
 
   return (
     <div className="rr rr-app">
@@ -270,7 +275,7 @@ function App(){
       <TierUpCelebration/>
       <RenewalPopup/>
       <div className="rr-scroll" ref={scrollRef}>
-        <div key={tab}>{screens[tab]}</div>
+        <div key={tab}>{activeScreen()}</div>
       </div>
       <TabBar active={tab} onChange={go}/>
       {showProfile && <ProfileSheet onClose={() => setShowProfile(false)}/>}

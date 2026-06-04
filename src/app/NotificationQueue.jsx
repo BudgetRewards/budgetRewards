@@ -159,16 +159,7 @@ export function NotificationQueue({ profileOpen = false }) {
 function NotifCard({ notif, lang, onDismiss }) {
   const { event } = notif
   const c = lang === 'en' ? event.en : event.nl
-  const [progress, setProgress] = React.useState(1)
   const [out, setOut] = React.useState(false)
-
-  React.useEffect(() => {
-    const start = Date.now()
-    const raf = setInterval(() => {
-      setProgress(Math.max(0, 1 - (Date.now() - start) / LIFETIME_MS))
-    }, 80)
-    return () => clearInterval(raf)
-  }, [])
 
   function handleDismiss() {
     setOut(true)
@@ -217,11 +208,11 @@ function NotifCard({ notif, lang, onDismiss }) {
         </div>
       </div>
 
-      {/* countdown bar */}
+      {/* countdown bar — pure CSS, no JS timer */}
       <div style={{ height:4, background:'var(--grey-line)' }}>
         <div style={{
           height:'100%', background: isGreen ? 'var(--green)' : event.accent,
-          width:`${progress * 100}%`, transition:'width 0.08s linear',
+          animation:`rrTimerBar ${LIFETIME_MS}ms linear both`,
         }}/>
       </div>
     </div>

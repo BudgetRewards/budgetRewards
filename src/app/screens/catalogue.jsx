@@ -224,7 +224,7 @@ function EarnProgressBar(){
   );
 }
 
-function Catalogue(){
+function CatalogueInner(){
   const R = useRR();
   const trigger = useTrigger();
   const t = useT();
@@ -289,4 +289,5 @@ function Catalogue(){
   );
 }
 
+const Catalogue = React.memo(CatalogueInner);
 export { Catalogue, TriggerRow, StatusPill };

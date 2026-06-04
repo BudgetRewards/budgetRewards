@@ -127,6 +127,7 @@ html,body{ margin:0; padding:0; max-width:100%; overflow-x:hidden; }
 }
 .rr-notif-in{ animation:rrNotifIn .45s cubic-bezier(.22,1,.36,1) both; }
 .rr-notif-out{ animation:rrNotifOut .3s cubic-bezier(.4,0,1,1) both; }
+@keyframes rrTimerBar{ from{ width:100%; } to{ width:0%; } }
 @keyframes rrNotifIn{
   from{ opacity:0; transform:translateY(-28px) scale(0.88); }
   to{   opacity:1; transform:translateY(0) scale(1); }

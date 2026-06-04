@@ -4,7 +4,7 @@ import { SeedMark, ScreenHeader } from '../ui.jsx'
 import { useT, useFmt, useLang } from '../i18n.jsx'
 
 /* ───────────────── Screen 2 · Seeds history (Ledger) ───────────────── */
-function Ledger(){
+function LedgerInner(){
   const R = useRR();
   const t = useT();
   const fmt = useFmt();
@@ -92,4 +92,5 @@ function Ledger(){
   );
 }
 
+const Ledger = React.memo(LedgerInner);
 export { Ledger };

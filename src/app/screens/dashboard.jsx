@@ -49,7 +49,7 @@ function Logo({ light=false }){
   );
 }
 
-function Dashboard({ onNav, onProfileOpen }){
+function DashboardInner({ onNav, onProfileOpen }){
   const R = useRR();
   const t = useT();
   const fmt = useFmt();
@@ -81,7 +81,10 @@ function Dashboard({ onNav, onProfileOpen }){
   const bal = useCountUp(R.balance);
   const pct = R.nextTier ? (R.balance / R.nextTier.threshold) * 100 : 100;
   const toNext = R.nextTier ? R.nextTier.threshold - R.balance : 0;
-  const availableCount = R.catalogue.reduce((s,g) => s + g.items.filter(i => i.status === 'available').length, 0);
+  const availableCount = React.useMemo(
+    () => R.catalogue.reduce((s,g) => s + g.items.filter(i => i.status === 'available').length, 0),
+    [R.catalogue],
+  );
 
   return (
     <div className="rr-page rr-stagger">
@@ -232,4 +235,5 @@ function Dashboard({ onNav, onProfileOpen }){
   );
 }
 
+const Dashboard = React.memo(DashboardInner);
 export { Dashboard, Logo };

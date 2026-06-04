@@ -44,7 +44,7 @@ function HarvestDay({ cell, simulated, clickable, onClick }){
   );
 }
 
-function Harvest(){
+function HarvestInner(){
   const R = useRR();
   const H = R.harvest;
   const t = useT();
@@ -255,4 +255,5 @@ function Harvest(){
   );
 }
 
+const Harvest = React.memo(HarvestInner);
 export { Harvest, HarvestDay };

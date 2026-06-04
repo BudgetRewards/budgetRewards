@@ -62,7 +62,7 @@ function TierCard({ tier, current, achieved, isNext }){
   );
 }
 
-function Tiers(){
+function TiersInner(){
   const R = useRR();
   const t = useT();
   const fmt = useFmt();
@@ -122,4 +122,5 @@ function Tiers(){
   );
 }
 
+const Tiers = React.memo(TiersInner);
 export { Tiers, TierCard };
