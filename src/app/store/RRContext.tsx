@@ -26,28 +26,48 @@ export function RRProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('rr-config', JSON.stringify({ catalogue: overrides }));
   }, [state.catalogue]);
 
-  // Broadcast every new positive ledger entry to the live dashboard
-  const prevLedgerLen = useRef(state.ledger.length);
-  useEffect(() => {
-    const prev = prevLedgerLen.current;
-    prevLedgerLen.current = state.ledger.length;
-    if (state.ledger.length <= prev) return;
-
-    const entry = state.ledger[0];
-    if (!entry || entry.kind !== 'pos') return;
-
-    // Generate a stable device UUID on first use so two people with the same
-    // name don't collide on the leaderboard.
+  // ── helpers ──────────────────────────────────────────────────
+  function getUid(): string {
     let uid = localStorage.getItem('rr-uid');
     if (!uid) { uid = crypto.randomUUID(); localStorage.setItem('rr-uid', uid); }
-
+    return uid;
+  }
+  function postLive(seeds: number, label: string, labelEn?: string) {
+    const uid  = getUid();
     const user = localStorage.getItem('rr-name') || 'Customer';
     fetch('/api/live', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid, user, seeds: entry.amount, label: entry.name, labelEn: entry.nameEn }),
-    }).catch(() => { /* silent fail in dev */ });
+      body: JSON.stringify({ uid, user, seeds, label, labelEn }),
+    }).catch(() => { /* silent fail in dev / when API not set up */ });
+  }
+
+  // ── 1. Broadcast ALL new positive ledger entries ─────────────
+  // When onboarding fires, multiple entries land at once — loop them all.
+  const prevLedgerLen = useRef(state.ledger.length);
+  useEffect(() => {
+    const prev = prevLedgerLen.current;
+    prevLedgerLen.current = state.ledger.length;
+    const newCount = state.ledger.length - prev;
+    if (newCount <= 0) return;
+
+    for (let i = 0; i < newCount; i++) {
+      const entry = state.ledger[i]; // ledger is newest-first
+      if (entry?.kind === 'pos') postLive(entry.amount, entry.name, entry.nameEn);
+    }
   }, [state.ledger]);
+
+  // ── 2. Initial balance sync ───────────────────────────────────
+  // Fires once when the user first gets a name (onboarding complete).
+  // Sends their full current balance so the live dashboard starts accurate.
+  const initialSyncDone = useRef(!!localStorage.getItem('rr-live-synced'));
+  useEffect(() => {
+    const name = localStorage.getItem('rr-name');
+    if (!name || initialSyncDone.current || state.balance <= 0) return;
+    initialSyncDone.current = true;
+    localStorage.setItem('rr-live-synced', '1');
+    postLive(state.balance, 'App gestart', 'App started');
+  }, [state.balance]);
 
   return <RRContext.Provider value={{ state, dispatch }}>{children}</RRContext.Provider>;
 }

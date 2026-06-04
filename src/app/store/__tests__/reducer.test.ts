@@ -33,8 +33,8 @@ describe('APPLY_TRIGGER', () => {
     expect(next.balance).toBe(150);
   });
 
-  test('clamps balance to cap (10000)', () => {
-    const nearCap = { ...freshState, balance: 9900 };
+  test('clamps balance to the cap', () => {
+    const nearCap = { ...freshState, cap: 10000, balance: 9900 };
     const next = apply(nearCap, { name: 'Test', cat: 'App & Data', base: 500, kind: 'pos' });
     expect(next.balance).toBe(10000);
   });
