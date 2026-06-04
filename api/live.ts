@@ -1,19 +1,16 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@vercel/kv'
+import { createClient } from 'redis'
 
-/* The KV client is built explicitly from whichever REST credentials the
-   connected database provides. A first-party Vercel KV exposes
-   KV_REST_API_URL / KV_REST_API_TOKEN; a Marketplace "Upstash for Redis"
-   database exposes UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN. Both
-   speak the same Upstash REST protocol, so createClient works with either. */
-const REST_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL
-const REST_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN
+/* The connected database is a Vercel Marketplace "Redis" store, which exposes a
+   TCP connection string in REDIS_URL (redis:// or rediss://) — not the Upstash
+   REST API. So this uses node-redis, which speaks the Redis wire protocol.
+   node-redis uses camelCase command names (lPush, not lpush). */
 
-/** Presence (never values) of the env vars a REST KV/Redis client might need. */
+/** Presence (never values) of the env vars a Redis client might use. */
 function envPresence() {
   const keys = [
-    'KV_URL', 'KV_REST_API_URL', 'KV_REST_API_TOKEN', 'KV_REST_API_READ_ONLY_TOKEN',
-    'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN', 'REDIS_URL',
+    'REDIS_URL', 'KV_URL', 'KV_REST_API_URL', 'KV_REST_API_TOKEN',
+    'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN',
   ]
   return Object.fromEntries(keys.map(k => [k, !!process.env[k]]))
 }
@@ -25,18 +22,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'OPTIONS') return res.status(200).end()
 
-  // No REST credentials → the database isn't a REST-capable KV/Upstash store
-  // (or isn't connected to this project). Surface a clear, secret-free diagnostic.
-  if (!REST_URL || !REST_TOKEN) {
+  const url = process.env.REDIS_URL
+  if (!url) {
     return res.status(500).json({
-      error: 'KV REST credentials missing: expected KV_REST_API_URL/KV_REST_API_TOKEN or UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN.',
+      error: 'REDIS_URL missing — no Redis database is connected to this project/environment.',
       env: envPresence(),
     })
   }
 
-  const kv = createClient({ url: REST_URL, token: REST_TOKEN })
+  const client = createClient({ url })
+  client.on('error', err => console.error('[api/live] redis client error', err))
 
   try {
+    await client.connect()
+
     /* ── POST: record a seed event ─────────────────────────────── */
     if (req.method === 'POST') {
       const body = req.body ?? {}
@@ -48,10 +47,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const event = { user, seeds, label, labelEn, ts: Date.now() }
       await Promise.all([
-        kv.lpush('rr:events', JSON.stringify(event)),
-        kv.ltrim('rr:events', 0, 199),
-        kv.incrby('rr:total', seeds),
-        kv.sadd('rr:users', user),
+        client.lPush('rr:events', JSON.stringify(event)),
+        client.lTrim('rr:events', 0, 199),
+        client.incrBy('rr:total', seeds),
+        client.sAdd('rr:users', user),
       ])
       return res.status(200).json({ ok: true })
     }
@@ -59,29 +58,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     /* ── GET: fetch aggregated state ───────────────────────────── */
     if (req.method === 'GET') {
       const [rawEvents, total, userCount] = await Promise.all([
-        kv.lrange('rr:events', 0, 29),
-        kv.get<number>('rr:total'),
-        kv.scard('rr:users'),
+        client.lRange('rr:events', 0, 29),
+        client.get('rr:total'),
+        client.sCard('rr:users'),
       ])
-      const events = (rawEvents ?? []).map(e =>
-        typeof e === 'string' ? JSON.parse(e) : e
-      )
-      return res.status(200).json({ events, total: total ?? 0, userCount: userCount ?? 0 })
+      const events = (rawEvents ?? []).map(e => {
+        try { return JSON.parse(e) } catch { return e }
+      })
+      return res.status(200).json({ events, total: Number(total) || 0, userCount: Number(userCount) || 0 })
     }
 
     /* ── DELETE: reset for a fresh session ─────────────────────── */
     if (req.method === 'DELETE') {
-      await Promise.all([kv.del('rr:events'), kv.del('rr:total'), kv.del('rr:users')])
+      await Promise.all([client.del('rr:events'), client.del('rr:total'), client.del('rr:users')])
       return res.status(200).json({ ok: true })
     }
 
     return res.status(405).json({ error: 'Method not allowed' })
   } catch (err) {
-    // Turn an opaque 500 into something actionable (message + which env vars exist).
     console.error('[api/live]', err)
     return res.status(500).json({
       error: err instanceof Error ? err.message : String(err),
       env: envPresence(),
     })
+  } finally {
+    // Close the connection so the serverless invocation can exit cleanly.
+    try { await client.quit() } catch { /* already closed */ }
   }
 }
