@@ -119,6 +119,32 @@ html,body{ margin:0; padding:0; }
 .rr-stagger > *:nth-child(8){ animation-delay:.30s; }
 @media (prefers-reduced-motion: reduce){ .rr-fadein, .rr-stagger > *{ animation:none; } }
 
+/* Gamified notifications */
+.rr-notif{
+  background:#fff; border-radius:20px;
+  box-shadow:0 16px 48px rgba(26,26,46,0.22), 0 4px 12px rgba(26,26,46,0.12);
+  overflow:hidden; font-family:'Inter',-apple-system,system-ui,sans-serif;
+}
+.rr-notif-in{ animation:rrNotifIn .45s cubic-bezier(.22,1,.36,1) both; }
+.rr-notif-out{ animation:rrNotifOut .3s cubic-bezier(.4,0,1,1) both; }
+@keyframes rrNotifIn{
+  from{ opacity:0; transform:translateY(-28px) scale(0.88); }
+  to{   opacity:1; transform:translateY(0) scale(1); }
+}
+@keyframes rrNotifOut{
+  from{ opacity:1; transform:translateY(0) scale(1); max-height:200px; }
+  to{   opacity:0; transform:translateY(-16px) scale(0.92); max-height:0; }
+}
+.rr-notif-claim{
+  flex:1; border:none; border-radius:12px; padding:12px;
+  background:var(--green); color:#fff;
+  font-family:inherit; font-weight:800; font-size:14px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  box-shadow:0 6px 16px rgba(0,166,81,0.35);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.rr-notif-claim:active{ transform:scale(0.97); box-shadow:0 3px 8px rgba(0,166,81,0.22); }
+
 /* Onboarding modal */
 .rr-onboarding-backdrop{
   position:fixed; inset:0; z-index:100;

@@ -9,6 +9,7 @@ import { Harvest } from './screens/harvest.jsx'
 import { Usage } from './screens/usage.jsx'
 import { LanguageProvider, useT, useLang } from './i18n.jsx'
 import { OnboardingModal } from './OnboardingModal.jsx'
+import { NotificationQueue } from './NotificationQueue.jsx'
 import { useRR, useTrigger } from './store/RRContext.tsx'
 
 /* ───────────────── RootedRewards · App shell + tab bar ───────────────── */
@@ -196,6 +197,7 @@ function App(){
   return (
     <div className="rr rr-app">
       {!userName && <OnboardingModal/>}
+      <NotificationQueue/>
       <AutoSimulateWeekends/>
       <FullscreenHint/>
       <RewardToast onView={()=>go('history')}/>
