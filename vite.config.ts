@@ -11,8 +11,8 @@ export default defineConfig({
       name: 'api-live-mock',
       configureServer(server) {
         // In-memory store — mimics Vercel KV for local dev
-        const store: { events: object[]; total: number; users: Set<string> } = {
-          events: [], total: 0, users: new Set(),
+        const store: { events: object[]; total: number; users: Set<string>; userSeeds: Map<string, number> } = {
+          events: [], total: 0, users: new Set(), userSeeds: new Map(),
         }
 
         server.middlewares.use('/api/live', (req, res) => {
@@ -20,10 +20,15 @@ export default defineConfig({
           res.setHeader('Content-Type', 'application/json')
 
           if (req.method === 'GET') {
+            const leaderboard = [...store.userSeeds.entries()]
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 5)
+              .map(([user, seeds]) => ({ user, seeds }))
             res.end(JSON.stringify({
               events: store.events.slice(0, 30),
               total: store.total,
               userCount: store.users.size,
+              leaderboard,
             }))
           } else if (req.method === 'POST') {
             let body = ''
@@ -35,11 +40,12 @@ export default defineConfig({
                 store.events = store.events.slice(0, 200)
                 store.total += seeds
                 store.users.add(user)
+                store.userSeeds.set(user, (store.userSeeds.get(user) ?? 0) + seeds)
               } catch { /* ignore */ }
               res.end(JSON.stringify({ ok: true }))
             })
           } else if (req.method === 'DELETE') {
-            store.events = []; store.total = 0; store.users.clear()
+            store.events = []; store.total = 0; store.users.clear(); store.userSeeds.clear()
             res.end(JSON.stringify({ ok: true }))
           } else {
             res.end('{}')

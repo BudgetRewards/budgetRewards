@@ -51,26 +51,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         client.lTrim('rr:events', 0, 199),
         client.incrBy('rr:total', seeds),
         client.sAdd('rr:users', user),
+        client.zIncrBy('rr:leaderboard', seeds, user),
       ])
       return res.status(200).json({ ok: true })
     }
 
     /* ── GET: fetch aggregated state ───────────────────────────── */
     if (req.method === 'GET') {
-      const [rawEvents, total, userCount] = await Promise.all([
+      const [rawEvents, total, userCount, topRaw] = await Promise.all([
         client.lRange('rr:events', 0, 29),
         client.get('rr:total'),
         client.sCard('rr:users'),
+        client.zRangeWithScores('rr:leaderboard', 0, 4, { REV: true }),
       ])
       const events = (rawEvents ?? []).map(e => {
         try { return JSON.parse(e) } catch { return e }
       })
-      return res.status(200).json({ events, total: Number(total) || 0, userCount: Number(userCount) || 0 })
+      const leaderboard = (topRaw ?? []).map(entry => ({
+        user: entry.value,
+        seeds: Number(entry.score),
+      }))
+      return res.status(200).json({
+        events,
+        total: Number(total) || 0,
+        userCount: Number(userCount) || 0,
+        leaderboard,
+      })
     }
 
     /* ── DELETE: reset for a fresh session ─────────────────────── */
     if (req.method === 'DELETE') {
-      await Promise.all([client.del('rr:events'), client.del('rr:total'), client.del('rr:users')])
+      await Promise.all([
+        client.del('rr:events'),
+        client.del('rr:total'),
+        client.del('rr:users'),
+        client.del('rr:leaderboard'),
+      ])
       return res.status(200).json({ ok: true })
     }
 
